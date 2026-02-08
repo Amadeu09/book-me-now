@@ -1,0 +1,317 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Empresa {
+  id           Int           @id @default(autoincrement())
+  nom          String
+  // Campos fusionados de la única sala asociada
+  capacitat    Int?
+  ubicacio     String
+  activa       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  clients      Client[]
+  serveis      Servei[]
+  treballadors Treballador[]
+  usuaris      Usuari[]
+  valoracions  Valoracio[]
+  reserves     Reserva[]
+
+  // --- AFEGIT (additiu, no canvia res existent) ---
+  jornadesPlantilla JornadaPlantilla[]
+
+  // (opcional) si vols accés directe a assignacions des d’empresa:
+  // treballadorJornadesPlantilla TreballadorJornadaPlantilla[]
+}
+
+model Usuari {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  hash      String
+  rol       Rol
+  empresaId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  treballador Treballador?
+
+
+  @@index([empresaId])
+}
+
+model Treballador {
+  id          Int                 @id @default(autoincrement())
+  Usuari      Usuari              @relation(fields: [idUsuari], references: [id])
+  idUsuari    Int                 @unique
+  nom         String
+  empresaId   Int
+  actiu       Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  absencies   Absencia[]
+  jornades    Jornada[]
+  reserves    Reserva[]           @relation("ReservaTreballador")
+  empresa     Empresa             @relation(fields: [empresaId], references: [id])
+  serveis     TreballadorServei[]
+  valoracions Valoracio[]
+
+  // --- AFEGIT (additiu, no canvia res existent) ---
+  jornadesPlantillaAssignacions TreballadorJornadaPlantilla[]
+  // (opcional) per excepcions futures:
+  // jornadesExcepcions JornadaExcepcio[]
+
+  @@index([empresaId])
+  @@index([actiu])
+}
+
+model Servei {
+  id           Int                 @id @default(autoincrement())
+  nom          String
+  duradaMin    Int
+  preu         Decimal             @db.Decimal(10, 2)
+  empresaId    Int
+  actiu        Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  reserves     Reserva[]
+  empresa      Empresa             @relation(fields: [empresaId], references: [id])
+  treballadors TreballadorServei[]
+
+  @@index([empresaId])
+  @@index([actiu])
+}
+
+model Client {
+  id          Int         @id @default(autoincrement())
+  nom         String
+  email       String?     @unique
+  telefon     String?
+  empresaId   Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  empresa     Empresa     @relation(fields: [empresaId], references: [id])
+  reserves    Reserva[]
+  valoracions Valoracio[]
+
+  @@index([empresaId])
+}
+
+model TreballadorServei {
+  id            Int         @id @default(autoincrement())
+  treballadorId Int
+  serveiId      Int
+  servei        Servei      @relation(fields: [serveiId], references: [id])
+  treballador   Treballador @relation(fields: [treballadorId], references: [id])
+
+  @@unique([treballadorId, serveiId])
+  @@index([serveiId])
+}
+
+model Reserva {
+  id            Int             @id @default(autoincrement())
+  dataHora      DateTime
+  estat         ReservaEstat    @default(PENDENT)
+  empresaId     Int
+  treballadorId Int?
+  clientId      Int?
+  clientNom     String?
+  clientEmail   String?
+  observacions  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  factura       Factura?
+  client        Client?         @relation(fields: [clientId], references: [id])
+  empresa       Empresa         @relation(fields: [empresaId], references: [id])
+  treballador   Treballador?    @relation("ReservaTreballador", fields: [treballadorId], references: [id])
+  serveiId      Int
+  servei        Servei          @relation(fields: [serveiId], references: [id])
+
+  @@index([empresaId, dataHora])
+  @@index([treballadorId, dataHora])
+  @@index([clientId])
+  @@index([estat])
+  @@index([serveiId])
+}
+
+
+
+model Valoracio {
+  id            Int            @id @default(autoincrement())
+  empresaId     Int
+  clientId      Int?
+  tipus         ValoracioTipus
+  treballadorId Int?
+  puntuacio     Int
+  comentari     String?
+  dataValoracio DateTime       @default(now())
+  client        Client?        @relation(fields: [clientId], references: [id])
+  empresa       Empresa        @relation(fields: [empresaId], references: [id])
+  treballador   Treballador?   @relation(fields: [treballadorId], references: [id])
+
+  @@index([empresaId])
+  @@index([tipus, treballadorId])
+}
+
+model Factura {
+  id          Int            @id @default(autoincrement())
+  reservaId   Int            @unique
+  dataEmissio DateTime       @default(now())
+  total       Decimal        @db.Decimal(10, 2)
+  reserva     Reserva        @relation(fields: [reservaId], references: [id])
+  linies      LineaFactura[]
+}
+
+model LineaFactura {
+  id          Int     @id @default(autoincrement())
+  facturaId   Int
+  concepte    String
+  quantitat   Int     @default(1)
+  preuUnitari Decimal @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
+  factura     Factura @relation(fields: [facturaId], references: [id])
+}
+
+//
+// --- MODEL EXISTENT: NO TOCAT ---
+// Aquest el mantinc exactament igual.
+//
+model Jornada {
+  id            Int         @id @default(autoincrement())
+  treballadorId Int
+  inici         DateTime
+  fi            DateTime
+  recurrent     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  treballador   Treballador @relation(fields: [treballadorId], references: [id])
+
+  @@index([treballadorId, inici])
+}
+
+model Absencia {
+  id            Int         @id @default(autoincrement())
+  treballadorId Int
+  inici         DateTime
+  fi            DateTime
+  motiu         String?
+  createdAt     DateTime    @default(now())
+  treballador   Treballador @relation(fields: [treballadorId], references: [id])
+
+  @@index([treballadorId, inici])
+}
+
+model JornadaPlantilla {
+  id        Int      @id @default(autoincrement())
+  empresaId Int
+  nom       String
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+
+  rotacions    JornadaRotacio[]
+  assignacions TreballadorJornadaPlantilla[]
+
+  @@index([empresaId])
+  @@unique([empresaId, nom])
+}
+
+model JornadaRotacio {
+  id          Int      @id @default(autoincrement())
+  plantillaId Int
+
+  // 0 = setmana A, 1 = setmana B, ...
+  index       Int
+  nom         String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  plantilla   JornadaPlantilla @relation(fields: [plantillaId], references: [id])
+  dies        JornadaDiaRotacio[]
+
+  @@index([plantillaId])
+  @@unique([plantillaId, index])
+}
+
+model JornadaDiaRotacio {
+  id        Int     @id @default(autoincrement())
+  rotacioId Int
+
+  // 1=dilluns ... 7=diumenge
+  dow       Int
+
+  // opcional (també es pot deduir si no hi ha trams)
+  esDescans Boolean @default(false)
+
+  rotacio   JornadaRotacio @relation(fields: [rotacioId], references: [id])
+  trams     JornadaTram[]
+
+  @@index([rotacioId])
+  @@unique([rotacioId, dow])
+}
+
+model JornadaTram {
+  id       Int @id @default(autoincrement())
+  diaId    Int
+
+  // minuts des de 00:00 (ex: 08:30 => 510)
+  iniciMin Int
+  fiMin    Int
+
+  // per ordenar al frontend (opcional)
+  ordre    Int?
+
+  dia      JornadaDiaRotacio @relation(fields: [diaId], references: [id])
+
+  @@index([diaId])
+}
+
+//
+// Assignació d’una plantilla a un treballador per rang de dates
+// (AIXÒ és el que evita solapes i defineix amb quina rotació comença)
+//
+model TreballadorJornadaPlantilla {
+  id            Int      @id @default(autoincrement())
+  treballadorId Int
+  plantillaId   Int
+
+  dataInici     DateTime
+  dataFi        DateTime?
+
+  // amb quina rotació (index) comença a dataInici
+  anchorRotacioIndex Int @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  treballador   Treballador      @relation(fields: [treballadorId], references: [id])
+  plantilla     JornadaPlantilla @relation(fields: [plantillaId], references: [id])
+
+  @@index([treballadorId, dataInici])
+  @@index([plantillaId])
+}
+
+enum Rol {
+  ADMIN_GENERAL
+  EMPLEAT
+}
+
+enum ReservaEstat {
+  PENDENT
+  CONFIRMADA
+  CANCELLADA
+  FINALITZADA
+  NO_SHOW
+}
+
+enum ValoracioTipus {
+  SALA
+  TREBALLADOR
+}

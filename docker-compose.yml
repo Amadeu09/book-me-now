@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: bookmenow-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bookmenow_dev
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d bookmenow_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: bookmenow-backend-dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://dev:dev123@postgres:5432/bookmenow_dev?schema=public
+      JWT_SECRET: BmNwQf9uKfC7zF8tL2xR3pV6aY9eT4wH1jM0sD5cN8rU2bG7
+      SESSION_SECRET: session-secret-dev
+      NODE_ENV: development
+      PORT: 3000
+      ALLOWED_ORIGINS: http://localhost:3001,http://127.0.0.1:3001,http://localhost:8081,http://localhost:19000,http://localhost:19002
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run start:dev"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: bookmenow-frontend-dev
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      EXPO_PUBLIC_API_URL: http://localhost:5000
+      NODE_ENV: development
+    ports:
+      - "3001:3001"   # Expo web
+      - "19000:19000" # Expo Metro (Android)
+      - "19001:19001" # Expo Metro (devtools)
+      - "19002:19002" # Expo Metro (logs)
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm run start -- --web --port 3001"
+
+volumes:
+  postgres_dev_data:

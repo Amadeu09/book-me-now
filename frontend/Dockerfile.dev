@@ -1,0 +1,19 @@
+# Frontend development Dockerfile for Expo
+FROM node:20-alpine
+
+WORKDIR /app
+
+# OS deps
+RUN apk add --no-cache bash
+
+# Install deps
+COPY package*.json ./
+RUN npm install
+
+# Copy source
+COPY . .
+
+EXPOSE 3001 19000 19001 19002
+
+# Start Expo (web + metro). Web on 3001.
+CMD ["sh", "-c", "npm run start -- --web --port 3001"]
