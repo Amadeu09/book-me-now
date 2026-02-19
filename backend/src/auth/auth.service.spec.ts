@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TokenBlacklistService } from './token-blacklist.service';
 import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
@@ -36,6 +37,10 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: TokenBlacklistService,
+          useValue: { addToBlacklist: jest.fn() },
         },
       ],
     }).compile();

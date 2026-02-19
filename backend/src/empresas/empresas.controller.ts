@@ -46,6 +46,7 @@ export class EmpresasController {
   @ApiOperation({ summary: 'Obtener empresa' })
   @ApiParam({ name: 'id' })
   @ApiResponse({ status: 200, description: 'Empresa encontrada' })
+  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per veure aquesta empresa' })
   @ApiResponse({ status: 404, description: 'No encontrada' })
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
     return this.empresasService.findOne(id, user.empresaId, user.rol);
@@ -56,6 +57,8 @@ export class EmpresasController {
   @ApiOperation({ summary: 'Actualizar empresa' })
   @ApiParam({ name: 'id' })
   @ApiResponse({ status: 200, description: 'Empresa actualizada' })
+  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per modificar aquesta empresa' })
+  @ApiResponse({ status: 404, description: 'No encontrada' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateEmpresaDto: UpdateEmpresaDto,

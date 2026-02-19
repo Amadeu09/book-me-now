@@ -27,6 +27,8 @@ export class JornadesController {
     @ApiOperation({ summary: 'Crear plantilla de jornada' })
     @ApiParam({ name: 'empresaId' })
     @ApiResponse({ status: 201, description: 'Plantilla de jornada creada' })
+    @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per crear jornades en aquesta empresa' })
+    @ApiResponse({ status: 404, description: 'No trobada: L\'empresa no existeix' })
     create(
         @Param('empresaId', ParseIntPipe) empresaId: number,
         @Body() createJornadaDto: CreateJornadaPlantillaDto,
@@ -41,6 +43,8 @@ export class JornadesController {
     @ApiOperation({ summary: 'Llistar plantilles de jornada' })
     @ApiParam({ name: 'empresaId' })
     @ApiResponse({ status: 200, description: 'Llista de plantilles' })
+    @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per veure jornades d\'aquesta empresa' })
+    @ApiResponse({ status: 404, description: 'No trobada: L\'empresa no existeix' })
     findAll(
         @Param('empresaId', ParseIntPipe) empresaId: number,
         @CurrentUser() user: CurrentUserData,

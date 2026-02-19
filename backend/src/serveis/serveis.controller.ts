@@ -14,7 +14,7 @@ import { ServeisService } from './serveis.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { CreateServeiDto, UpdateServeiDto } from './dto/servei.dto';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 
 @Controller('serveis')
 @UseGuards(JwtAuthGuard)
@@ -22,11 +22,17 @@ export class ServeisController {
   constructor(private readonly serveisService: ServeisService) { }
 
   @Post()
+  @ApiOperation({ summary: 'Crear un nou servei' })
+  @ApiBody({ type: CreateServeiDto })
+  @ApiResponse({ status: 201, description: 'Servei creat correctament' })
+  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís' })
   create(@Body() dto: CreateServeiDto, @CurrentUser() user: CurrentUserData) {
     return this.serveisService.create(user.empresaId, dto);
   }
 
   @Get()
+  @ApiOperation({ summary: 'Llistar tots els serveis de l\'empresa' })
+  @ApiResponse({ status: 200, description: 'Llista de serveis recuperada' })
   findAll(
     @CurrentUser() user: CurrentUserData,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
@@ -44,11 +50,22 @@ export class ServeisController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Obtenir un servei per ID' })
+  @ApiParam({ name: 'id' })
+  @ApiResponse({ status: 200, description: 'Servei trobat' })
+  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís o el servei és d\'una altra empresa' })
+  @ApiResponse({ status: 404, description: 'Servei no trobat' })
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
     return this.serveisService.findOne(user.empresaId, id);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Actualitzar un servei' })
+  @ApiParam({ name: 'id' })
+  @ApiBody({ type: UpdateServeiDto })
+  @ApiResponse({ status: 200, description: 'Servei actualitzat correctament' })
+  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís o el servei és d\'una altra empresa' })
+  @ApiResponse({ status: 404, description: 'Servei no trobat' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateServeiDto,
@@ -58,6 +75,11 @@ export class ServeisController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar (desactivar) un servei' })
+  @ApiParam({ name: 'id' })
+  @ApiResponse({ status: 200, description: 'Servei eliminat correctament' })
+  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís o el servei és d\'una altra empresa' })
+  @ApiResponse({ status: 404, description: 'Servei no trobat' })
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
     return this.serveisService.remove(user.empresaId, id);
   }

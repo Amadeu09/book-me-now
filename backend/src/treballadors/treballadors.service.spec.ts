@@ -18,13 +18,21 @@ describe('TreballadorsService', () => {
         },
         treballadorJornadaPlantilla: {
             create: jest.fn(),
+            findMany: jest.fn(),
         },
         servei: {
             findMany: jest.fn(),
+            findUnique: jest.fn(),
         },
         treballadorServei: {
             create: jest.fn(),
             findUnique: jest.fn(),
+        },
+        reserva: {
+            findMany: jest.fn(),
+        },
+        absencia: {
+            findMany: jest.fn(),
         },
     };
 
@@ -226,6 +234,96 @@ describe('TreballadorsService', () => {
                     NotFoundException,
                 );
             });
+        });
+    });
+
+    describe('getDisponibilitat', () => {
+        const empresaId = 1;
+        const adminUserId = 1;
+        const workerId = 100;
+        const serviceId = 5;
+
+        const adminUser = { id: adminUserId, rol: 'ADMIN_GENERAL', empresaId };
+        const worker = { id: workerId, empresaId };
+        const servei = { id: serviceId, empresaId, duradaMin: 60 };
+
+        it('should return availability slots', async () => {
+            mockPrismaService.usuari.findUnique.mockResolvedValue(adminUser);
+            mockPrismaService.treballador.findUnique.mockResolvedValue(worker);
+            prismaService.servei.findUnique = jest.fn().mockResolvedValue(servei);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const assignments = [{
+                dataInici: new Date(today),
+                dataFi: null,
+                anchorRotacioIndex: 0,
+                plantilla: {
+                    rotacions: [{
+                        index: 0,
+                        dies: [{
+                            dow: new Date().getDay() || 7, // Today
+                            trams: [{ iniciMin: 480, fiMin: 1080 }] // 08:00 - 18:00
+                        }]
+                    }]
+                }
+            }];
+
+            prismaService.treballadorJornadaPlantilla.findMany = jest.fn().mockResolvedValue(assignments);
+            prismaService.reserva.findMany = jest.fn().mockResolvedValue([]);
+            prismaService.absencia.findMany = jest.fn().mockResolvedValue([]);
+
+            const result = await service.getDisponibilitat(empresaId, workerId, serviceId, adminUserId);
+
+            expect(result).toBeDefined();
+            const dateKey = today.toISOString().split('T')[0];
+            expect(result[dateKey]).toBeDefined();
+            expect(result[dateKey].length).toBeGreaterThan(0);
+        });
+
+        it('should filter slots based on reservations', async () => {
+            mockPrismaService.usuari.findUnique.mockResolvedValue(adminUser);
+            mockPrismaService.treballador.findUnique.mockResolvedValue(worker);
+            prismaService.servei.findUnique = jest.fn().mockResolvedValue(servei);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Create a reservation from 08:00 to 09:00
+            const reservationDate = new Date(today);
+            reservationDate.setHours(8, 0, 0, 0);
+
+            const assignments = [{
+                dataInici: new Date(today),
+                dataFi: null,
+                anchorRotacioIndex: 0,
+                plantilla: {
+                    rotacions: [{
+                        index: 0,
+                        dies: [{
+                            dow: new Date().getDay() || 7,
+                            trams: [{ iniciMin: 480, fiMin: 600 }] // 08:00 - 10:00
+                        }]
+                    }]
+                }
+            }];
+
+            const reserves = [{
+                dataHora: reservationDate,
+                servei: { duradaMin: 60 }
+            }];
+
+            prismaService.treballadorJornadaPlantilla.findMany = jest.fn().mockResolvedValue(assignments);
+            prismaService.reserva.findMany = jest.fn().mockResolvedValue(reserves);
+            prismaService.absencia.findMany = jest.fn().mockResolvedValue([]);
+
+            const result = await service.getDisponibilitat(empresaId, workerId, serviceId, adminUserId);
+
+            const dateKey = today.toISOString().split('T')[0];
+            // 08:00-09:00 blocked. 09:00-10:00 should be free.
+            expect(result[dateKey]).toContain('09:00 - 10:00');
+            expect(result[dateKey]).not.toContain('08:00 - 09:00');
         });
     });
 });
