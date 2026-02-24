@@ -20,7 +20,7 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
-      
+
       if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
@@ -62,6 +62,11 @@ async function bootstrap() {
     .addTag('serveis', 'Servicios')
     .addTag('clients', 'Clientes')
     .addTag('reserves', 'Reservas')
+    .addTag('absencies', 'Ausencias y bajas')
+    .addTag('factures', 'Facturas y pagos')
+    .addTag('jornades', 'Jornadas y turnos')
+    .addTag('valoracions', 'Valoraciones y reseñas')
+    .addTag('botiga', 'Tienda y productos')
     .addBearerAuth(
       {
         type: 'http',

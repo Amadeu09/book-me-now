@@ -18,8 +18,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Login de usuario', description: 'Autentica un usuario y devuelve un token JWT' })
   @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: 'Login exitoso', type: LoginResponseDto })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación en DTO)' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   @ApiResponse({ status: 429, description: 'Demasiados intentos - Rate limit exceeded' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     this.logger.debug(`POST /api/auth/login - Email: ${loginDto.email}`);
     return this.authService.login(loginDto);
@@ -31,8 +33,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Registro de empresa', description: 'Registra una nueva empresa con un usuario administrador' })
   @ApiBody({ type: SignupDto })
   @ApiResponse({ status: 201, description: 'Registro exitoso', type: LoginResponseDto })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación en DTO)' })
   @ApiResponse({ status: 409, description: 'Email ya registrado' })
   @ApiResponse({ status: 429, description: 'Demasiados intentos - Rate limit exceeded' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   async signup(@Body() signupDto: SignupDto): Promise<LoginResponseDto> {
     this.logger.debug(`POST /api/auth/signup - Email: ${signupDto.usuari.email}`);
     return this.authService.signup(signupDto);
@@ -45,6 +49,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout de usuario', description: 'Desautentica el usuario y invalida el token JWT' })
   @ApiResponse({ status: 200, description: 'Logout exitoso' })
   @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   async logout(@Req() req: any): Promise<{ message: string }> {
     const userId = req.user.userId;
     const token = req.headers.authorization?.split(' ')[1];

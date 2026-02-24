@@ -51,6 +51,7 @@ describe('AbsenciesService', () => {
                 treballadorId: 10,
                 inici: '2023-01-01',
                 fi: '2023-01-02',
+                tipus: 'VACANCES' as any,
                 motiu: 'Vacances',
             };
 
@@ -72,7 +73,7 @@ describe('AbsenciesService', () => {
         it('should throw ForbiddenException if user is not ADMIN_GENERAL', async () => {
             mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, rol: 'USER' });
 
-            await expect(service.create(1, { treballadorId: 1, inici: 'd', fi: 'd' }, 1))
+            await expect(service.create(1, { treballadorId: 1, tipus: 'VACANCES' as any, inici: 'd', fi: 'd' }, 1))
                 .rejects.toThrow(ForbiddenException);
         });
 
@@ -80,7 +81,7 @@ describe('AbsenciesService', () => {
             mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, rol: 'ADMIN_GENERAL' });
             mockPrismaService.treballador.findUnique.mockResolvedValue(null);
 
-            await expect(service.create(1, { treballadorId: 1, inici: 'd', fi: 'd' }, 1))
+            await expect(service.create(1, { treballadorId: 1, tipus: 'VACANCES' as any, inici: 'd', fi: 'd' }, 1))
                 .rejects.toThrow(NotFoundException);
         });
 
@@ -88,7 +89,7 @@ describe('AbsenciesService', () => {
             mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, rol: 'ADMIN_GENERAL' });
             mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 1, empresaId: 999 });
 
-            await expect(service.create(1, { treballadorId: 1, inici: 'd', fi: 'd' }, 1))
+            await expect(service.create(1, { treballadorId: 1, tipus: 'VACANCES' as any, inici: 'd', fi: 'd' }, 1))
                 .rejects.toThrow(ForbiddenException);
         });
     });

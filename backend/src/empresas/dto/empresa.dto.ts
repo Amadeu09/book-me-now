@@ -12,7 +12,7 @@ export class CreateEmpresaDto {
   @IsNotEmpty()
   ubicacio: string;
 
-  @ApiProperty({ example: 30, description: 'Capacidad máxima', required: false })
+  @ApiProperty({ example: 30, description: 'Capacidad máxima de clientes/trabajadores', required: false })
   @IsOptional()
   @IsNumber()
   @Min(1)
@@ -25,23 +25,23 @@ export class CreateEmpresaDto {
 }
 
 export class UpdateEmpresaDto {
-  @ApiProperty({ example: 'Nuevo nombre', required: false })
+  @ApiProperty({ example: 'Nuevo nombre', required: false, description: 'Nuevo nombre de empresa' })
   @IsOptional()
   @IsString()
   nom?: string;
 
-  @ApiProperty({ example: 'Nueva ubicación', required: false })
+  @ApiProperty({ example: 'Nueva ubicación', required: false, description: 'Nueva ubicación' })
   @IsOptional()
   @IsString()
   ubicacio?: string;
 
-  @ApiProperty({ example: 50, required: false })
+  @ApiProperty({ example: 50, required: false, description: 'Nueva capacidad máxima' })
   @IsOptional()
   @IsNumber()
   @Min(1)
   capacitat?: number;
 
-  @ApiProperty({ example: false, required: false })
+  @ApiProperty({ example: false, required: false, description: 'Nuevo estado activo/inactivo' })
   @IsOptional()
   @IsBoolean()
   activa?: boolean;

@@ -2,27 +2,34 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuard
 import { ReservesService } from './reserves.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { CreateReservaDto, UpdateReservaEstatDto } from './dto/reserves.dto';
+import { ApiOperation, ApiResponse, ApiTags, ApiBody } from '@nestjs/swagger';
+import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto } from './dto/reserves.dto';
 
+@ApiTags('reserves')
 @Controller('reserves')
 export class ReservesController {
   constructor(private readonly reservesService: ReservesService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Asignar múltiples servicios a un trabajador' })
-  @ApiResponse({ status: 201, description: 'Servicios asignados correctamente' })
-  @ApiResponse({ status: 403, description: 'No autorizado o empresa incorrecta' })
-  @ApiResponse({ status: 404, description: 'Trabajador o servicios no encontrados' })
-  create(@Body() dto: CreateReservaDto ) {
-    return this.reservesService.create( dto);
+  @ApiOperation({ summary: 'Crear una nueva reserva' })
+  @ApiBody({ type: CreateReservaDto })
+  @ApiResponse({ status: 201, description: 'Reserva creada correctamente', type: ReservaResponseDto })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
+  @ApiResponse({ status: 404, description: 'Servicio o trabajador no encontrados' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  create(@Body() dto: CreateReservaDto) {
+    return this.reservesService.create(dto);
   }
 
   @Put('update/:id')
-  @ApiOperation({ summary: 'Cambiar el estado de una reserva' })
-  @ApiResponse({ status: 200, description: 'Estado de reserva actualizado' })
-  @ApiResponse({ status: 403, description: 'No autorizado o empresa incorrecta' })
+  @ApiOperation({ summary: 'Actualizar el estado de una reserva' })
+  @ApiBody({ type: UpdateReservaEstatDto })
+  @ApiResponse({ status: 200, description: 'Estado de reserva actualizado', type: ReservaResponseDto })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   updateEstado(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateReservaEstatDto,
@@ -32,19 +39,23 @@ export class ReservesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Eliminar una reserva' })
-  @ApiResponse({ status: 200, description: 'Reserva eliminada correctamente' })
-  @ApiResponse({ status: 403, description: 'No autorizado o empresa incorrecta' })
+  @ApiResponse({ status: 200, description: 'Reserva eliminada correctamente', type: ReservaResponseDto })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
-  delete(@Param('id', ParseIntPipe) id: number) 
-  {
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  delete(@Param('id', ParseIntPipe) id: number) {
     return this.reservesService.delete(id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Actualizar una reserva' })
-  @ApiResponse({ status: 200, description: 'Reserva actualizada correctamente' })
-  @ApiResponse({ status: 403, description: 'No autorizado o empresa incorrecta' })
+  @ApiBody({ type: CreateReservaDto })
+  @ApiResponse({ status: 200, description: 'Reserva actualizada correctamente', type: ReservaResponseDto })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateReservaDto,

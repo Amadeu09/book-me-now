@@ -1,0 +1,309 @@
+
+> bookmenow-backend@1.0.0 test
+> jest
+
+PASS src/serveis/serveis.service.spec.ts (28.168 s)
+PASS src/clients/clients.controller.spec.ts (30.144 s)
+PASS src/auth/auth.service.spec.ts (31.861 s)
+PASS src/serveis/serveis.controller.spec.ts (32.516 s)
+PASS src/empresas/empresas.controller.spec.ts (32.796 s)
+PASS src/absencies/absencies.controller.spec.ts (5.205 s)
+PASS src/auth/auth.controller.spec.ts (33.817 s)
+PASS src/usuaris/usuaris.controller.spec.ts (33.88 s)
+PASS src/reserves/reserves.controller.spec.ts
+PASS src/clients/clients.service.spec.ts
+PASS src/usuaris/usuaris.service.spec.ts
+PASS src/reserves/reserves.service.spec.ts
+PASS src/treballadors/treballadors.service.spec.ts
+  ● Console
+
+    console.log
+      Date: 2026-02-22, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      Date: 2026-02-23, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-23 dow 2
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-24, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-24 dow 3
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-25, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-25 dow 4
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-26, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-26 dow 5
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-27, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-27 dow 6
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-28, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-28 dow 7
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-01, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      Date: 2026-03-02, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-02 dow 2
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-03, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-03 dow 3
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-04, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-04 dow 4
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-05, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-05 dow 5
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-06, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-06 dow 6
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-07, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-07 dow 7
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-22, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      Date: 2026-02-23, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-23 dow 2
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-24, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-24 dow 3
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-25, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-25 dow 4
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-26, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-26 dow 5
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-27, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-27 dow 6
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-02-28, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-02-22T23:00:00.000Z, WeeksDiff: 0, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-02-28 dow 7
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-01, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      Date: 2026-03-02, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-02 dow 2
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-03, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-03 dow 3
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-04, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-04 dow 4
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-05, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-05 dow 5
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-06, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-06 dow 6
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+    console.log
+      Date: 2026-03-07, AssignmentStart: 2026-02-22T23:00:00.000Z, MondayStart: 2026-02-22T23:00:00.000Z, CurrentMonday: 2026-03-01T23:00:00.000Z, WeeksDiff: 1, RotationIndex: 0
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:390:15)
+
+    console.log
+      No schedule for 2026-03-07 dow 7
+
+      at TreballadorsService.getDisponibilitat (treballadors/treballadors.service.ts:401:17)
+
+PASS src/empresas/empresas.service.spec.ts
+PASS src/jornades/jornades.service.spec.ts
+PASS src/absencies/absencies.service.spec.ts
+PASS src/jornades/jornades.controller.spec.ts
+FAIL src/treballadors/treballadors.controller.spec.ts
+  ● Test suite failed to run
+
+    Cannot find module '@/common/decorators/roles.decorator' from 'treballadors/treballadors.controller.ts'
+
+    Require stack:
+      treballadors/treballadors.controller.ts
+      treballadors/treballadors.controller.spec.ts
+
+    [0m [90m 4 |[39m [36mimport[39m { [33mRolesGuard[39m } [36mfrom[39m [32m'../common/guards/roles.guard'[39m[33m;[39m
+     [90m 5 |[39m [36mimport[39m { [33mCurrentUser[39m[33m,[39m [33mCurrentUserData[39m } [36mfrom[39m [32m'../common/decorators/current-user.decorator'[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m { [33mRoles[39m } [36mfrom[39m [32m'@/common/decorators/roles.decorator'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 7 |[39m [36mimport[39m { [33mApiOperation[39m[33m,[39m [33mApiResponse[39m[33m,[39m [33mApiBody[39m } [36mfrom[39m [32m'@nestjs/swagger'[39m[33m;[39m
+     [90m 8 |[39m [36mimport[39m { [33mCreateJornadaTreballadorExistDto[39m[33m,[39m [33mCreateTreballadorDto[39m[33m,[39m [33mJornadaTreballadorDto[39m } [36mfrom[39m [32m'./dto/CreateTreballadorDto'[39m[33m;[39m
+     [90m 9 |[39m [36mimport[39m { [33mAssignarServeisDto[39m } [36mfrom[39m [32m'./dto/AssignarServeisDto'[39m[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (treballadors/treballadors.controller.ts:6:1)
+      at Object.<anonymous> (treballadors/treballadors.controller.spec.ts:2:1)
+
+Test Suites: 1 failed, 17 passed, 18 total
+Tests:       1 skipped, 108 passed, 109 total
+Snapshots:   0 total
+Time:        38.694 s
+Ran all test suites.

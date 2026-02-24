@@ -41,6 +41,7 @@ describe('AbsenciesController', () => {
                 treballadorId: 1,
                 inici: '2023-01-01',
                 fi: '2023-01-02',
+                tipus: 'VACANCES' as any,
                 motiu: 'Test',
             };
             const user = { userId: 1, empresaId: 1, email: 'test@example.com', rol: 'ADMIN_GENERAL' as Rol };

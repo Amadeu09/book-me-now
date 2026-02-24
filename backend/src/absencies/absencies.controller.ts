@@ -15,20 +15,24 @@ export class AbsenciesController {
 
     @Post()
     @Roles('ADMIN_GENERAL')
-    @ApiOperation({ summary: 'Assignar absència a un treballador' })
-    @ApiResponse({ status: 201, description: 'Absència assignada correctament' })
-    @ApiResponse({ status: 403, description: 'Prohibit: No tens permisos per assignar absències o el treballador no pertany a la teva empresa' })
-    @ApiResponse({ status: 404, description: 'No trobat: El treballador no existeix' })
+    @ApiOperation({ summary: 'Asignar ausencia a un trabajador' })
+    @ApiResponse({ status: 201, description: 'Ausencia asignada correctamente' })
+    @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación en DTO)' })
+    @ApiResponse({ status: 403, description: 'Prohibido: No tienes permisos para asignar ausencias o el trabajador no pertenece a tu empresa' })
+    @ApiResponse({ status: 404, description: 'No encontrado: El trabajador no existe' })
+    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     create(@Body() dto: CreateAbsenciaDto, @CurrentUser() user: CurrentUserData) {
         return this.absenciesService.create(user.empresaId, dto, user.userId);
     }
 
     @Put(':id')
     @Roles('ADMIN_GENERAL')
-    @ApiOperation({ summary: 'Editar una absència' })
-    @ApiResponse({ status: 200, description: 'Absència actualitzada correctament' })
-    @ApiResponse({ status: 403, description: 'Prohibit: No tens permisos per editar aquesta absència' })
-    @ApiResponse({ status: 404, description: 'No trobat: L\'absència no existeix' })
+    @ApiOperation({ summary: 'Editar una ausencia' })
+    @ApiResponse({ status: 200, description: 'Ausencia actualizada correctamente' })
+    @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación en DTO)' })
+    @ApiResponse({ status: 403, description: 'Prohibido: No tienes permisos para editar esta ausencia' })
+    @ApiResponse({ status: 404, description: 'No encontrado: La ausencia no existe' })
+    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     update(
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: UpdateAbsenciaDto,
@@ -39,10 +43,12 @@ export class AbsenciesController {
 
     @Delete(':id')
     @Roles('ADMIN_GENERAL')
-    @ApiOperation({ summary: 'Eliminar una absència' })
-    @ApiResponse({ status: 200, description: 'Absència eliminada correctament' })
-    @ApiResponse({ status: 403, description: 'Prohibit: No tens permisos per eliminar aquesta absència' })
-    @ApiResponse({ status: 404, description: 'No trobat: L\'absència no existeix' })
+    @ApiOperation({ summary: 'Eliminar una ausencia' })
+    @ApiResponse({ status: 200, description: 'Ausencia eliminada correctamente' })
+    @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
+    @ApiResponse({ status: 403, description: 'Prohibido: No tienes permisos para eliminar esta ausencia' })
+    @ApiResponse({ status: 404, description: 'No encontrado: La ausencia no existe' })
+    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     delete(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
         return this.absenciesService.remove(user.empresaId, id, user.userId);
     }

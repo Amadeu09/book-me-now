@@ -25,10 +25,13 @@ export class JornadesController {
     @Post()
     @Roles('ADMIN_GENERAL', 'EMPLEAT')
     @ApiOperation({ summary: 'Crear plantilla de jornada' })
-    @ApiParam({ name: 'empresaId' })
-    @ApiResponse({ status: 201, description: 'Plantilla de jornada creada' })
-    @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per crear jornades en aquesta empresa' })
-    @ApiResponse({ status: 404, description: 'No trobada: L\'empresa no existeix' })
+    @ApiParam({ name: 'empresaId', description: 'ID de la empresa' })
+    @ApiResponse({ status: 201, description: 'Plantilla de jornada creada exitosamente' })
+    @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+    @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+    @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso para crear jornadas en esta empresa' })
+    @ApiResponse({ status: 404, description: 'No encontrada: La empresa no existe' })
+    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     create(
         @Param('empresaId', ParseIntPipe) empresaId: number,
         @Body() createJornadaDto: CreateJornadaPlantillaDto,
@@ -40,11 +43,14 @@ export class JornadesController {
 
     @Get()
     @Roles('ADMIN_GENERAL', 'EMPLEAT')
-    @ApiOperation({ summary: 'Llistar plantilles de jornada' })
-    @ApiParam({ name: 'empresaId' })
-    @ApiResponse({ status: 200, description: 'Llista de plantilles' })
-    @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per veure jornades d\'aquesta empresa' })
-    @ApiResponse({ status: 404, description: 'No trobada: L\'empresa no existeix' })
+    @ApiOperation({ summary: 'Listar plantillas de jornada' })
+    @ApiParam({ name: 'empresaId', description: 'ID de la empresa' })
+    @ApiResponse({ status: 200, description: 'Lista de plantillas recuperada exitosamente' })
+    @ApiResponse({ status: 400, description: 'Petición incorrecta' })
+    @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+    @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso para ver jornadas de esta empresa' })
+    @ApiResponse({ status: 404, description: 'No encontrada: La empresa no existe' })
+    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     findAll(
         @Param('empresaId', ParseIntPipe) empresaId: number,
         @CurrentUser() user: CurrentUserData,

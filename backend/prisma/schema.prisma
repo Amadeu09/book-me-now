@@ -80,6 +80,7 @@ model Servei {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   reserves     Reserva[]
+  valoracions  Valoracio[]
   empresa      Empresa             @relation(fields: [empresaId], references: [id])
   treballadors TreballadorServei[]
 
@@ -139,20 +140,22 @@ model Reserva {
   @@index([serveiId])
 }
 
-
-
 model Valoracio {
   id            Int            @id @default(autoincrement())
   empresaId     Int
   clientId      Int?
+  nomClient     String?
   tipus         ValoracioTipus
   treballadorId Int?
+  serveiId      Int?
   puntuacio     Int
   comentari     String?
   dataValoracio DateTime       @default(now())
+
   client        Client?        @relation(fields: [clientId], references: [id])
   empresa       Empresa        @relation(fields: [empresaId], references: [id])
   treballador   Treballador?   @relation(fields: [treballadorId], references: [id])
+  servei        Servei?        @relation(fields: [serveiId], references: [id])
 
   @@index([empresaId])
   @@index([tipus, treballadorId])
@@ -199,6 +202,7 @@ model Absencia {
   inici         DateTime
   fi            DateTime
   motiu         String?
+  tipus         TipusAbsencia
   createdAt     DateTime    @default(now())
   treballador   Treballador @relation(fields: [treballadorId], references: [id])
 
@@ -315,3 +319,11 @@ enum ValoracioTipus {
   SALA
   TREBALLADOR
 }
+
+enum TipusAbsencia {
+  VACANCES
+  MALALTIA
+  PERMIS
+  ALTRE
+}
+

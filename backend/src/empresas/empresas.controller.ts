@@ -28,7 +28,11 @@ export class EmpresasController {
   @Post()
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Crear empresa' })
-  @ApiResponse({ status: 201, description: 'Empresa creada' })
+  @ApiResponse({ status: 201, description: 'Empresa creada correctamente' })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   create(@Body() createEmpresaDto: CreateEmpresaDto) {
     return this.empresasService.create(createEmpresaDto);
   }
@@ -37,17 +41,22 @@ export class EmpresasController {
 
   @Get()
   @ApiOperation({ summary: 'Listar empresas' })
-  @ApiResponse({ status: 200, description: 'Lista de empresas' })
+  @ApiResponse({ status: 200, description: 'Lista de empresas recuperada' })
+  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   findAll() {
     return this.empresasService.findAll();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener empresa' })
+  @ApiOperation({ summary: 'Obtener empresa por ID' })
   @ApiParam({ name: 'id' })
   @ApiResponse({ status: 200, description: 'Empresa encontrada' })
-  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per veure aquesta empresa' })
-  @ApiResponse({ status: 404, description: 'No encontrada' })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
+  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso para ver esta empresa' })
+  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
     return this.empresasService.findOne(id, user.empresaId, user.rol);
   }
@@ -56,9 +65,12 @@ export class EmpresasController {
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Actualizar empresa' })
   @ApiParam({ name: 'id' })
-  @ApiResponse({ status: 200, description: 'Empresa actualizada' })
-  @ApiResponse({ status: 403, description: 'Prohibit: No tens permís per modificar aquesta empresa' })
-  @ApiResponse({ status: 404, description: 'No encontrada' })
+  @ApiResponse({ status: 200, description: 'Empresa actualizada correctamente' })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso para modificar esta empresa' })
+  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateEmpresaDto: UpdateEmpresaDto,
@@ -71,7 +83,12 @@ export class EmpresasController {
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Desactivar empresa' })
   @ApiParam({ name: 'id' })
-  @ApiResponse({ status: 200, description: 'Empresa desactivada' })
+  @ApiResponse({ status: 200, description: 'Empresa desactivada correctamente' })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
+  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
+  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.empresasService.remove(id);
   }

@@ -41,7 +41,7 @@ export class CreateTreballadorDto {
 }
 
 export class CreateJornadaTreballadorExistDto {
-    @ApiProperty({ example: 123, description: 'ID del treballador existente a vincular' })
+    @ApiProperty({ example: 123, description: 'ID del trabajador existente a vincular' })
     @Type(() => Number)
     @IsInt()
     @IsNotEmpty()

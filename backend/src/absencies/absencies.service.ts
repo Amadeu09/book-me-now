@@ -20,6 +20,7 @@ export class AbsenciesService {
                 inici: new Date(dto.inici),
                 fi: new Date(dto.fi),
                 motiu: dto.motiu,
+                tipus: dto.tipus,
             },
         });
     }
