@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, View, useWindowDimensions } from 'react-native';
-import Navbar from '../../components/navBar';
+import Navbar from "@/ui/components/navBar";
 
 export default function MainLayout() {
     const { width } = useWindowDimensions();
