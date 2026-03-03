@@ -91,10 +91,8 @@ export class ServeisService {
     if (!existing) throw new NotFoundException('Servei no trobat');
     if (existing.empresaId !== empresaId) throw new ForbiddenException('No autoritzat');
 
-    // Soft delete: desactiva el servei
-    return this.prisma.servei.update({
+    return this.prisma.servei.delete({
       where: { id },
-      data: { actiu: false },
     });
   }
 

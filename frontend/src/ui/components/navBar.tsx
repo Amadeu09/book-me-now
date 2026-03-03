@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { name: 'Reservas', icon: 'calendar-outline', activeIcon: 'calendar', path: '/bookings' },
   { name: 'Servicios', icon: 'grid-outline', activeIcon: 'grid', path: '/services' },
   { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', path: '/profile' },
+  { name: 'Horarios y disponibilidad', icon: 'time-outline', activeIcon: 'time', path: '/horarios' },
 ] as const;
 
 type NavbarProps = {

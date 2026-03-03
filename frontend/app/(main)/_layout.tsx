@@ -19,6 +19,7 @@ export default function MainLayout() {
                     <Tabs.Screen name="bookings" />
                     <Tabs.Screen name="services" />
                     <Tabs.Screen name="profile" />
+                    <Tabs.Screen name="horarios" />
                 </Tabs>
             </View>
 
