@@ -54,10 +54,29 @@ export class TreballadorsService {
       });
     }
 
+    if (dto.serveisIds && dto.serveisIds.length > 0) {
+      const serveis = await this.prisma.servei.findMany({
+        where: {
+          id: { in: dto.serveisIds },
+          empresaId: empresaId,
+        },
+      });
+
+      if (serveis.length !== dto.serveisIds.length) {
+        throw new NotFoundException('Un o més serveis a assignar no existeixen o no pertanyen a la teva empresa');
+      }
+
+      await this.prisma.treballadorServei.createMany({
+        data: dto.serveisIds.map((serveiId) => ({
+          treballadorId: treballador.id,
+          serveiId: serveiId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
     return treballador;
   }
-
-
   async assignJornadaTreballador(empresaId: number, jornadaTreballadorDto: CreateJornadaTreballadorExistDto, currentUser: number) {
 
     const user = await this.prisma.usuari.findUnique({

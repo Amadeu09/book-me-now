@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray } from 'class-validator';
+import { AssignarServeisDto } from './AssignarServeisDto';
 
 export class JornadaTreballadorDto {
 
@@ -38,6 +39,12 @@ export class CreateTreballadorDto {
     @Type(() => JornadaTreballadorDto)
     @IsOptional()
     jornadaTreballador?: JornadaTreballadorDto;
+
+    @ApiProperty({ example: [1, 2, 3], required: false, description: 'Lista de IDs de servicios iniciales a asignar (opcional)' })
+    @IsArray()
+    @IsInt({ each: true })
+    @IsOptional()
+    serveisIds?: number[];
 }
 
 export class CreateJornadaTreballadorExistDto {

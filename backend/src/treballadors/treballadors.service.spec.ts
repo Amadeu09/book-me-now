@@ -26,6 +26,7 @@ describe('TreballadorsService', () => {
         },
         treballadorServei: {
             create: jest.fn(),
+            createMany: jest.fn(),
             findUnique: jest.fn(),
         },
         reserva: {
@@ -136,6 +137,69 @@ describe('TreballadorsService', () => {
 
             expect(result).toEqual(createdTreballador);
             expect(prismaService.treballadorJornadaPlantilla.create).not.toHaveBeenCalled();
+        });
+
+        it('should assign serveis during creation if serveisIds are provided', async () => {
+            const dtoWithServeis = { ...createDto, serveisIds: [1, 2] };
+
+            mockPrismaService.usuari.findUnique
+                .mockResolvedValueOnce(adminUser)
+                .mockResolvedValueOnce(targetUser);
+
+            const createdTreballador = {
+                id: 100,
+                empresaId,
+                idUsuari: targetUserId,
+                nom: createDto.nom,
+            };
+
+            const serveisDocs = [
+                { id: 1, empresaId },
+                { id: 2, empresaId },
+            ];
+
+            mockPrismaService.treballador.create.mockResolvedValue(createdTreballador);
+            mockPrismaService.servei.findMany.mockResolvedValue(serveisDocs);
+            mockPrismaService.treballadorServei.createMany = jest.fn().mockResolvedValue({ count: 2 });
+
+            const result = await service.create(empresaId, dtoWithServeis, adminUserId);
+
+            expect(result).toEqual(createdTreballador);
+            expect(prismaService.servei.findMany).toHaveBeenCalledWith({
+                where: { id: { in: dtoWithServeis.serveisIds }, empresaId }
+            });
+            expect(prismaService.treballadorServei.createMany).toHaveBeenCalledWith({
+                data: [
+                    { treballadorId: createdTreballador.id, serveiId: 1 },
+                    { treballadorId: createdTreballador.id, serveiId: 2 },
+                ],
+                skipDuplicates: true
+            });
+        });
+
+        it('should throw NotFoundException if any serveisIds do not exist during creation', async () => {
+            const dtoWithServeis = { ...createDto, serveisIds: [1, 999] };
+
+            mockPrismaService.usuari.findUnique
+                .mockResolvedValueOnce(adminUser)
+                .mockResolvedValueOnce(targetUser);
+
+            const createdTreballador = {
+                id: 100,
+                empresaId,
+                idUsuari: targetUserId,
+                nom: createDto.nom,
+            };
+
+            // Only one service returned instead of two
+            const serveisDocs = [
+                { id: 1, empresaId },
+            ];
+
+            mockPrismaService.treballador.create.mockResolvedValue(createdTreballador);
+            mockPrismaService.servei.findMany.mockResolvedValue(serveisDocs);
+
+            await expect(service.create(empresaId, dtoWithServeis, adminUserId)).rejects.toThrow(NotFoundException);
         });
 
         it('should throw ForbiddenException if user is not ADMIN_GENERAL', async () => {
