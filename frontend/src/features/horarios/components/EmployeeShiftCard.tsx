@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow, STATUS_CONFIG, type Employee } from '../constants/horarios.constants';
@@ -13,77 +13,118 @@ interface EmployeeShiftCardProps {
     employee: Employee;
     variant?: 'card' | 'row';
     onAction?: () => void;
+    onEdit?: (employee: Employee) => void;
+    onDelete?: (employee: Employee) => void;
 }
 
 export const EmployeeShiftCard: React.FC<EmployeeShiftCardProps> = ({
     employee,
     variant = 'card',
     onAction,
+    onEdit,
+    onDelete,
 }) => {
     const sts = STATUS_CONFIG[employee.status];
 
-    if (variant === 'row') return <DesktopRow employee={employee} sts={sts} onAction={onAction} />;
-    return <MobileCard employee={employee} sts={sts} />;
+    if (variant === 'row') return <DesktopRow employee={employee} sts={sts} onAction={onAction} onEdit={onEdit} onDelete={onDelete} />;
+    return <MobileCard employee={employee} sts={sts} onEdit={onEdit} onDelete={onDelete} />;
 };
 
 /* ── Mobile Card ───────────────────────── */
-const MobileCard: React.FC<{ employee: Employee; sts: typeof STATUS_CONFIG.available }> = ({
-    employee, sts,
-}) => (
-    <View style={styles.mCard}>
-        <View style={styles.avatarWrap}>
-            <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
-                <Text style={styles.avatarText}>{employee.initials}</Text>
+const MobileCard: React.FC<{ employee: Employee; sts: typeof STATUS_CONFIG.available; onEdit?: (e: Employee) => void; onDelete?: (e: Employee) => void }> = ({
+    employee, sts, onEdit, onDelete
+}) => {
+    const [showMenu, setShowMenu] = useState(false);
+    return (
+        <View style={[styles.mCard, { zIndex: showMenu ? 100 : 1 }]}>
+            <View style={styles.avatarWrap}>
+                <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
+                    <Text style={styles.avatarText}>{employee.initials}</Text>
+                </View>
+                <View style={[styles.statusDot, { backgroundColor: sts.dotColor }]} />
             </View>
-            <View style={[styles.statusDot, { backgroundColor: sts.dotColor }]} />
+            <View style={styles.mInfo}>
+                <Text style={styles.mName}>{employee.name}</Text>
+                <Text style={styles.mShift}>{employee.shift}</Text>
+            </View>
+            <Text style={[styles.mBadge, { color: sts.color }]}>{sts.label}</Text>
+            <View style={{ position: 'relative', zIndex: 10, marginLeft: 10 }}>
+                <TouchableOpacity onPress={() => setShowMenu(!showMenu)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name="ellipsis-vertical" size={18} color={HC.textMuted} />
+                </TouchableOpacity>
+                {showMenu && (
+                    <View style={styles.menuPopover}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onEdit?.(employee); }}>
+                            <Text style={styles.menuItemText}>Editar</Text>
+                        </TouchableOpacity>
+                        <View style={styles.menuDivider} />
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onDelete?.(employee); }}>
+                            <Text style={[styles.menuItemText, { color: HC.red }]}>Eliminar</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
         </View>
-        <View style={styles.mInfo}>
-            <Text style={styles.mName}>{employee.name}</Text>
-            <Text style={styles.mShift}>{employee.shift}</Text>
-        </View>
-        <Text style={[styles.mBadge, { color: sts.color }]}>{sts.label}</Text>
-    </View>
-);
+    );
+};
 
 /* ── Desktop Row ───────────────────────── */
 const DesktopRow: React.FC<{
     employee: Employee;
     sts: typeof STATUS_CONFIG.available;
     onAction?: () => void;
-}> = ({ employee, sts, onAction }) => (
-    <View style={styles.dRow}>
-        {/* Empleado */}
-        <View style={styles.dCellEmployee}>
-            <View style={styles.avatarWrap}>
-                <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
-                    <Text style={styles.avatarText}>{employee.initials}</Text>
+    onEdit?: (e: Employee) => void;
+    onDelete?: (e: Employee) => void;
+}> = ({ employee, sts, onAction, onEdit, onDelete }) => {
+    const [showMenu, setShowMenu] = useState(false);
+    return (
+        <View style={[styles.dRow, { zIndex: showMenu ? 100 : 1 }]}>
+            {/* Empleado */}
+            <View style={styles.dCellEmployee}>
+                <View style={styles.avatarWrap}>
+                    <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
+                        <Text style={styles.avatarText}>{employee.initials}</Text>
+                    </View>
+                </View>
+                <View>
+                    <Text style={styles.dName}>{employee.name}</Text>
+                    <Text style={styles.dRole}>{employee.role}</Text>
                 </View>
             </View>
-            <View>
-                <Text style={styles.dName}>{employee.name}</Text>
-                <Text style={styles.dRole}>{employee.role}</Text>
+            {/* Plantilla */}
+            <View style={styles.dCellTemplate}>
+                <View style={styles.templateBadge}>
+                    <Text style={styles.templateBadgeText}>{employee.templateName}</Text>
+                </View>
+            </View>
+            {/* Estado */}
+            <View style={styles.dCellStatus}>
+                <View style={[styles.statusDotSmall, { backgroundColor: sts.dotColor }]} />
+                <Text style={[styles.dStatusText, { color: sts.color }]}>{sts.label}</Text>
+                {employee.status === 'vacation' && (
+                    <Text style={styles.dStatusSub}>Vuelve el 15 de Oct.</Text>
+                )}
+            </View>
+            {/* Acciones */}
+            <View style={[styles.dCellAction, { zIndex: 10 }]}>
+                <TouchableOpacity onPress={() => setShowMenu(!showMenu)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name="ellipsis-vertical" size={18} color={HC.textMuted} />
+                </TouchableOpacity>
+                {showMenu && (
+                    <View style={styles.menuPopover}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onEdit?.(employee); }}>
+                            <Text style={styles.menuItemText}>Editar</Text>
+                        </TouchableOpacity>
+                        <View style={styles.menuDivider} />
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onDelete?.(employee); }}>
+                            <Text style={[styles.menuItemText, { color: HC.red }]}>Eliminar</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
         </View>
-        {/* Plantilla */}
-        <View style={styles.dCellTemplate}>
-            <View style={styles.templateBadge}>
-                <Text style={styles.templateBadgeText}>{employee.templateName}</Text>
-            </View>
-        </View>
-        {/* Estado */}
-        <View style={styles.dCellStatus}>
-            <View style={[styles.statusDotSmall, { backgroundColor: sts.dotColor }]} />
-            <Text style={[styles.dStatusText, { color: sts.color }]}>{sts.label}</Text>
-            {employee.status === 'vacation' && (
-                <Text style={styles.dStatusSub}>Vuelve el 15 de Oct.</Text>
-            )}
-        </View>
-        {/* Acciones */}
-        <TouchableOpacity style={styles.dCellAction} onPress={onAction}>
-            <Ionicons name="open-outline" size={18} color={HC.textMuted} />
-        </TouchableOpacity>
-    </View>
-);
+    );
+};
 
 /* ── Styles ────────────────────────────── */
 const styles = StyleSheet.create({
@@ -205,5 +246,29 @@ const styles = StyleSheet.create({
     dCellAction: {
         width: 36,
         alignItems: 'center',
+    },
+    menuPopover: {
+        position: 'absolute',
+        top: 24,
+        right: 0,
+        backgroundColor: HC.white,
+        borderRadius: 8,
+        paddingVertical: 4,
+        minWidth: 120,
+        ...cardShadow,
+        elevation: 5,
+        zIndex: 1000,
+    },
+    menuItem: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+    },
+    menuItemText: {
+        fontSize: 14,
+        color: HC.textPrimary,
+    },
+    menuDivider: {
+        height: 1,
+        backgroundColor: HC.borderSoft,
     },
 });

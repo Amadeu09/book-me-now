@@ -7,6 +7,8 @@ import {
     TextInput,
     StyleSheet,
     useWindowDimensions,
+    Alert,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HorariosHeader } from '../components/HorariosHeader';
@@ -17,12 +19,19 @@ import { EmployeeShiftCard } from '../components/EmployeeShiftCard';
 import { ExceptionCardMobile, ExceptionSectionDesktop } from '../components/ExceptionCard';
 import { FloatingAddButton } from '../components/FloatingAddButton';
 import { CreateTemplateModal } from '../components/modal/CreateTemplateModal';
+import { CreateTrabajadorModal } from '../components/modal/CreateTrabajadorModal';
+import { PaginationRow } from '../components/PaginationRow';
+import { useTreballadors } from '../hooks/useTreballadors';
 import { useJornades } from '../hooks/useJornades';
+import { deleteJornada } from '../services/jornades.service';
+import { deleteTreballador } from '../services/treballadors.service';
 import {
     HC, cardShadow,
-    MOCK_EMPLOYEES, MOCK_HOLIDAYS,
+    MOCK_HOLIDAYS,
     type TabKey,
+    type Employee,
 } from '../constants/horarios.constants';
+import type { PlantillaSummary } from '../types/jornades.types';
 
 /* ═══════════════════════════════════════════
    HorariosScreen – Main screen
@@ -34,20 +43,132 @@ export default function HorariosScreen() {
 
     const [activeTab, setActiveTab] = useState<TabKey>('global');
     const [searchQuery, setSearchQuery] = useState('');
-    const [personalPage, setPersonalPage] = useState(0);
+    const [personalPage, setPersonalPage] = useState(1);
+    
+    // Modal & Edit states
     const [templateModalVisible, setTemplateModalVisible] = useState(false);
-    const { plantillas, loading: plantillasLoading, error: plantillasError, refetch: refetchPlantillas } = useJornades();
+    const [trabajadorModalVisible, setTrabajadorModalVisible] = useState(false);
+    const [workerToEdit, setWorkerToEdit] = useState<any>(null);
+    const [templateToEdit, setTemplateToEdit] = useState<any>(null);
 
-    const PAGE_SIZE = 3;
-    const filteredEmployees = MOCK_EMPLOYEES.filter((e) =>
+    const { plantillas, rawPlantillas, total: plantillasTotal, page: plantillasPage, totalPages: plantillasTotalPages, loading: plantillasLoading, error: plantillasError, refetch: refetchPlantillas } = useJornades(1, 2);
+
+    const PAGE_SIZE = 4;
+    
+    // Custom hook to fetch workers via new implementation
+    const { data: treballadorsData, isLoading: treballadorsLoading, refetch: refetchTreballadors } = useTreballadors(personalPage, PAGE_SIZE);
+
+    const backendEmployees = (treballadorsData?.data || []).map((t: any): Employee => {
+        // Find assigned template if present (we expect one active generally)
+        const activeAssignment = t.jornadesPlantillaAssignacions?.[0];
+        const templateName = activeAssignment?.plantilla?.nom || 'Sin jornada';
+        const roleStr = t.usuari?.rol === 'EMPLEAT' ? 'EMPLEADO' : t.usuari?.rol || 'No asignado';
+        
+        return {
+            id: String(t.id),
+            name: t.nom,
+            role: roleStr,
+            shift: templateName,
+            status: 'available', // Petición: "estado actual pon siempre activo"
+            initials: t.nom.substring(0, 2).toUpperCase(),
+            avatarColor: HC.primaryLight,
+            templateName: templateName,
+        };
+    });
+
+    const filteredEmployees = backendEmployees.filter((e: Employee) =>
         e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.role.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    const pagedEmployees = filteredEmployees.slice(
-        personalPage * PAGE_SIZE,
-        (personalPage + 1) * PAGE_SIZE,
-    );
-    const totalPages = Math.ceil(filteredEmployees.length / PAGE_SIZE);
+
+    const totalPages = treballadorsData?.totalPages || 1;
+    const totalItems = treballadorsData?.total || 0;
+
+    /* ── Handlers ── */
+    const handleEditTemplate = (template: PlantillaSummary) => {
+        const fullData = rawPlantillas?.find(p => p.id === template.id);
+        if (fullData) {
+            setTemplateToEdit(fullData);
+            setTemplateModalVisible(true);
+        } else {
+            const msg = "No se pudo extraer la información de la plantilla.";
+            Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Error", msg);
+        }
+    };
+
+    const handleDeleteTemplate = (template: PlantillaSummary) => {
+        const confirmMsg = `¿Estás seguro de que deseas eliminar la plantilla "${template.nom}"?`;
+        
+        const executeDelete = async () => {
+            try {
+                await deleteJornada(template.id);
+                refetchPlantillas(1);
+                Platform.OS === 'web' 
+                    ? window.alert("Plantilla eliminada correctamente.") 
+                    : Alert.alert("Éxito", "Plantilla eliminada correctamente.");
+            } catch (error: any) {
+                const msg = error?.response?.data?.message || 'No se pudo eliminar la plantilla.';
+                Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+            }
+        };
+
+        if (Platform.OS === 'web') {
+            if (window.confirm(confirmMsg)) {
+                executeDelete();
+            }
+        } else {
+            Alert.alert(
+                "Eliminar Plantilla",
+                confirmMsg,
+                [
+                    { text: "Cancelar", style: "cancel" },
+                    { text: "Eliminar", style: "destructive", onPress: executeDelete }
+                ]
+            );
+        }
+    };
+
+    const handleEditWorker = (employee: Employee) => {
+        // Encontraremos el trabajador original en treballadorsData
+        const originalWorker = (treballadorsData?.data || []).find((t: any) => String(t.id) === employee.id);
+        if (originalWorker) {
+            setWorkerToEdit(originalWorker);
+            setTrabajadorModalVisible(true);
+        }
+    };
+
+    const handleDeleteWorker = (employee: Employee) => {
+        const confirmMsg = `¿Estás seguro de que deseas eliminar a "${employee.name}"?`;
+        
+        const executeDelete = async () => {
+            try {
+                await deleteTreballador(Number(employee.id));
+                setPersonalPage(1);
+                refetchTreballadors(1);
+                Platform.OS === 'web' 
+                    ? window.alert("Trabajador eliminado correctamente.") 
+                    : Alert.alert("Éxito", "Trabajador eliminado correctamente.");
+            } catch (error: any) {
+                const msg = error?.response?.data?.message || 'No se pudo eliminar el trabajador.';
+                Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+            }
+        };
+
+        if (Platform.OS === 'web') {
+            if (window.confirm(confirmMsg)) {
+                executeDelete();
+            }
+        } else {
+            Alert.alert(
+                "Eliminar Trabajador",
+                confirmMsg,
+                [
+                    { text: "Cancelar", style: "cancel" },
+                    { text: "Eliminar", style: "destructive", onPress: executeDelete }
+                ]
+            );
+        }
+    };
 
     /* ── Desktop layout ─────────────────── */
     if (isDesktop) {
@@ -80,13 +201,32 @@ export default function HorariosScreen() {
                                 {plantillasLoading ? (
                                     <PlantillaListLoading />
                                 ) : plantillasError ? (
-                                    <PlantillaListError message={plantillasError} onRetry={refetchPlantillas} />
+                                    <PlantillaListError message={plantillasError} onRetry={() => refetchPlantillas()} />
                                 ) : plantillas.length === 0 ? (
                                     <PlantillaListEmpty />
                                 ) : (
-                                    plantillas.map((t) => (
-                                        <PlantillaCard key={t.id} template={t} />
-                                    ))
+                                    <>
+                                        {plantillas.map((t) => (
+                                            <PlantillaCard 
+                                                key={t.id} 
+                                                template={t} 
+                                                onEdit={handleEditTemplate}
+                                                onDelete={handleDeleteTemplate}
+                                            />
+                                        ))}
+                                        {plantillasTotalPages > 1 && (
+                                            <View style={{ marginTop: 8 }}>
+                                                <PaginationRow 
+                                                    currentPage={plantillasPage}
+                                                    totalPages={plantillasTotalPages}
+                                                    totalItems={plantillasTotal}
+                                                    itemsPerPage={2}
+                                                    onPageChange={(p) => refetchPlantillas(p)}
+                                                    labelTemplate={(count, total) => `MOSTRANDO ${count} DE ${total} PLANTILLAS`}
+                                                />
+                                            </View>
+                                        )}
+                                    </>
                                 )}
                             </View>
 
@@ -103,15 +243,20 @@ export default function HorariosScreen() {
                                         <Ionicons name="people" size={18} color={HC.primary} />
                                         <Text style={styles.sectionTitle}>Horarios del Personal</Text>
                                     </View>
-                                    <View style={styles.searchBox}>
-                                        <Ionicons name="search-outline" size={16} color={HC.textLight} />
-                                        <TextInput
-                                            style={styles.searchInput}
-                                            placeholder="Buscar por nombre o rol..."
-                                            placeholderTextColor={HC.textLight}
-                                            value={searchQuery}
-                                            onChangeText={setSearchQuery}
-                                        />
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                                        <View style={styles.searchBox}>
+                                            <Ionicons name="search-outline" size={16} color={HC.textLight} />
+                                            <TextInput
+                                                style={styles.searchInput}
+                                                placeholder="Buscar por nombre o rol..."
+                                                placeholderTextColor={HC.textLight}
+                                                value={searchQuery}
+                                                onChangeText={setSearchQuery}
+                                            />
+                                        </View>
+                                        <TouchableOpacity activeOpacity={0.7} onPress={() => setTrabajadorModalVisible(true)}>
+                                            <Text style={styles.linkText}>+ Crear Nuevo</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
 
@@ -124,31 +269,28 @@ export default function HorariosScreen() {
                                 </View>
 
                                 {/* Rows */}
-                                {pagedEmployees.map((emp) => (
-                                    <EmployeeShiftCard key={emp.id} employee={emp} variant="row" />
+                                {treballadorsLoading ? (
+                                    <Text style={{ textAlign: 'center', padding: 20 }}>Cargando empleados...</Text>
+                                ) : filteredEmployees.map((emp: Employee) => (
+                                    <EmployeeShiftCard 
+                                        key={emp.id} 
+                                        employee={emp} 
+                                        variant="row" 
+                                        onEdit={handleEditWorker}
+                                        onDelete={handleDeleteWorker}
+                                    />
                                 ))}
 
                                 {/* Pagination */}
-                                <View style={styles.paginationRow}>
-                                    <Text style={styles.paginationText}>
-                                        MOSTRANDO {pagedEmployees.length} DE {filteredEmployees.length} EMPLEADOS
-                                    </Text>
-                                    <View style={styles.paginationBtns}>
-                                        <TouchableOpacity
-                                            style={[styles.pageBtn, personalPage === 0 && styles.pageBtnDisabled]}
-                                            disabled={personalPage === 0}
-                                            onPress={() => setPersonalPage((p) => p - 1)}
-                                        >
-                                            <Ionicons name="chevron-back" size={16} color={HC.textMuted} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[styles.pageBtn, personalPage >= totalPages - 1 && styles.pageBtnDisabled]}
-                                            disabled={personalPage >= totalPages - 1}
-                                            onPress={() => setPersonalPage((p) => p + 1)}
-                                        >
-                                            <Ionicons name="chevron-forward" size={16} color={HC.textMuted} />
-                                        </TouchableOpacity>
-                                    </View>
+                                <View style={{ marginTop: 'auto' }}>
+                                    <PaginationRow 
+                                        currentPage={personalPage}
+                                        totalPages={totalPages}
+                                        totalItems={totalItems}
+                                        itemsPerPage={PAGE_SIZE}
+                                        onPageChange={setPersonalPage}
+                                        labelTemplate={(count, total) => `MOSTRANDO PÁGINA ${personalPage} DE ${totalPages}`}
+                                    />
                                 </View>
                             </View>
                         </View>
@@ -157,8 +299,25 @@ export default function HorariosScreen() {
 
                 <CreateTemplateModal
                     visible={templateModalVisible}
-                    onClose={() => setTemplateModalVisible(false)}
-                    onSuccess={refetchPlantillas}
+                    initialData={templateToEdit}
+                    onClose={() => {
+                        setTemplateModalVisible(false);
+                        setTemplateToEdit(null);
+                    }}
+                    onSuccess={() => refetchPlantillas(1)}
+                />
+
+                <CreateTrabajadorModal
+                    visible={trabajadorModalVisible}
+                    initialData={workerToEdit}
+                    onClose={() => {
+                        setTrabajadorModalVisible(false);
+                        setWorkerToEdit(null);
+                    }}
+                    onSuccess={() => {
+                        setPersonalPage(1);
+                        refetchTreballadors(1);
+                    }}
                 />
             </View>
         );
@@ -198,9 +357,19 @@ export default function HorariosScreen() {
                         </View>
 
                         <View style={{ paddingHorizontal: 16 }}>
-                            {MOCK_EMPLOYEES.slice(0, 3).map((emp) => (
-                                <EmployeeShiftCard key={emp.id} employee={emp} variant="card" />
-                            ))}
+                                {treballadorsLoading ? (
+                                    <Text style={{ padding: 16 }}>Cargando...</Text>
+                                ) : (
+                                    filteredEmployees.slice(0, 3).map((emp: Employee) => (
+                                        <EmployeeShiftCard 
+                                            key={emp.id} 
+                                            employee={emp} 
+                                            variant="card"
+                                            onEdit={handleEditWorker}
+                                            onDelete={handleDeleteWorker}
+                                        />
+                                    ))
+                                )}
                         </View>
 
                         {/* Exception CTA */}
@@ -220,13 +389,32 @@ export default function HorariosScreen() {
                             {plantillasLoading ? (
                                 <PlantillaListLoading />
                             ) : plantillasError ? (
-                                <PlantillaListError message={plantillasError} onRetry={refetchPlantillas} />
+                                <PlantillaListError message={plantillasError} onRetry={() => refetchPlantillas(plantillasPage)} />
                             ) : plantillas.length === 0 ? (
                                 <PlantillaListEmpty />
                             ) : (
-                                plantillas.map((t) => (
-                                    <PlantillaCard key={t.id} template={t} />
-                                ))
+                                <>
+                                    {plantillas.map((t) => (
+                                        <PlantillaCard 
+                                            key={t.id} 
+                                            template={t}
+                                            onEdit={handleEditTemplate}
+                                            onDelete={handleDeleteTemplate}
+                                        />
+                                    ))}
+                                    {plantillasTotalPages > 1 && (
+                                        <View style={{ marginTop: 8 }}>
+                                            <PaginationRow 
+                                                currentPage={plantillasPage}
+                                                totalPages={plantillasTotalPages}
+                                                totalItems={plantillasTotal}
+                                                itemsPerPage={2}
+                                                onPageChange={(p) => refetchPlantillas(p)}
+                                                labelTemplate={(count, total) => `MOSTRANDO ${count} DE ${total} PLANTILLAS`}
+                                            />
+                                        </View>
+                                    )}
+                                </>
                             )}
                         </View>
                     </>
@@ -235,13 +423,42 @@ export default function HorariosScreen() {
                 {activeTab === 'personal' && (
                     <>
                         <View style={styles.mobileSectionHeader}>
-                            <Text style={styles.mobileSectionTitle}>Personal</Text>
-                            <Text style={styles.countText}>{filteredEmployees.length} empleados</Text>
+                            <View>
+                                <Text style={styles.mobileSectionTitle}>Personal</Text>
+                                <Text style={styles.countText}>{totalItems} empleados en total</Text>
+                            </View>
+                            <TouchableOpacity activeOpacity={0.7} onPress={() => setTrabajadorModalVisible(true)}>
+                                <Text style={styles.linkText}>+ Crear Nuevo</Text>
+                            </TouchableOpacity>
                         </View>
                         <View style={{ paddingHorizontal: 16 }}>
-                            {filteredEmployees.map((emp) => (
-                                <EmployeeShiftCard key={emp.id} employee={emp} variant="card" />
-                            ))}
+                            {treballadorsLoading ? (
+                                <Text>Cargando empleados...</Text>
+                            ) : (
+                                <>
+                                    {filteredEmployees.map((emp: Employee) => (
+                                        <EmployeeShiftCard 
+                                            key={emp.id} 
+                                            employee={emp} 
+                                            variant="card" 
+                                            onEdit={handleEditWorker}
+                                            onDelete={handleDeleteWorker}
+                                        />
+                                    ))}
+                                    {totalPages > 1 && (
+                                        <View style={{ marginTop: 8 }}>
+                                            <PaginationRow 
+                                                currentPage={personalPage}
+                                                totalPages={totalPages}
+                                                totalItems={totalItems}
+                                                itemsPerPage={PAGE_SIZE}
+                                                onPageChange={setPersonalPage}
+                                                labelTemplate={(count, total) => `PÁGINA ${personalPage} DE ${totalPages}`}
+                                            />
+                                        </View>
+                                    )}
+                                </>
+                            )}
                         </View>
                     </>
                 )}
@@ -252,8 +469,25 @@ export default function HorariosScreen() {
 
             <CreateTemplateModal
                 visible={templateModalVisible}
-                onClose={() => setTemplateModalVisible(false)}
-                onSuccess={refetchPlantillas}
+                initialData={templateToEdit}
+                onClose={() => {
+                    setTemplateModalVisible(false);
+                    setTemplateToEdit(null);
+                }}
+                onSuccess={() => refetchPlantillas(1)}
+            />
+
+            <CreateTrabajadorModal
+                visible={trabajadorModalVisible}
+                initialData={workerToEdit}
+                onClose={() => {
+                    setTrabajadorModalVisible(false);
+                    setWorkerToEdit(null);
+                }}
+                onSuccess={() => {
+                    setPersonalPage(1);
+                    refetchTreballadors(1);
+                }}
             />
         </View>
     );
@@ -275,7 +509,7 @@ const styles = StyleSheet.create({
     desktopContent: {
         padding: 32,
         paddingBottom: 48,
-        maxWidth: 1100,
+        maxWidth: 1900,
         alignSelf: 'center',
         width: '100%',
     },
@@ -355,37 +589,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
 
-    /* Pagination */
-    paginationRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 16,
-        paddingHorizontal: 16,
-    },
-    paginationText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: HC.textMuted,
-        letterSpacing: 0.4,
-    },
-    paginationBtns: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    pageBtn: {
-        width: 34,
-        height: 34,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: HC.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: HC.white,
-    },
-    pageBtnDisabled: {
-        opacity: 0.4,
-    },
+
 
     /* ── Mobile ──────────────────────────── */
     mobileContent: {

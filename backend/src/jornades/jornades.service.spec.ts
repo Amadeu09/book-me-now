@@ -11,6 +11,7 @@ const mockPrismaService = {
     jornadaPlantilla: {
         create: jest.fn(),
         findMany: jest.fn(),
+        count: jest.fn(),
     },
 };
 
@@ -98,6 +99,44 @@ describe('JornadesService', () => {
         it('should throw NotFoundException if empresa not found', async () => {
             mockPrismaService.empresa.findUnique.mockResolvedValue(null);
             await expect(service.findAll(1, 1, 'ADMIN_GENERAL' as any))
+                .rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('getJornadesPaginadas', () => {
+        it('should return paginated plantilles for an empresa', async () => {
+            const empresaId = 1;
+            mockPrismaService.empresa.findUnique.mockResolvedValue({ id: empresaId });
+            mockPrismaService.jornadaPlantilla.count.mockResolvedValue(5);
+            mockPrismaService.jornadaPlantilla.findMany.mockResolvedValue([]);
+
+            const result = await service.getJornadesPaginadas(empresaId, empresaId, 'ADMIN_GENERAL' as any, 1, 2);
+
+            expect(result).toEqual({
+                data: [],
+                total: 5,
+                page: 1,
+                rows: 2,
+                totalPages: 3,
+            });
+            expect(mockPrismaService.jornadaPlantilla.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                where: { empresaId },
+                skip: 0,
+                take: 2,
+            }));
+            expect(mockPrismaService.jornadaPlantilla.count).toHaveBeenCalledWith({
+                where: { empresaId },
+            });
+        });
+
+        it('should throw ForbiddenException if user not in empresa', async () => {
+            await expect(service.getJornadesPaginadas(1, 2, 'TREBALLADOR' as any))
+                .rejects.toThrow(ForbiddenException);
+        });
+
+        it('should throw NotFoundException if empresa not found', async () => {
+            mockPrismaService.empresa.findUnique.mockResolvedValue(null);
+            await expect(service.getJornadesPaginadas(1, 1, 'ADMIN_GENERAL' as any))
                 .rejects.toThrow(NotFoundException);
         });
     });

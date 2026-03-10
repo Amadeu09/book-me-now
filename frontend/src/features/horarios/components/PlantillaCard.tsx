@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/horarios.constants';
@@ -7,31 +7,50 @@ import type { PlantillaSummary } from '../types/jornades.types';
 interface PlantillaCardProps {
     template: PlantillaSummary;
     onOptions?: () => void;
+    onEdit?: (template: PlantillaSummary) => void;
+    onDelete?: (template: PlantillaSummary) => void;
 }
 
-export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOptions }) => (
-    <View style={[styles.card, { borderLeftColor: template.accentColor }]}>
-        <View style={styles.content}>
-            <View style={styles.nameRow}>
-                <Text style={styles.name}>{template.nom}</Text>
-                {!template.activa && (
-                    <View style={styles.inactiveBadge}>
-                        <Text style={styles.inactiveBadgeText}>Inactiva</Text>
+export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOptions, onEdit, onDelete }) => {
+    const [showMenu, setShowMenu] = useState(false);
+
+    return (
+        <View style={[styles.card, { borderLeftColor: template.accentColor, zIndex: showMenu ? 100 : 1 }]}>
+            <View style={styles.content}>
+                <View style={styles.nameRow}>
+                    <Text style={styles.name}>{template.nom}</Text>
+                    {!template.activa && (
+                        <View style={styles.inactiveBadge}>
+                            <Text style={styles.inactiveBadgeText}>Inactiva</Text>
+                        </View>
+                    )}
+                </View>
+                <Text style={styles.details}>
+                    <Text style={styles.days}>{template.daysLabel}</Text>
+                    {'   '}
+                    {template.hoursLabel}
+                    {template.rotationsCount > 1 ? ` • ${template.rotationsCount} rotaciones` : ''}
+                </Text>
+            </View>
+            <View style={{ position: 'relative', zIndex: 10 }}>
+                <TouchableOpacity onPress={() => setShowMenu(!showMenu)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name="ellipsis-vertical" size={18} color={HC.textMuted} />
+                </TouchableOpacity>
+                {showMenu && (
+                    <View style={styles.menuPopover}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onEdit?.(template); }}>
+                            <Text style={styles.menuItemText}>Editar</Text>
+                        </TouchableOpacity>
+                        <View style={styles.menuDivider} />
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onDelete?.(template); }}>
+                            <Text style={[styles.menuItemText, { color: HC.red }]}>Eliminar</Text>
+                        </TouchableOpacity>
                     </View>
                 )}
             </View>
-            <Text style={styles.details}>
-                <Text style={styles.days}>{template.daysLabel}</Text>
-                {'   '}
-                {template.hoursLabel}
-                {template.rotationsCount > 1 ? ` • ${template.rotationsCount} rotaciones` : ''}
-            </Text>
         </View>
-        <TouchableOpacity onPress={onOptions} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="ellipsis-vertical" size={18} color={HC.textMuted} />
-        </TouchableOpacity>
-    </View>
-);
+    );
+};
 
 /* ── Empty / Loading / Error states ───── */
 
@@ -144,5 +163,29 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
         color: HC.white,
+    },
+    menuPopover: {
+        position: 'absolute',
+        top: 24,
+        right: 0,
+        backgroundColor: HC.white,
+        borderRadius: 8,
+        paddingVertical: 4,
+        minWidth: 120,
+        ...cardShadow,
+        elevation: 5,
+        zIndex: 1000,
+    },
+    menuItem: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+    },
+    menuItemText: {
+        fontSize: 14,
+        color: HC.textPrimary,
+    },
+    menuDivider: {
+        height: 1,
+        backgroundColor: HC.borderSoft,
     },
 });

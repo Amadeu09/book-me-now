@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJornadaTreballadorExistDto, CreateTreballadorDto, JornadaTreballadorDto } from './dto/CreateTreballadorDto';
 import { AssignarServeisDto } from './dto/AssignarServeisDto';
+import { UpdateTreballadorDto } from './dto/UpdateTreballadorDto';
 
 @Injectable()
 export class TreballadorsService {
@@ -517,5 +518,226 @@ export class TreballadorsService {
     }
 
     return disponibilitat;
+  }
+
+  async getTreballadorsPaginats(
+    empresaId: number,
+    page: number = 1,
+    rows: number = 2,
+    currentUser: number
+  ) {
+    const user = await this.prisma.usuari.findUnique({
+      where: { id: currentUser },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuari no trobat');
+    }
+
+    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+      throw new ForbiddenException('No pots veure treballadors d\'aquesta empresa');
+    }
+
+    const empresa = await this.prisma.empresa.findUnique({
+      where: { id: empresaId },
+    });
+
+    if (!empresa) {
+      throw new NotFoundException('Empresa no trobada');
+    }
+
+    const skip = (page - 1) * rows;
+    const total = await this.prisma.treballador.count({ where: { empresaId } });
+
+    const data = await this.prisma.treballador.findMany({
+      where: { empresaId },
+      include: {
+        Usuari: {
+          select: {
+            email: true,
+          }
+        },
+        serveis: {
+          include: {
+            servei: true
+          }
+        },
+        jornadesPlantillaAssignacions: {
+          include: {
+            plantilla: true
+          }
+        }
+      },
+      orderBy: {
+        nom: 'asc',
+      },
+      skip,
+      take: Number(rows),
+    });
+
+    return {
+      data,
+      total,
+      page: Number(page),
+      rows: Number(rows),
+      totalPages: Math.ceil(total / rows)
+    };
+  }
+
+  async update(empresaId: number, id: number, dto: UpdateTreballadorDto, currentUser: number) {
+    const user = await this.prisma.usuari.findUnique({
+      where: { id: currentUser },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuari no trobat');
+    }
+
+    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+      throw new ForbiddenException('No pots modificar treballadors d\'aquesta empresa');
+    }
+
+    const treballador = await this.prisma.treballador.findUnique({
+      where: { id: id },
+    });
+
+    if (!treballador) {
+      throw new NotFoundException('El treballador no existeix');
+    }
+
+    if (treballador.empresaId !== empresaId) {
+      throw new ForbiddenException('No pots modificar un treballador d\'una altra empresa');
+    }
+
+    // Process update in a transaction
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Update basic info (nom)
+      if (dto.nom) {
+        await tx.treballador.update({
+          where: { id: id },
+          data: {
+            nom: dto.nom,
+          },
+        });
+      }
+
+      // 2. Update service assignments if provided
+      if (dto.serveisIds !== undefined) {
+        // Verify services
+        if (dto.serveisIds.length > 0) {
+           const serveis = await tx.servei.findMany({
+             where: {
+               id: { in: dto.serveisIds },
+               empresaId: empresaId,
+             },
+           });
+           if (serveis.length !== dto.serveisIds.length) {
+             throw new NotFoundException('Un o més serveis no existeixen o no pertanyen a la teva empresa');
+           }
+        }
+        
+        // Remove old assignments
+        await tx.treballadorServei.deleteMany({
+          where: { treballadorId: id },
+        });
+
+        // Add new assignments
+        if (dto.serveisIds.length > 0) {
+          await tx.treballadorServei.createMany({
+            data: dto.serveisIds.map(serveiId => ({
+              treballadorId: id,
+              serveiId: serveiId,
+            })),
+          });
+        }
+      }
+
+      // 3. Update active template assignment if provided (just doing one active assignment for simplicity, as in UI)
+      if (dto.jornadaTreballador !== undefined) {
+        const payload = dto.jornadaTreballador;
+        
+        // Find existing assignments
+        const assignments = await tx.treballadorJornadaPlantilla.findMany({
+           where: { treballadorId: id }
+        });
+        
+        if (assignments.length > 0) {
+          // Keep it simple: update the first or active assignment or recreate
+          // Delete existing assignments for a clean slate
+          await tx.treballadorJornadaPlantilla.deleteMany({
+            where: { treballadorId: id }
+          });
+        }
+        
+        // Create new assignment
+        if (payload && payload.plantillaJornadaId) {
+          await tx.treballadorJornadaPlantilla.create({
+            data: {
+              treballador: { connect: { id: id } },
+              plantilla: { connect: { id: payload.plantillaJornadaId } },
+              dataInici: new Date(payload.dataInici),
+              dataFi: payload.dataFi ? new Date(payload.dataFi) : null,
+            },
+          });
+        }
+      }
+
+      // Return updated entity
+      return await tx.treballador.findUnique({
+        where: { id: id },
+        include: {
+          serveis: { include: { servei: true } },
+          jornadesPlantillaAssignacions: { include: { plantilla: true } },
+        }
+      });
+    });
+  }
+
+  async remove(empresaId: number, id: number, currentUser: number) {
+    const user = await this.prisma.usuari.findUnique({
+      where: { id: currentUser },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuari no trobat');
+    }
+
+    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+      throw new ForbiddenException('No pots eliminar treballadors d\'aquesta empresa');
+    }
+
+    const treballador = await this.prisma.treballador.findUnique({
+      where: { id: id },
+      include: { Usuari: true }
+    });
+
+    if (!treballador) {
+      throw new NotFoundException('El treballador no existeix');
+    }
+
+    if (treballador.Usuari?.rol === 'ADMIN_GENERAL') {
+      throw new ForbiddenException('No es pot eliminar un treballador administrador');
+    }
+
+    if (treballador.empresaId !== empresaId) {
+      throw new ForbiddenException('No pots eliminar un treballador d\'una altra empresa');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Eliminar relaciones que dependen del trabajador
+      await tx.treballadorServei.deleteMany({ where: { treballadorId: id } });
+      await tx.treballadorJornadaPlantilla.deleteMany({ where: { treballadorId: id } });
+      await tx.jornada.deleteMany({ where: { treballadorId: id } });
+      await tx.absencia.deleteMany({ where: { treballadorId: id } });
+      
+      // 2. Desvincular de reservas y valoraciones
+      await tx.reserva.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });
+      await tx.valoracio.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });
+
+      // 3. Eliminar el trabajador
+      return await tx.treballador.delete({
+        where: { id: id },
+      });
+    });
   }
 }

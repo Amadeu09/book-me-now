@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getJornades } from '../services/jornades.service';
+import { getJornadesPaginadas } from '../services/jornades.service';
 import {
     summarizePlantilla,
     type JornadaPlantillaResponse,
@@ -11,25 +11,37 @@ import {
    jornada plantillas from the API
    ────────────────────────────────────────── */
 
-interface UseJornadesReturn {
+export interface UseJornadesReturn {
     plantillas: PlantillaSummary[];
+    rawPlantillas: JornadaPlantillaResponse[];
+    total: number;
+    page: number;
+    totalPages: number;
     loading: boolean;
     error: string | null;
-    refetch: () => void;
+    refetch: (newPage?: number) => void;
 }
 
-export function useJornades(): UseJornadesReturn {
+export function useJornades(initialPage = 1, rows = 2): UseJornadesReturn {
     const [plantillas, setPlantillas] = useState<PlantillaSummary[]>([]);
+    const [rawPlantillas, setRawPlantillas] = useState<JornadaPlantillaResponse[]>([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(initialPage);
+    const [totalPages, setTotalPages] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (targetPage = page) => {
         try {
             setLoading(true);
             setError(null);
-            const raw: JornadaPlantillaResponse[] = await getJornades();
-            const summaries = raw.map((p, i) => summarizePlantilla(p, i));
+            const { data, total: totalItems, page: currentPage, totalPages: tPages } = await getJornadesPaginadas(targetPage, rows);
+            const summaries = data.map((p: any, i: number) => summarizePlantilla(p, i));
+            setRawPlantillas(data);
             setPlantillas(summaries);
+            setTotal(totalItems);
+            setPage(currentPage);
+            setTotalPages(tPages);
         } catch (err: any) {
             const msg =
                 err?.response?.data?.message ||
@@ -37,14 +49,17 @@ export function useJornades(): UseJornadesReturn {
                 'No se pudieron cargar las plantillas';
             setError(msg);
             setPlantillas([]);
+            setRawPlantillas([]);
+            setTotal(0);
+            setTotalPages(0);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [page, rows]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        fetchData(initialPage);
+    }, [initialPage, rows]); // Refetch if initial settings change (optional)
 
-    return { plantillas, loading, error, refetch: fetchData };
+    return { plantillas, rawPlantillas, total, page, totalPages, loading, error, refetch: fetchData };
 }

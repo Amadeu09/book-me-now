@@ -17,8 +17,10 @@ import {
     createDefaultRotation,
     type JornadaFormState,
     type DiaRotacio,
+    type PlantillaSummary,
+    type JornadaPlantillaResponse
 } from '../../types/jornades.types';
-import { createJornada } from '../../services/jornades.service';
+import { createJornada, updateJornada } from '../../services/jornades.service';
 import { RotationTabs } from './RotationTabs';
 import { WeeklyEditor } from './WeeklyEditor';
 
@@ -30,6 +32,7 @@ import { WeeklyEditor } from './WeeklyEditor';
 
 interface CreateTemplateModalProps {
     visible: boolean;
+    initialData?: JornadaPlantillaResponse;
     onClose: () => void;
     onSuccess?: () => void;
 }
@@ -42,6 +45,7 @@ const buildInitialState = (): JornadaFormState => ({
 
 export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     visible,
+    initialData,
     onClose,
     onSuccess,
 }) => {
@@ -56,11 +60,27 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     /* Reset cuando se abre */
     useEffect(() => {
         if (visible) {
-            setForm(buildInitialState());
+            if (initialData) {
+                // If we have initialData, pre-fill the form
+                setForm({
+                    nom: initialData.nom,
+                    activa: initialData.activa ?? true,
+                    // If rotacions exist in initialData, we map them here
+                    rotacions: initialData.rotacions && initialData.rotacions.length > 0
+                        ? initialData.rotacions.map(r => ({
+                            index: r.index,
+                            nom: r.nom || `Rotación ${r.index + 1}`,
+                            dies: r.dies ? r.dies : createDefaultRotation(r.index).dies
+                        }))
+                        : [createDefaultRotation(0)]
+                });
+            } else {
+                setForm(buildInitialState());
+            }
             setActiveRotation(0);
             setErrors({});
         }
-    }, [visible]);
+    }, [visible, initialData]);
 
     /* ── Handlers ─────────────────────── */
     const handleNameChange = useCallback((text: string) => {
@@ -108,15 +128,33 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     const handleSave = async () => {
         if (!validate()) return;
 
+        // Strip potential DB ids (like id, rotacioId, diaId) to avoid 400 Validation Errors
+        const cleanRotacions = form.rotacions.map(r => ({
+            index: r.index,
+            nom: r.nom,
+            dies: r.dies.map(d => ({
+                dow: d.dow,
+                esDescans: d.esDescans,
+                trams: (d.trams || []).map(t => ({
+                    iniciMin: t.iniciMin,
+                    fiMin: t.fiMin
+                }))
+            }))
+        }));
+
         const payload = {
             nom: form.nom.trim(),
             activa: form.activa,
-            rotacions: form.rotacions,
+            rotacions: cleanRotacions,
         };
 
         try {
             setLoading(true);
-            await createJornada(payload);
+            if (initialData?.id) {
+                 await updateJornada(initialData.id, payload);
+            } else {
+                 await createJornada(payload);
+            }
             onSuccess?.();
             onClose();
         } catch (err: any) {
@@ -150,7 +188,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
 
                     {/* ── Header ────────────────── */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Crear plantilla</Text>
+                        <Text style={styles.headerTitle}>{initialData ? 'Editar plantilla' : 'Crear plantilla'}</Text>
                         <TouchableOpacity onPress={handleClose} disabled={loading}>
                             <Ionicons name="close" size={24} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -245,7 +283,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                             {loading ? (
                                 <ActivityIndicator color={HC.white} size="small" />
                             ) : (
-                                <Text style={styles.btnSaveText}>Guardar plantilla</Text>
+                                <Text style={styles.btnSaveText}>{initialData ? 'Guardar cambios' : 'Guardar plantilla'}</Text>
                             )}
                         </TouchableOpacity>
                     </View>

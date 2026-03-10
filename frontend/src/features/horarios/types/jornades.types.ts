@@ -141,3 +141,12 @@ export function summarizePlantilla(p: JornadaPlantillaResponse, index: number): 
         accentColor: ACCENT_COLORS[index % ACCENT_COLORS.length],
     };
 }
+
+/** Respuesta paginada del backend para GET /empreses/:id/jornades/paginadas */
+export interface JornadaPlantillaPaginatedResponse {
+    data: JornadaPlantillaResponse[];
+    total: number;
+    page: number;
+    rows: number;
+    totalPages: number;
+}
