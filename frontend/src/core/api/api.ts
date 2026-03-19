@@ -32,8 +32,8 @@ function resolveApiBase(): string {
 // HARDCODED para forzar el puerto correcto - cambiar solo si backend cambia de puerto
 const API_URL = 'http://localhost:3000/api';
 
-const api = axios.create({ 
-  baseURL: API_URL, 
+const api = axios.create({
+  baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' }
 });
 

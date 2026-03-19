@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, useWindowDimensions, TouchableOpacity, Text, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { palette, spacing } from "@/constants/theme";
+
+// Components
+import { InicioHeader } from '../components/InicioHeader';
+import { LocalDataCard } from '../components/LocalDataCard';
+import { ScheduleCard } from '../components/ScheduleCard';
+import { StatsCard } from '../components/StatsCard';
 
 export default function Home() {
   const [token, setToken] = useState<string | null>(null);
@@ -9,7 +16,8 @@ export default function Home() {
   const router = useRouter();
   const { width } = useWindowDimensions();
 
-  const isWeb = width > 768;
+  // We align with the React.Native Frontend Agent Skills standards (isTablet = >= 768)
+  const isDesktop = width >= 768;
 
   useEffect(() => {
     (async () => {
@@ -26,42 +34,71 @@ export default function Home() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <View style={[styles.container, isWeb && styles.containerWeb]}>
-        <Text style={styles.title}>Home</Text>
-        <Text style={styles.text}>Bienvenido 👋</Text>
-        {user && (
-          <Text style={styles.textSmall}>Usuario: {user.email} · Rol: {user.rol}</Text>
-        )}
-        {token && (
-          <Text style={styles.textSmall}>Token: {token.slice(0, 12)}…</Text>
-        )}
-        <View style={{ height: 24 }} />
-        <TouchableOpacity style={styles.button} onPress={logout}>
-          <Text style={styles.buttonText}>Cerrar sesión</Text>
-        </TouchableOpacity>
-      </View>
+      <InicioHeader />
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.mainWrapper, isDesktop && styles.desktopWrapper]}>
+          <LocalDataCard />
+
+          {/* The responsive blocks grid */}
+          <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
+            <ScheduleCard />
+            <StatsCard />
+          </View>
+
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F8F9FB' // HC.screenBg equivalent
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 80
+    paddingTop: 32,
+    paddingBottom: 80,
   },
-  containerWeb: {
-    paddingLeft: 224, // 200px sidebar + 24px padding
-    paddingBottom: 24,
+  mainWrapper: {
+    width: '100%',
+    alignSelf: 'center',
+    gap: 24,
   },
-  title: { fontSize: 28, fontWeight: '800', marginBottom: 8 },
-  text: { fontSize: 16 },
-  textSmall: { marginTop: 8, fontSize: 12, color: '#666' },
-  button: { marginTop: 16, backgroundColor: '#111', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
-  buttonText: { color: '#fff', fontWeight: '700' },
+  desktopWrapper: {
+
+  },
+  blocksRow: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+    alignItems: 'stretch',
+  },
+  blocksColumn: {
+    flexDirection: 'column',
+  },
+  logoutContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  logoutButton: {
+    backgroundColor: palette.danger || '#ef4444',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: '700'
+  }
 });

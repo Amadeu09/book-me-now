@@ -113,6 +113,21 @@ export class TreballadorsController {
     return this.treballadorsService.getTreballadorsPaginats(empresaId, page, rows, user.userId);
   }
 
+  @Get()
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @ApiOperation({ summary: 'Listar trabajadores paginados por empresa' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (por defecto 1)' })
+  @ApiQuery({ name: 'rows', required: false, type: Number, description: 'Número de filas por página (por defecto 2)' })
+  @ApiResponse({ status: 200, description: 'Lista de trabajadores obtenida correctamente' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso o no perteneces a la empresa' })
+  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  getTreballadors(
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.treballadorsService.getTreballadors(user.empresaId, user.userId);
+  }
+
   @Put(':id')
   @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Actualizar trabajador' })

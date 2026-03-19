@@ -1,21 +1,65 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { palette } from "@/constants/theme";
+import { View, StyleSheet, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
+import { palette, spacing } from "@/constants/theme";
+
+// Components
+import { InicioHeader } from '../components/InicioHeader';
+import { LocalDataCard } from '../components/LocalDataCard';
+import { ScheduleCard } from '../components/ScheduleCard';
+import { StatsCard } from '../components/StatsCard';
 
 export default function Home() {
+    const { width } = useWindowDimensions();
+    const isDesktop = width >= 768; // Based on the standard rules
+
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.content}>
-                <Text style={styles.title}>Inicio</Text>
-                <Text style={styles.subtitle}>Bienvenido a BookMeNow</Text>
-            </View>
+            <InicioHeader />
+            
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={[styles.mainWrapper, isDesktop && styles.desktopWrapper]}>
+                    <LocalDataCard />
+                    
+                    <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
+                        <ScheduleCard />
+                        <StatsCard />
+                    </View>
+                </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: palette.background },
-    content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 },
-    title: { fontSize: 28, fontWeight: '800', color: palette.textPrimary, marginBottom: 8 },
-    subtitle: { fontSize: 16, color: palette.textMuted },
+    container: { 
+        flex: 1, 
+        backgroundColor: palette.background 
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: spacing.xl, // Default spacing
+        paddingBottom: 40,
+    },
+    mainWrapper: {
+        width: '100%',
+        alignSelf: 'center',
+        gap: spacing.xl,
+    },
+    desktopWrapper: {
+        maxWidth: 1000,
+    },
+    blocksRow: {
+        flexDirection: 'row',
+        gap: spacing.xl,
+        alignItems: 'stretch',
+    },
+    blocksColumn: {
+        flexDirection: 'column',
+    }
 });

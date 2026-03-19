@@ -625,17 +625,17 @@ export class TreballadorsService {
       if (dto.serveisIds !== undefined) {
         // Verify services
         if (dto.serveisIds.length > 0) {
-           const serveis = await tx.servei.findMany({
-             where: {
-               id: { in: dto.serveisIds },
-               empresaId: empresaId,
-             },
-           });
-           if (serveis.length !== dto.serveisIds.length) {
-             throw new NotFoundException('Un o més serveis no existeixen o no pertanyen a la teva empresa');
-           }
+          const serveis = await tx.servei.findMany({
+            where: {
+              id: { in: dto.serveisIds },
+              empresaId: empresaId,
+            },
+          });
+          if (serveis.length !== dto.serveisIds.length) {
+            throw new NotFoundException('Un o més serveis no existeixen o no pertanyen a la teva empresa');
+          }
         }
-        
+
         // Remove old assignments
         await tx.treballadorServei.deleteMany({
           where: { treballadorId: id },
@@ -655,12 +655,12 @@ export class TreballadorsService {
       // 3. Update active template assignment if provided (just doing one active assignment for simplicity, as in UI)
       if (dto.jornadaTreballador !== undefined) {
         const payload = dto.jornadaTreballador;
-        
+
         // Find existing assignments
         const assignments = await tx.treballadorJornadaPlantilla.findMany({
-           where: { treballadorId: id }
+          where: { treballadorId: id }
         });
-        
+
         if (assignments.length > 0) {
           // Keep it simple: update the first or active assignment or recreate
           // Delete existing assignments for a clean slate
@@ -668,7 +668,7 @@ export class TreballadorsService {
             where: { treballadorId: id }
           });
         }
-        
+
         // Create new assignment
         if (payload && payload.plantillaJornadaId) {
           await tx.treballadorJornadaPlantilla.create({
@@ -690,6 +690,28 @@ export class TreballadorsService {
           jornadesPlantillaAssignacions: { include: { plantilla: true } },
         }
       });
+    });
+  }
+
+  async getTreballadors(empresaId: number, currentUser: number) {
+    const user = await this.prisma.usuari.findUnique({
+      where: { id: currentUser },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuari no trobat');
+    }
+
+    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+      throw new ForbiddenException('No pots veure els treballadors d\'aquesta empresa');
+    }
+
+    return await this.prisma.treballador.findMany({
+      where: { empresaId: empresaId },
+      include: {
+        serveis: { include: { servei: true } },
+        jornadesPlantillaAssignacions: { include: { plantilla: true } },
+      }
     });
   }
 
@@ -729,15 +751,22 @@ export class TreballadorsService {
       await tx.treballadorJornadaPlantilla.deleteMany({ where: { treballadorId: id } });
       await tx.jornada.deleteMany({ where: { treballadorId: id } });
       await tx.absencia.deleteMany({ where: { treballadorId: id } });
-      
+
       // 2. Desvincular de reservas y valoraciones
       await tx.reserva.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });
       await tx.valoracio.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });
 
       // 3. Eliminar el trabajador
-      return await tx.treballador.delete({
+      const deletedTreballador = await tx.treballador.delete({
         where: { id: id },
       });
+
+      // 4. Eliminar el usuario enlazado
+      await tx.usuari.delete({
+        where: { id: deletedTreballador.idUsuari },
+      });
+
+      return deletedTreballador;
     });
   }
 }

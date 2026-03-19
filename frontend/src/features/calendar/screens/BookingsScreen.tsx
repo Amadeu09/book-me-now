@@ -1,19 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { palette, shadow } from "@/constants/theme";
 import { Feather } from '@expo/vector-icons';
 
 import { CalendarHeader } from "@/features/calendar/components/CalendarHeader";
 import { CalendarControls } from "@/features/calendar/components/CalendarControls";
+import { CreateBookingModal } from "@/features/calendar/components/CreateBookingModal";
 import { WeekGrid } from "@/features/calendar/components/WeekGrid";
 import { MOCK_EVENTS } from "@/features/calendar/components/constants";
 import { ViewMode } from "@/features/calendar/components/types";
+import { getUser } from '@/utils/session';
+import { useBookings } from '@/features/calendar/hooks/useBookings';
+import { fetchGetTreballadors, fetchGetServeis } from '@/features/calendar/services/calendarApi';
+import type { ApiTreballador, ApiServei } from '@/features/calendar/types';
 
 import { addWeeks, subWeeks, format, startOfWeek, endOfWeek } from 'date-fns';
 
 export default function Bookings() {
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [workers, setWorkers] = useState<ApiTreballador[]>([]);
+    const [selectedWorkerId, setSelectedWorkerId] = useState<string | undefined>(undefined);
+    const [services, setServices] = useState<ApiServei[]>([]);
+    const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        getUser().then(user => {
+            if (user?.rol === 'ADMIN_GENERAL') {
+                setIsAdmin(true);
+                
+                Promise.all([
+                    fetchGetTreballadors().catch(err => {
+                        console.error("Error fetching workers in Screen:", err);
+                        return [];
+                    }),
+                    fetchGetServeis().catch(err => {
+                        console.error("Error fetching services in Screen:", err);
+                        return [];
+                    })
+                ]).then(([workersData, servicesData]) => {
+                    setWorkers(workersData);
+                    if (workersData.length > 0) {
+                        setSelectedWorkerId(workersData[0].id.toString());
+                    }
+                    
+                    setServices(servicesData);
+                    // Optionally set default service
+                    // if (servicesData.length > 0) {
+                    //     setSelectedServiceId(servicesData[0].id.toString());
+                    // }
+                });
+            }
+        });
+    }, []);
+
     const [viewMode, setViewMode] = useState<ViewMode>('week');
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     const end = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -21,7 +63,10 @@ export default function Bookings() {
 
     const handlePrev = () => setCurrentDate(subWeeks(currentDate, 1));
     const handleNext = () => setCurrentDate(addWeeks(currentDate, 1));
-    const handleQuickCreate = () => console.log('Quick create');
+    const handleQuickCreate = () => setIsCreateModalVisible(true);
+
+    // Fetch API data for the current week
+    const { events, loading, error, refetch } = useBookings(start, end, isAdmin, selectedWorkerId, selectedServiceId);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -35,14 +80,34 @@ export default function Bookings() {
                 dateRange={dateRange}
                 onPrev={handlePrev}
                 onNext={handleNext}
+                workers={workers}
+                selectedWorkerId={selectedWorkerId}
+                onWorkerSelect={(id) => setSelectedWorkerId(id || undefined)}
+                services={services}
+                selectedServiceId={selectedServiceId}
+                onServiceSelect={(id) => setSelectedServiceId(id || undefined)}
+            />
+
+            <CreateBookingModal 
+                visible={isCreateModalVisible}
+                onClose={() => setIsCreateModalVisible(false)}
+                onSuccess={() => refetch()}
+                workers={workers}
+                services={services}
             />
 
             <View style={styles.content}>
-                <WeekGrid
-                    events={MOCK_EVENTS}
-                    currentDate={currentDate}
-                    onEventPress={(event) => console.log('Event pressed:', event.title)}
-                />
+                {loading ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                         <Feather name="loader" size={24} color={palette.accent} />
+                    </View>
+                ) : (
+                    <WeekGrid
+                        events={events.length > 0 ? events : MOCK_EVENTS} // Fallback to MOCK_EVENTS for UI if empty
+                        currentDate={currentDate}
+                        onEventPress={(event) => console.log('Event pressed:', event.title)}
+                    />
+                )}
 
                 {/* Floating Action Button */}
                 <TouchableOpacity style={styles.fab} onPress={handleQuickCreate}>

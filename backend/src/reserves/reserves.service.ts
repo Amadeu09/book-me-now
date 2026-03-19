@@ -18,7 +18,7 @@ export class ReservesService {
       throw new NotFoundException('Servei no trobat');
     }
 
-  
+
 
     const treballador = await this.prisma.treballador.findUnique({
       where: { id: dto.idTreballador },
@@ -109,7 +109,7 @@ export class ReservesService {
     });
   }
 
-   async update(idReserva: number, dto: CreateReservaDto) {
+  async update(idReserva: number, dto: CreateReservaDto) {
     const reserva = await this.prisma.reserva.findUnique({
       where: { id: idReserva },
     });
@@ -209,11 +209,99 @@ export class ReservesService {
       throw new NotFoundException('Reserva no trobada');
     }
 
-    
+
 
     return this.prisma.reserva.update({
       where: { id: idReserva },
       data: { estat: nouEstat },
     });
+  }
+
+
+
+  async findAllByTreballador(idTreballador: number, currentUserEmpresaId: number, currentUserId: number) {
+    const user = await this.prisma.usuari.findUnique({
+      where: { id: currentUserId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuari no trobat');
+    }
+
+    const treballador = await this.prisma.treballador.findUnique({
+      where: { id: idTreballador },
+    });
+
+    if (!treballador) {
+      throw new NotFoundException('Treballador no trobat');
+    }
+
+    if (treballador.empresaId !== currentUserEmpresaId) {
+      throw new ForbiddenException('No pots veure les reserves d\'un treballador d\'una altra empresa');
+    }
+
+    const reserves = await this.prisma.reserva.findMany({
+      where: { treballadorId: idTreballador },
+      include: {
+        servei: true,
+        treballador: true,
+        client: true,
+      },
+    });
+    return reserves;
+  }
+
+  async findAllBySetmana(empresaId: number, inici: string, fi: string, currentUserId: number, treballadorId?: string) {
+    const user = await this.prisma.usuari.findUnique({
+      where: { id: currentUserId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuari no trobat');
+    }
+
+    if (user.empresaId !== empresaId || user.rol !== 'ADMIN_GENERAL') {
+      throw new ForbiddenException('Sense permisos per veure totes les reserves de l\'empresa');
+    }
+
+    if (treballadorId) {
+      const userBooking = await this.prisma.treballador.findUnique({
+        where: { id: parseInt(treballadorId) },
+      });
+
+      if (!userBooking) {
+        throw new NotFoundException('Treballador no trobat');
+      }
+
+      if (userBooking.empresaId !== empresaId) {
+        throw new ForbiddenException('No pots veure les reserves d\'un treballador d\'una altra empresa');
+      }
+    }
+
+
+    const dataInici = new Date(inici);
+    dataInici.setHours(0, 0, 0, 0);
+
+    const dataFi = new Date(fi);
+    dataFi.setHours(23, 59, 59, 999);
+
+
+    const reserves = await this.prisma.reserva.findMany({
+      where: {
+        ...(treballadorId && { treballadorId: parseInt(treballadorId) }),
+        empresaId: empresaId,
+        dataHora: {
+          gte: dataInici,
+          lte: dataFi,
+        },
+      },
+      include: {
+        servei: true,
+        treballador: true,
+        client: true,
+      },
+    });
+
+    return reserves;
   }
 }

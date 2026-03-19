@@ -8,15 +8,32 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiConsumes,
+} from '@nestjs/swagger';
+
 import { EmpresasService } from './empresas.service';
 import { CreateEmpresaDto, UpdateEmpresaDto } from './dto/empresa.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  CurrentUserData,
+} from '../common/decorators/current-user.decorator';
 
 @ApiTags('empresas')
 @ApiBearerAuth('JWT-auth')
@@ -28,22 +45,12 @@ export class EmpresasController {
   @Post()
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Crear empresa' })
-  @ApiResponse({ status: 201, description: 'Empresa creada correctamente' })
-  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
-  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
-  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   create(@Body() createEmpresaDto: CreateEmpresaDto) {
     return this.empresasService.create(createEmpresaDto);
   }
 
-
-
   @Get()
   @ApiOperation({ summary: 'Listar empresas' })
-  @ApiResponse({ status: 200, description: 'Lista de empresas recuperada' })
-  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   findAll() {
     return this.empresasService.findAll();
   }
@@ -51,45 +58,67 @@ export class EmpresasController {
   @Get(':id')
   @ApiOperation({ summary: 'Obtener empresa por ID' })
   @ApiParam({ name: 'id' })
-  @ApiResponse({ status: 200, description: 'Empresa encontrada' })
-  @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
-  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
-  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso para ver esta empresa' })
-  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserData,
+  ) {
     return this.empresasService.findOne(id, user.empresaId, user.rol);
   }
 
   @Patch(':id')
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Actualizar empresa' })
-  @ApiParam({ name: 'id' })
-  @ApiResponse({ status: 200, description: 'Empresa actualizada correctamente' })
-  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
-  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
-  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso para modificar esta empresa' })
-  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateEmpresaDto: UpdateEmpresaDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return this.empresasService.update(id, updateEmpresaDto, user.empresaId, user.rol);
+    return this.empresasService.update(
+      id,
+      updateEmpresaDto,
+      user.empresaId,
+      user.rol,
+    );
   }
 
   @Delete(':id')
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Desactivar empresa' })
-  @ApiParam({ name: 'id' })
-  @ApiResponse({ status: 200, description: 'Empresa desactivada correctamente' })
-  @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
-  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido' })
-  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
-  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.empresasService.remove(id);
+  }
+
+  // ✅ FIX: Upload con memoryStorage
+  @Patch(':id/foto')
+  @Roles('ADMIN_GENERAL')
+  @ApiOperation({ summary: 'Subir foto de perfil de la empresa' })
+  @ApiParam({ name: 'id' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('foto', {
+      storage: memoryStorage(),
+    }),
+  )
+  uploadFoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 1024 * 1024 * 5,
+            message: 'El archivo es demasiado grande (máx 5MB)',
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.empresasService.uploadFoto(
+      id,
+      file,
+      user.empresaId,
+      user.rol,
+    );
   }
 }

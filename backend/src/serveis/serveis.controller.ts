@@ -41,8 +41,9 @@ export class ServeisController {
   findAll(
     @CurrentUser() user: CurrentUserData,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('rows', new ParseIntPipe({ optional: true })) rows = 4,
   ) {
-    return this.serveisService.findAll(user.empresaId, page, 4);
+    return this.serveisService.findAll(user.empresaId, page, rows);
   }
 
   @Get('treballador/:id')

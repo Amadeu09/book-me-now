@@ -22,6 +22,7 @@ model Empresa {
   usuaris      Usuari[]
   valoracions  Valoracio[]
   reserves     Reserva[]
+  fotoPerfil   String?
 
   // --- AFEGIT (additiu, no canvia res existent) ---
   jornadesPlantilla JornadaPlantilla[]

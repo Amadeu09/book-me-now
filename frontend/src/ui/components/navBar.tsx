@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   TouchableOpacity,
@@ -33,6 +34,30 @@ export default function Navbar({ variant }: NavbarProps) {
   const isDesktopWeb = variant === 'desktop' || (variant !== 'mobile' && Platform.OS === 'web' && width >= 1024);
 
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const u = await AsyncStorage.getItem('user');
+        if (u) {
+          setUser(JSON.parse(u));
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    loadUser();
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.multiRemove(['token', 'user']);
+      router.replace('/login');
+    } catch (err) {
+      console.error('Logout error', err);
+    }
+  };
 
   const sidebarWidth = collapsed ? 70 : 240;
 
@@ -121,6 +146,28 @@ export default function Navbar({ variant }: NavbarProps) {
           );
         })}
       </View>
+
+      {/* ===========================
+          PERFIL USUARIO WEB (Bottom)
+         =========================== */}
+      {isDesktopWeb && user && (
+        <View style={[styles.profileContainerWeb, collapsed && styles.profileContainerCollapsed]}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarText}>{user?.nom ? user.nom.substring(0, 2).toUpperCase() : 'U'}</Text>
+          </View>
+          
+          {!collapsed && (
+            <View style={styles.profileTextContainer}>
+              <Text style={styles.profileName} numberOfLines={1}>{user?.nom}</Text>
+              <Text style={styles.profileEmail} numberOfLines={1}>{user?.email}</Text>
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+             <Ionicons name="log-out-outline" size={20} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+      )}
 
     </BlurView>
   );
@@ -251,5 +298,61 @@ const styles = StyleSheet.create({
 
   navTextActive: {
     color: '#0f172a',
+  },
+
+  /* ----------------------  
+        PERFIL WEB (Bottom)
+     ---------------------- */
+  profileContainerWeb: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(148, 163, 184, 0.4)',
+    paddingTop: 15,
+    paddingBottom: 20,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  profileContainerCollapsed: {
+    justifyContent: 'center',
+    flexDirection: 'column',
+    gap: 15,
+  },
+  avatarCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  profileTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+  },
+  profileName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  profileEmail: {
+    fontSize: 11,
+    color: '#64748b',
+  },
+  logoutButton: {
+    padding: 6,
+    borderRadius: 8,
   },
 });

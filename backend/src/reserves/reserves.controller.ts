@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards, Query } from '@nestjs/common';
 import { ReservesService } from './reserves.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
-import { ApiOperation, ApiResponse, ApiTags, ApiBody } from '@nestjs/swagger';
+import { Roles } from '../common/decorators/roles.decorator';
+import { ApiOperation, ApiResponse, ApiTags, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto } from './dto/reserves.dto';
 
 @ApiTags('reserves')
@@ -61,5 +63,40 @@ export class ReservesController {
     @Body() dto: CreateReservaDto,
   ) {
     return this.reservesService.update(id, dto);
+  }
+
+  @Get('treballador/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @ApiOperation({ summary: 'Obtener todas las reservas de un trabajador' })
+  @ApiResponse({ status: 200, description: 'Lista de reservas obtenida correctamente', type: [ReservaResponseDto] })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
+  @ApiResponse({ status: 404, description: 'Trabajador no encontrado' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  findAllByTreballador(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.reservesService.findAllByTreballador(id, user.empresaId, user.userId);
+  }
+
+  @Get('setmana')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_GENERAL')
+  @ApiOperation({ summary: 'Obtener todas las reservas de la empresa en un rango de fechas' })
+  @ApiQuery({ name: 'inici', required: true, type: String, description: 'Fecha de inicio (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'fi', required: true, type: String, description: 'Fecha de fin (YYYY-MM-DD)' })
+  @ApiResponse({ status: 200, description: 'Lista de reservas obtenida correctamente', type: [ReservaResponseDto] })
+  @ApiResponse({ status: 400, description: 'Petición incorrecta (fechas inválidas)' })
+  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  findAllBySetmana(
+    @Query('inici') inici: string,
+    @Query('fi') fi: string,
+    @Query('treballadorId') treballadorId: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.reservesService.findAllBySetmana(user.empresaId, inici, fi, user.userId, treballadorId);
   }
 }

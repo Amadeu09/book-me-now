@@ -162,7 +162,7 @@ describe('EmpresasService', () => {
   });
 
   describe('remove', () => {
-    it('debería desactivar una empresa y sus entidades relacionadas', async () => {
+    it('debería desactivar una empresa', async () => {
       const mockEmpresa = {
         id: 1,
         nom: 'Test Company',
@@ -180,37 +180,16 @@ describe('EmpresasService', () => {
         activa: false,
       };
 
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const tx = {
-          empresa: {
-            findUnique: jest.fn().mockResolvedValue(mockEmpresa),
-            update: jest.fn().mockResolvedValue(updatedEmpresa),
-          },
-          treballador: {
-            updateMany: jest.fn().mockResolvedValue({ count: 5 }),
-          },
-          servei: {
-            updateMany: jest.fn().mockResolvedValue({ count: 10 }),
-          },
-        };
-        return callback(tx);
-      });
+      mockPrismaService.empresa.findUnique.mockResolvedValue(mockEmpresa);
+      mockPrismaService.empresa.update.mockResolvedValue(updatedEmpresa);
 
       const result = await service.remove(1);
 
-      expect(result).toHaveProperty('message');
-      expect(result.empresa.activa).toBe(false);
+      expect(result.activa).toBe(false);
     });
 
     it('debería lanzar NotFoundException si la empresa no existe', async () => {
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const tx = {
-          empresa: {
-            findUnique: jest.fn().mockResolvedValue(null),
-          },
-        };
-        return callback(tx);
-      });
+      mockPrismaService.empresa.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
     });
