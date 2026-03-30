@@ -16,6 +16,7 @@ export interface ApiTreballador {
 }
 
 export interface ApiClient {
+
     id: number;
     nom: string;
     email: string | null;
@@ -37,12 +38,4 @@ export interface ApiReserva {
     servei?: ApiServei;
     treballador?: ApiTreballador;
     client?: ApiClient;
-}
-
-export interface ApiTreballador {
-    id: number;
-    idUsuari: number;
-    nom: string;
-    empresaId: number;
-    actiu: boolean;
 }

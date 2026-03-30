@@ -49,6 +49,7 @@ export interface Employee {
     initials: string;
     avatarColor: string;
     templateName: string;
+    photoUri?: string | null;
 }
 
 

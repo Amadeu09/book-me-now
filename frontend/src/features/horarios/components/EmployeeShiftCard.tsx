@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow, STATUS_CONFIG, type Employee } from '../constants/horarios.constants';
 
@@ -38,9 +38,13 @@ const MobileCard: React.FC<{ employee: Employee; sts: typeof STATUS_CONFIG.avail
     return (
         <View style={[styles.mCard, { zIndex: showMenu ? 100 : 1 }]}>
             <View style={styles.avatarWrap}>
-                <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
-                    <Text style={styles.avatarText}>{employee.initials}</Text>
-                </View>
+                {employee.photoUri ? (
+                    <Image source={{ uri: employee.photoUri }} style={styles.avatar} />
+                ) : (
+                    <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
+                        <Text style={styles.avatarText}>{employee.initials}</Text>
+                    </View>
+                )}
                 <View style={[styles.statusDot, { backgroundColor: sts.dotColor }]} />
             </View>
             <View style={styles.mInfo}>
@@ -82,14 +86,19 @@ const DesktopRow: React.FC<{
             {/* Empleado */}
             <View style={styles.dCellEmployee}>
                 <View style={styles.avatarWrap}>
-                    <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
-                        <Text style={styles.avatarText}>{employee.initials}</Text>
-                    </View>
+                    {employee.photoUri ? (
+                        <Image source={{ uri: employee.photoUri }} style={styles.avatar} />
+                    ) : (
+                        <View style={[styles.avatar, { backgroundColor: employee.avatarColor }]}>
+                            <Text style={styles.avatarText}>{employee.initials}</Text>
+                        </View>
+                    )}
                 </View>
                 <View>
                     <Text style={styles.dName}>{employee.name}</Text>
                     <Text style={styles.dRole}>{employee.role}</Text>
                 </View>
+                
             </View>
             {/* Plantilla */}
             <View style={styles.dCellTemplate}>

@@ -13,6 +13,7 @@ import React, { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { login } from "@/features/auth/services/auth.service";
 import api from "@/core/api/api";
+import { AUTH } from "../constants/auth.constants";
 import {
     ActivityIndicator,
     Alert,
@@ -135,7 +136,7 @@ export default function NeoLogin() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
       <LinearGradient
-        colors={["#0b0b10", "#1b1220", "#10202a", "#0b0b10"]}
+        colors={[AUTH.bgDark, AUTH.bgMid1, AUTH.bgMid2, AUTH.bgDark]}
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -211,7 +212,7 @@ export default function NeoLogin() {
 
               {/* CTA */}
               <TouchableOpacity activeOpacity={0.9} style={styles.cta} onPress={handlesLogin} disabled={loading}>
-                <LinearGradient colors={["#ffffff", "#ffe3aa"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaGradient}>
+                <LinearGradient colors={[AUTH.ctaGradientStart, AUTH.ctaGradientEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaGradient}>
                   {loading ? (
                     <ActivityIndicator color="#000" />
                   ) : (
@@ -221,7 +222,7 @@ export default function NeoLogin() {
               </TouchableOpacity>
 
               <TouchableOpacity onPress={testConnection} style={{ marginTop: 10, alignSelf: 'center' }}>
-                <Text style={{ color: '#93c5fd', fontSize: 12, fontWeight: '600' }}>Probar conexión</Text>
+                <Text style={styles.testBtnText}>Probar conexión</Text>
               </TouchableOpacity>
 
               {generalError ? (
@@ -266,10 +267,10 @@ export default function NeoLogin() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#0b0b10" },
+  safe: { flex: 1, backgroundColor: AUTH.bgDark },
   container: { flex: 1, paddingHorizontal: 20, justifyContent: "center" },
   brandRow: { flexDirection: "row", alignItems: "center" },
-  brandDot: { width: 10, height: 10, borderRadius: 10, backgroundColor: "#f472b6", marginRight: 8 },
+  brandDot: { width: 10, height: 10, borderRadius: 10, backgroundColor: AUTH.blobPink, marginRight: 8 },
   brandText: { letterSpacing: 4, color: "#fff", fontWeight: "700", fontSize: 12, opacity: 0.9 },
   title: { fontSize: 36, fontWeight: "900", color: "#fff", lineHeight: 40 },
   subtitle: { color: "rgba(255,255,255,0.65)", marginTop: 6 },
@@ -312,10 +313,11 @@ const styles = StyleSheet.create({
   },
 
   metaText: { color: "rgba(255,255,255,0.7)", fontSize: 12 },
-  linkText: { color: "#fbcfe8", fontWeight: "700" },
+  linkText: { color: AUTH.linkLight, fontWeight: "700" },
+  testBtnText: { color: AUTH.testBtn, fontSize: 12, fontWeight: '600' },
   footer: { textAlign: "center", color: "rgba(255,255,255,0.45)", marginTop: 26, fontSize: 11 },
 
-  errorText: { color: "#fecaca", marginTop: 6, fontSize: 12 },
+  errorText: { color: AUTH.errorLight, marginTop: 6, fontSize: 12 },
 
   // Fondos y brillos
   conicGlow: {
@@ -327,15 +329,13 @@ const styles = StyleSheet.create({
     borderRadius: width * 1.8,
     opacity: 0.22,
     backgroundColor: "transparent",
-    // Simulación de conic gradient con un radial grande + blur
-    shadowColor: "#ff7ae6",
+    shadowColor: AUTH.glowPink,
     shadowOpacity: 0.4,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 100,
   },
   vignette: {
-    position: "absolute",
-    inset: 0 as any,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "transparent",
   },
   blob: {
@@ -345,9 +345,9 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.8,
     opacity: 0.12,
   },
-  blobA: { backgroundColor: "#f472b6", top: height * 0.1, left: -width * 0.2 },
-  blobB: { backgroundColor: "#fde68a", top: height * 0.5, right: -width * 0.3 },
-  blobC: { backgroundColor: "#67e8f9", top: -width * 0.2, right: -width * 0.15 },
+  blobA: { backgroundColor: AUTH.blobPink, top: height * 0.1, left: -width * 0.2 },
+  blobB: { backgroundColor: AUTH.blobYellow, top: height * 0.5, right: -width * 0.3 },
+  blobC: { backgroundColor: AUTH.blobCyan, top: -width * 0.2, right: -width * 0.15 },
 });
 
 // USO con Expo Router o React Navigation

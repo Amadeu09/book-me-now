@@ -2,13 +2,14 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, View, useWindowDimensions } from 'react-native';
 import Navbar from "@/ui/components/navBar";
+import { HC } from "@/features/home/constants/inicio.constants";
 
 export default function MainLayout() {
     const { width } = useWindowDimensions();
     const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
 
     return (
-        <View style={{ flex: 1, flexDirection: isDesktopWeb ? 'row' : 'column', backgroundColor: '#fff' }}>
+        <View style={{ flex: 1, flexDirection: isDesktopWeb ? 'row' : 'column', backgroundColor: HC.white }}>
             {isDesktopWeb && (
                 <Navbar variant="desktop" />
             )}
@@ -20,6 +21,7 @@ export default function MainLayout() {
                     <Tabs.Screen name="services" />
                     <Tabs.Screen name="profile" />
                     <Tabs.Screen name="horarios" />
+                    <Tabs.Screen name="vacaciones" />
                 </Tabs>
             </View>
 

@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+@layer base {
+  body {
+    background-color: theme('colors.background');
+    color: theme('colors.on-surface');
+  }
+}
+
+@layer utilities {
+  .editorial-kern {
+    letter-spacing: -0.04em;
+  }
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  }
+}

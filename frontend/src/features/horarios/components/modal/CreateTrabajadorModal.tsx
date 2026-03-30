@@ -10,14 +10,17 @@ import {
     TextInput,
     ActivityIndicator,
     Alert,
+    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { HC, cardShadow } from '../../constants/horarios.constants';
 import { RotationTabs } from './RotationTabs';
+import { DatePickerField } from '../DatePickerField';
 
 // Hooks & Services
 import { useCreateUsuari, useCreateTreballador } from '../../hooks/useTreballadors';
-import { updateTreballador } from '../../services/treballadors.service';
+import { updateTreballador, uploadFotoUsuari } from '../../services/treballadors.service';
 import { useAllServices } from '../../../services/hooks/useServices';
 import { getJornades } from '../../services/jornades.service';
 
@@ -49,10 +52,14 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
     const [email, setEmail] = useState('');
     const [nom, setNom] = useState('');
     const [password, setPassword] = useState('');
+    const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [usuariError, setUsuariError] = useState('');
 
     // Form State - Serveis
     const [serveisIds, setServeisIds] = useState<number[]>([]);
+
+    // Form State - Vacances
+    const [diesVacancesAnuals, setDiesVacancesAnuals] = useState('25');
 
     // Form State - Jornada
     const [plantillaJornadaId, setPlantillaJornadaId] = useState<number | null>(null);
@@ -88,7 +95,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
         if (visible) {
             if (initialData) {
                 setNom(initialData.nom || '');
-                setEmail(initialData.usuari?.email || '');
+                setEmail(initialData.Usuari?.email || '');
                 setPassword(''); // Don't pre-fill password, handled separately or hidden in edit
                 
                 // Pre-fill services
@@ -96,6 +103,9 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     setServeisIds(initialData.serveis.map((ts: any) => ts.serveiId));
                 }
                 
+                // Pre-fill vacation days
+                setDiesVacancesAnuals(String(initialData.diesVacancesAnuals ?? 25));
+
                 // Pre-fill templates (just the active one)
                 if (initialData.jornadesPlantillaAssignacions && initialData.jornadesPlantillaAssignacions.length > 0) {
                     const activeAssig = initialData.jornadesPlantillaAssignacions[0];
@@ -122,11 +132,30 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
         setEmail('');
         setNom('');
         setPassword('');
+        setPhotoUri(null);
         setUsuariError('');
         setServeisIds([]);
+        setDiesVacancesAnuals('25');
         setPlantillaJornadaId(null);
         setDataInici('');
         setDataFi('');
+    };
+
+    const pickPhoto = async () => {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+            Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para subir una foto.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0]) {
+            setPhotoUri(result.assets[0].uri);
+        }
     };
 
     const toggleService = (id: number) => {
@@ -162,6 +191,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 const updatePayload: any = {
                     nom: nom.trim(),
                     serveisIds: serveisIds,
+                    diesVacancesAnuals: parseInt(diesVacancesAnuals, 10) || 25,
                 };
                 
                 if (plantillaJornadaId && dataInici) {
@@ -184,6 +214,15 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     nom: nom.trim(),
                     password: password.trim(),
                 });
+
+                // 2c. Upload profile photo if selected (non-blocking)
+                if (photoUri) {
+                    try {
+                        await uploadFotoUsuari(usuariRes.id, photoUri);
+                    } catch (photoErr) {
+                        console.warn('⚠️ Error subiendo foto de perfil:', photoErr);
+                    }
+                }
 
                 // 3. Create Treballador
                 const treballadorPayload: any = {
@@ -213,10 +252,13 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
             onSuccess?.();
             onClose();
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error creating worker:', error);
-            const msg = error?.response?.data?.message || error.message || 'Error al guardar el trabajador.';
-            setUsuariError(Array.isArray(msg) ? msg.join(', ') : msg);
+            const msg =
+                (error as { response?: { data?: { message?: string | string[] } }; message?: string })?.response?.data?.message ||
+                (error as { message?: string })?.message ||
+                'Error al guardar el trabajador.';
+            setUsuariError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Error al guardar el trabajador.'));
         }
     };
 
@@ -224,7 +266,29 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
     const renderUsuariTab = () => (
         <View style={styles.tabContainer}>
             {usuariError ? <Text style={styles.errorText}>{usuariError}</Text> : null}
-            
+
+            {/* Avatar picker — only shown in create mode */}
+            {!initialData && (
+                <View style={styles.avatarRow}>
+                    <TouchableOpacity onPress={pickPhoto} style={styles.avatarTouch} activeOpacity={0.8}>
+                        {photoUri ? (
+                            <Image source={{ uri: photoUri }} style={styles.avatar} />
+                        ) : (
+                            <View style={styles.avatarPlaceholder}>
+                                <Ionicons name="person-outline" size={32} color={HC.textMuted} />
+                            </View>
+                        )}
+                        <View style={styles.avatarBadge}>
+                            <Ionicons name="camera" size={12} color={HC.white} />
+                        </View>
+                    </TouchableOpacity>
+                    <View style={styles.avatarInfo}>
+                        <Text style={styles.avatarLabel}>Foto de perfil</Text>
+                        <Text style={styles.avatarHint}>Opcional · Toca para seleccionar</Text>
+                    </View>
+                </View>
+            )}
+
             <Text style={styles.label}>Nombre complete *</Text>
             <TextInput
                 style={styles.input}
@@ -258,6 +322,17 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     />
                 </>
             )}
+
+            <Text style={styles.label}>Dies de vacances anuals</Text>
+            <TextInput
+                style={styles.input}
+                placeholder="25"
+                value={diesVacancesAnuals}
+                onChangeText={v => setDiesVacancesAnuals(v.replace(/[^0-9]/g, ''))}
+                keyboardType="numeric"
+                maxLength={3}
+                editable={!isSubmitting}
+            />
         </View>
     );
 
@@ -327,26 +402,23 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
             <View style={styles.row}>
                 <View style={[styles.col, { paddingRight: 8 }]}>
                     <Text style={styles.label}>Fecha Inicio</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="YYYY-MM-DD"
+                    <DatePickerField
                         value={dataInici}
-                        onChangeText={setDataInici}
-                        editable={!isSubmitting}
+                        onChange={setDataInici}
+                        placeholder="Seleccionar inici"
+                        disabled={isSubmitting}
                     />
                 </View>
                 <View style={[styles.col, { paddingLeft: 8 }]}>
                     <Text style={styles.label}>Fecha Fin</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="YYYY-MM-DD"
+                    <DatePickerField
                         value={dataFi}
-                        onChangeText={setDataFi}
-                        editable={!isSubmitting}
+                        onChange={setDataFi}
+                        placeholder="Seleccionar fi"
+                        disabled={isSubmitting}
                     />
                 </View>
             </View>
-            <Text style={styles.helperText}>Formato esperado: YYYY-MM-DD Ej: 2026-02-07</Text>
         </View>
     );
 
@@ -626,5 +698,59 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: HC.white,
+    },
+    avatarRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: HC.border,
+    },
+    avatarTouch: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+    },
+    avatar: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+    },
+    avatarPlaceholder: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: HC.screenBg,
+        borderWidth: 1,
+        borderColor: HC.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarBadge: {
+        position: 'absolute',
+        bottom: 1,
+        right: 1,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: HC.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: HC.white,
+    },
+    avatarInfo: {
+        marginLeft: 16,
+    },
+    avatarLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: HC.textPrimary,
+    },
+    avatarHint: {
+        fontSize: 12,
+        color: HC.textMuted,
+        marginTop: 2,
     },
 });

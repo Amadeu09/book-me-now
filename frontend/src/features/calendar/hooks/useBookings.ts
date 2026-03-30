@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { fetchGetTreballadors, fetchWeekBookings } from '../services/calendarApi';
 import type { ApiReserva, ApiTreballador } from '../types';
 import type { CalendarEvent } from '../components/types';
+import { HC } from '@/features/home/constants/inicio.constants';
 
 export const useBookings = (startDate: Date, endDate: Date, isAdmin: boolean, treballadorId?: string, serveiId?: string) => {
     const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -44,14 +45,14 @@ export const useBookings = (startDate: Date, endDate: Date, isAdmin: boolean, tr
                     const endRaw = new Date(startRaw.getTime() + durada * 60000);
 
                     // Choose colors based on status or service
-                    let eventColor = '#EBF5FF'; // Default light blue
+                    let eventColor: string = HC.eventBlueBg;
                     let iconName = 'clock';
 
                     if (res.estat === 'CONFIRMADA') {
-                        eventColor = '#DCFCE7'; // Greenish
+                        eventColor = HC.statusGreenBg;
                         iconName = 'check-circle';
                     } else if (res.estat === 'CANCELLADA' || res.estat === 'NO_SHOW') {
-                        eventColor = '#FEE2E2'; // Reddish
+                        eventColor = HC.statusRedBg;
                         iconName = 'x-circle';
                     }
 

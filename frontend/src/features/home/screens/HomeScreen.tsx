@@ -3,6 +3,8 @@ import { View, StyleSheet, SafeAreaView, ScrollView, useWindowDimensions, Toucha
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { palette, spacing } from "@/constants/theme";
+import type { AuthUser } from '@/features/auth/services/auth.service';
+import { HC } from '../constants/inicio.constants';
 
 // Components
 import { InicioHeader } from '../components/InicioHeader';
@@ -10,14 +12,20 @@ import { LocalDataCard } from '../components/LocalDataCard';
 import { ScheduleCard } from '../components/ScheduleCard';
 import { StatsCard } from '../components/StatsCard';
 
+// Hooks
+import { useEmpresa } from '@/features/empresas/hooks/useEmpresa';
+
 export default function Home() {
   const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const router = useRouter();
   const { width } = useWindowDimensions();
 
   // We align with the React.Native Frontend Agent Skills standards (isTablet = >= 768)
   const isDesktop = width >= 768;
+
+  // React Query hook for dynamic company data
+  const { data: empresa } = useEmpresa(user?.empresaId);
 
   useEffect(() => {
     (async () => {
@@ -44,7 +52,7 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.mainWrapper, isDesktop && styles.desktopWrapper]}>
-          <LocalDataCard />
+          <LocalDataCard empresa={empresa || user?.empresa} />
 
           {/* The responsive blocks grid */}
           <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
@@ -61,14 +69,14 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FB' // HC.screenBg equivalent
+    backgroundColor: HC.screenBg,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 16,
     paddingBottom: 80,
   },
   mainWrapper: {
@@ -98,7 +106,7 @@ const styles = StyleSheet.create({
     borderRadius: 10
   },
   logoutText: {
-    color: '#fff',
-    fontWeight: '700'
+    color: HC.white,
+    fontWeight: '700',
   }
 });

@@ -22,6 +22,16 @@ export class CreateEmpresaDto {
   @IsOptional()
   @IsBoolean()
   activa?: boolean;
+
+  @ApiProperty({ example: 'Somos un salón de belleza premium...', description: 'Descripción de la empresa', required: false })
+  @IsOptional()
+  @IsString()
+  descripcio?: string;
+
+  @ApiProperty({ example: '#FF6A00', description: 'Color primario corporativo (hex)', required: false })
+  @IsOptional()
+  @IsString()
+  colorPrimari?: string;
 }
 
 export class UpdateEmpresaDto {
@@ -45,4 +55,14 @@ export class UpdateEmpresaDto {
   @IsOptional()
   @IsBoolean()
   activa?: boolean;
+
+  @ApiProperty({ example: 'Somos un salón de belleza premium...', required: false })
+  @IsOptional()
+  @IsString()
+  descripcio?: string;
+
+  @ApiProperty({ example: '#FF6A00', required: false, description: 'Color primario corporativo (hex)' })
+  @IsOptional()
+  @IsString()
+  colorPrimari?: string;
 }

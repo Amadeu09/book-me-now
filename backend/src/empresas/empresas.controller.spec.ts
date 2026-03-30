@@ -50,48 +50,50 @@ describe('EmpresasController', () => {
     });
 
     describe('findAll', () => {
-        it('should call service.findAll', async () => {
+        it('should call service.findAll with empresaId', async () => {
+            const user = { userId: 1, empresaId: 1, email: 't@t.com', rol: 'ADMIN_GENERAL' as Rol };
             mockEmpresasService.findAll.mockResolvedValue(['empresa']);
 
-            const result = await controller.findAll();
+            const result = await controller.findAll(user);
 
-            expect(service.findAll).toHaveBeenCalled();
+            expect(service.findAll).toHaveBeenCalledWith(user.empresaId);
             expect(result).toEqual(['empresa']);
         });
     });
 
     describe('findOne', () => {
-        it('should call service.findOne', async () => {
+        it('should call service.findOne without rol', async () => {
             const user = { userId: 1, empresaId: 1, email: 't@t.com', rol: 'ADMIN_GENERAL' as Rol };
             mockEmpresasService.findOne.mockResolvedValue('empresa');
 
             const result = await controller.findOne(1, user);
 
-            expect(service.findOne).toHaveBeenCalledWith(1, user.empresaId, user.rol);
+            expect(service.findOne).toHaveBeenCalledWith(1, user.empresaId);
             expect(result).toBe('empresa');
         });
     });
 
     describe('update', () => {
-        it('should call service.update', async () => {
+        it('should call service.update without rol', async () => {
             const dto: UpdateEmpresaDto = { nom: 'Updated' };
             const user = { userId: 1, empresaId: 1, email: 't@t.com', rol: 'ADMIN_GENERAL' as Rol };
             mockEmpresasService.update.mockResolvedValue('updated');
 
             const result = await controller.update(1, dto, user);
 
-            expect(service.update).toHaveBeenCalledWith(1, dto, user.empresaId, user.rol);
+            expect(service.update).toHaveBeenCalledWith(1, dto, user.empresaId);
             expect(result).toBe('updated');
         });
     });
 
     describe('remove', () => {
-        it('should call service.remove', async () => {
+        it('should call service.remove with empresaId', async () => {
+            const user = { userId: 1, empresaId: 1, email: 't@t.com', rol: 'ADMIN_GENERAL' as Rol };
             mockEmpresasService.remove.mockResolvedValue('removed');
 
-            const result = await controller.remove(1);
+            const result = await controller.remove(1, user);
 
-            expect(service.remove).toHaveBeenCalledWith(1);
+            expect(service.remove).toHaveBeenCalledWith(1, user.empresaId);
             expect(result).toBe('removed');
         });
     });

@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const NAV_ITEMS = [
@@ -19,6 +18,7 @@ const NAV_ITEMS = [
   { name: 'Servicios', icon: 'grid-outline', activeIcon: 'grid', path: '/services' },
   { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', path: '/profile' },
   { name: 'Horarios y disponibilidad', icon: 'time-outline', activeIcon: 'time', path: '/horarios' },
+  { name: 'Vacaciones', icon: 'sunny-outline', activeIcon: 'sunny', path: '/vacaciones' },
 ] as const;
 
 type NavbarProps = {
@@ -62,9 +62,7 @@ export default function Navbar({ variant }: NavbarProps) {
   const sidebarWidth = collapsed ? 70 : 240;
 
   return (
-    <BlurView
-      intensity={80}
-      tint="light"
+    <View
       style={[
         styles.container,
         isDesktopWeb
@@ -169,7 +167,7 @@ export default function Navbar({ variant }: NavbarProps) {
         </View>
       )}
 
-    </BlurView>
+    </View>
   );
 }
 
@@ -178,7 +176,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 50,
     borderColor: 'rgba(148, 163, 184, 0.25)',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: '#ffffff',
   },
 
   // MOBILE (bottom bar)
@@ -316,7 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: '#ffffff',
   },
   profileContainerCollapsed: {
     justifyContent: 'center',

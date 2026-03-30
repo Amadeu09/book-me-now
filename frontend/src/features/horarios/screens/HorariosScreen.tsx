@@ -31,7 +31,8 @@ import {
     type TabKey,
     type Employee,
 } from '../constants/horarios.constants';
-import type { PlantillaSummary } from '../types/jornades.types';
+import type { PlantillaSummary, JornadaPlantillaResponse } from '../types/jornades.types';
+import type { TreballadorBackendItem } from '../types/treballadors.types';
 
 /* ═══════════════════════════════════════════
    HorariosScreen – Main screen
@@ -48,8 +49,8 @@ export default function HorariosScreen() {
     // Modal & Edit states
     const [templateModalVisible, setTemplateModalVisible] = useState(false);
     const [trabajadorModalVisible, setTrabajadorModalVisible] = useState(false);
-    const [workerToEdit, setWorkerToEdit] = useState<any>(null);
-    const [templateToEdit, setTemplateToEdit] = useState<any>(null);
+    const [workerToEdit, setWorkerToEdit] = useState<TreballadorBackendItem | null>(null);
+    const [templateToEdit, setTemplateToEdit] = useState<JornadaPlantillaResponse | undefined>(undefined);
 
     const { plantillas, rawPlantillas, total: plantillasTotal, page: plantillasPage, totalPages: plantillasTotalPages, loading: plantillasLoading, error: plantillasError, refetch: refetchPlantillas } = useJornades(1, 2);
 
@@ -58,21 +59,20 @@ export default function HorariosScreen() {
     // Custom hook to fetch workers via new implementation
     const { data: treballadorsData, isLoading: treballadorsLoading, refetch: refetchTreballadors } = useTreballadors(personalPage, PAGE_SIZE);
 
-    const backendEmployees = (treballadorsData?.data || []).map((t: any): Employee => {
+    const backendEmployees = (treballadorsData?.data || []).map((t: TreballadorBackendItem): Employee => {
         // Find assigned template if present (we expect one active generally)
         const activeAssignment = t.jornadesPlantillaAssignacions?.[0];
         const templateName = activeAssignment?.plantilla?.nom || 'Sin jornada';
-        const roleStr = t.usuari?.rol === 'EMPLEAT' ? 'EMPLEADO' : t.usuari?.rol || 'No asignado';
-        
         return {
             id: String(t.id),
             name: t.nom,
-            role: roleStr,
+            role: 'EMPLEADO',
             shift: templateName,
             status: 'available', // Petición: "estado actual pon siempre activo"
             initials: t.nom.substring(0, 2).toUpperCase(),
             avatarColor: HC.primaryLight,
             templateName: templateName,
+            photoUri: t.Usuari?.fotoPerfil ?? null,
         };
     });
 
@@ -106,8 +106,9 @@ export default function HorariosScreen() {
                 Platform.OS === 'web' 
                     ? window.alert("Plantilla eliminada correctamente.") 
                     : Alert.alert("Éxito", "Plantilla eliminada correctamente.");
-            } catch (error: any) {
-                const msg = error?.response?.data?.message || 'No se pudo eliminar la plantilla.';
+            } catch (error: unknown) {
+                const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                const msg = errMsg || 'No se pudo eliminar la plantilla.';
                 Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
             }
         };
@@ -130,7 +131,7 @@ export default function HorariosScreen() {
 
     const handleEditWorker = (employee: Employee) => {
         // Encontraremos el trabajador original en treballadorsData
-        const originalWorker = (treballadorsData?.data || []).find((t: any) => String(t.id) === employee.id);
+        const originalWorker = (treballadorsData?.data || []).find((t: TreballadorBackendItem) => String(t.id) === employee.id);
         if (originalWorker) {
             setWorkerToEdit(originalWorker);
             setTrabajadorModalVisible(true);
@@ -148,8 +149,9 @@ export default function HorariosScreen() {
                 Platform.OS === 'web' 
                     ? window.alert("Trabajador eliminado correctamente.") 
                     : Alert.alert("Éxito", "Trabajador eliminado correctamente.");
-            } catch (error: any) {
-                const msg = error?.response?.data?.message || 'No se pudo eliminar el trabajador.';
+            } catch (error: unknown) {
+                const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                const msg = errMsg || 'No se pudo eliminar el trabajador.';
                 Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
             }
         };
@@ -302,7 +304,7 @@ export default function HorariosScreen() {
                     initialData={templateToEdit}
                     onClose={() => {
                         setTemplateModalVisible(false);
-                        setTemplateToEdit(null);
+                        setTemplateToEdit(undefined);
                     }}
                     onSuccess={() => refetchPlantillas(1)}
                 />
@@ -472,7 +474,7 @@ export default function HorariosScreen() {
                 initialData={templateToEdit}
                 onClose={() => {
                     setTemplateModalVisible(false);
-                    setTemplateToEdit(null);
+                    setTemplateToEdit(undefined);
                 }}
                 onSuccess={() => refetchPlantillas(1)}
             />
@@ -569,8 +571,8 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 13,
         color: HC.textPrimary,
-        outlineStyle: 'none',
-    } as any,
+        outlineStyle: 'none', // web-only CSS — cast needed, not in RN types
+    } as object,
 
     /* Table head */
     tableHead: {

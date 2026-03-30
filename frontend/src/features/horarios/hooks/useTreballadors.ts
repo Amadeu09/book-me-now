@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createUsuari, createTreballador, getTreballadorsPaginats } from '../services/treballadors.service';
-import type { CreateUsuariPayload, CreateTreballadorPayload } from '../types/treballadors.types';
+import type { CreateUsuariPayload, CreateTreballadorPayload, TreballadorPaginatedResponse } from '../types/treballadors.types';
 
 export function useCreateUsuari() {
     const [isPending, setIsPending] = useState(false);
@@ -34,7 +34,7 @@ export function useCreateTreballador() {
 }
 
 export function useTreballadors(initialPage: number, rows: number) {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<TreballadorPaginatedResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(initialPage);
 

@@ -1,5 +1,6 @@
 import api from '@/core/api/api';
 import { getEmpresaId } from '@/utils/session';
+import { Platform } from 'react-native';
 import type { CreateUsuariPayload, UsuariResponse, CreateTreballadorPayload, TreballadorResponse } from '../types/treballadors.types';
 
 /**
@@ -59,4 +60,29 @@ export async function updateTreballador(id: number, data: Partial<CreateTreballa
 export async function deleteTreballador(id: number) {
     const res = await api.delete(`/treballadors/${id}`);
     return res.data;
+}
+
+/**
+ * Sube la foto de perfil de un usuario.
+ * PATCH /api/usuaris/:id/foto
+ */
+export async function uploadFotoUsuari(id: number, fileUri: string): Promise<UsuariResponse> {
+    const formData = new FormData();
+    const filename = fileUri.split('/').pop() || 'photo.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+    if (Platform.OS === 'web') {
+        // On web, the URI is a blob: URL — fetch it to get a real Blob
+        const response = await fetch(fileUri);
+        const blob = await response.blob();
+        formData.append('foto', new File([blob], filename, { type }));
+    } else {
+        // On native, React Native's XHR handles { uri, name, type } directly
+        formData.append('foto', { uri: fileUri, name: filename, type } as any);
+    }
+
+    // Do NOT set Content-Type manually — let Axios set multipart/form-data with the boundary
+    const { data } = await api.patch(`/usuaris/${id}/foto`, formData);
+    return data;
 }

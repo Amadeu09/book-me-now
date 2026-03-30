@@ -50,19 +50,21 @@ export class EmpresasController {
   }
 
   @Get()
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Listar empresas' })
-  findAll() {
-    return this.empresasService.findAll();
+  findAll(@CurrentUser() user: CurrentUserData) {
+    return this.empresasService.findAll(user.empresaId);
   }
 
   @Get(':id')
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Obtener empresa por ID' })
   @ApiParam({ name: 'id' })
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return this.empresasService.findOne(id, user.empresaId, user.rol);
+    return this.empresasService.findOne(id, user.empresaId);
   }
 
   @Patch(':id')
@@ -73,19 +75,17 @@ export class EmpresasController {
     @Body() updateEmpresaDto: UpdateEmpresaDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return this.empresasService.update(
-      id,
-      updateEmpresaDto,
-      user.empresaId,
-      user.rol,
-    );
+    return this.empresasService.update(id, updateEmpresaDto, user.empresaId);
   }
 
   @Delete(':id')
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Desactivar empresa' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.empresasService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.empresasService.remove(id, user.empresaId);
   }
 
   // ✅ FIX: Upload con memoryStorage
@@ -114,11 +114,30 @@ export class EmpresasController {
     file: Express.Multer.File,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return this.empresasService.uploadFoto(
-      id,
-      file,
-      user.empresaId,
-      user.rol,
-    );
+    return this.empresasService.uploadFoto(id, file, user.empresaId);
+  }
+
+  @Patch(':id/banner')
+  @Roles('ADMIN_GENERAL')
+  @ApiOperation({ summary: 'Subir banner de la empresa' })
+  @ApiParam({ name: 'id' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('banner', { storage: memoryStorage() }))
+  uploadBanner(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 1024 * 1024 * 8,
+            message: 'El archivo es demasiado grande (máx 8MB)',
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.empresasService.uploadBanner(id, file, user.empresaId);
   }
 }

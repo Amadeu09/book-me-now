@@ -1,0 +1,76 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: "class",
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        "secondary-container": "#ff6a00",
+        "on-tertiary-fixed-variant": "#673d00",
+        "secondary": "#a14000",
+        "inverse-surface": "#2e3132",
+        "secondary-fixed-dim": "#ffb694",
+        "outline": "#7b7486",
+        "tertiary": "#855000",
+        "surface-container": "#edeef0",
+        "on-primary-fixed-variant": "#5516be",
+        "surface-container-high": "#e7e8ea",
+        "primary-fixed": "#e9ddff",
+        "surface-dim": "#d9dadc",
+        "on-secondary-fixed-variant": "#7b2f00",
+        "on-tertiary-container": "#fffbff",
+        "background": "#f8f9fb",
+        "inverse-on-surface": "#f0f1f3",
+        "on-background": "#191c1e",
+        "on-secondary-container": "#571f00",
+        "on-primary-container": "#fffbff",
+        "surface-variant": "#e1e2e4",
+        "on-surface": "#191c1e",
+        "on-error-container": "#93000a",
+        "error": "#ba1a1a",
+        "on-tertiary": "#ffffff",
+        "on-primary-fixed": "#23005c",
+        "surface-container-low": "#f2f4f6",
+        "on-error": "#ffffff",
+        "surface-container-lowest": "#ffffff",
+        "primary-fixed-dim": "#d0bcff",
+        "on-primary": "#ffffff",
+        "on-secondary": "#ffffff",
+        "secondary-fixed": "#ffdbcc",
+        "surface": "#f8f9fb",
+        "inverse-primary": "#d0bcff",
+        "on-surface-variant": "#494454",
+        "tertiary-fixed-dim": "#ffb869",
+        "surface-container-highest": "#e1e2e4",
+        "surface-tint": "#6d3bd7",
+        "tertiary-container": "#a76500",
+        "surface-bright": "#f8f9fb",
+        "primary-container": "#8455ef",
+        "on-secondary-fixed": "#351000",
+        "error-container": "#ffdad6",
+        "primary": "#6b38d4",
+        "outline-variant": "#cbc3d7",
+        "tertiary-fixed": "#ffdcbb",
+        "on-tertiary-fixed": "#2c1700"
+      },
+      fontFamily: {
+        "headline": ["Outfit", "Inter", "sans-serif"],
+        "body": ["Outfit", "Inter", "sans-serif"],
+        "label": ["Outfit", "Inter", "sans-serif"]
+      },
+      borderRadius: {
+        "DEFAULT": "1rem", 
+        "lg": "2rem", 
+        "xl": "3rem", 
+        "full": "9999px"
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;

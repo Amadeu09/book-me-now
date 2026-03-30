@@ -93,9 +93,10 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             resetForm();
             onSuccess();
             onClose();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error creating booking:', err);
-            const msg = err?.response?.data?.message || err.message || 'Error al crear la reserva.';
+            const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+            const msg = axiosErr?.response?.data?.message || axiosErr?.message || 'Error al crear la reserva.';
             setError(Array.isArray(msg) ? msg.join(', ') : msg);
         } finally {
             setIsSubmitting(false);

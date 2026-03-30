@@ -23,38 +23,40 @@ model Empresa {
   valoracions  Valoracio[]
   reserves     Reserva[]
   fotoPerfil   String?
+  bannerUrl    String?
+  descripcio   String?
+  colorPrimari String?
 
   // --- AFEGIT (additiu, no canvia res existent) ---
   jornadesPlantilla JornadaPlantilla[]
-
-  // (opcional) si vols accés directe a assignacions des d’empresa:
-  // treballadorJornadesPlantilla TreballadorJornadaPlantilla[]
+  absenciesEmpresa  AbsenciaEmpresa[]
 }
 
 model Usuari {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  hash      String
-  rol       Rol
-  empresaId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  hash       String
+  rol        Rol
+  empresaId  Int
+  fotoPerfil String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
   treballador Treballador?
-
 
   @@index([empresaId])
 }
 
 model Treballador {
-  id          Int                 @id @default(autoincrement())
-  Usuari      Usuari              @relation(fields: [idUsuari], references: [id])
-  idUsuari    Int                 @unique
-  nom         String
-  empresaId   Int
-  actiu       Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id                  Int                 @id @default(autoincrement())
+  Usuari              Usuari              @relation(fields: [idUsuari], references: [id])
+  idUsuari            Int                 @unique
+  nom                 String
+  empresaId           Int
+  actiu               Boolean             @default(true)
+  diesVacancesAnuals  Int                 @default(25)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
   absencies   Absencia[]
   jornades    Jornada[]
   reserves    Reserva[]           @relation("ReservaTreballador")
@@ -198,16 +200,19 @@ model Jornada {
 }
 
 model Absencia {
-  id            Int         @id @default(autoincrement())
+  id            Int              @id @default(autoincrement())
   treballadorId Int
   inici         DateTime
   fi            DateTime
   motiu         String?
   tipus         TipusAbsencia
-  createdAt     DateTime    @default(now())
-  treballador   Treballador @relation(fields: [treballadorId], references: [id])
+  estat         EstatAbsencia    @default(PENDENT)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  treballador   Treballador      @relation(fields: [treballadorId], references: [id])
 
   @@index([treballadorId, inici])
+  @@index([treballadorId, estat])
 }
 
 model JornadaPlantilla {
@@ -303,6 +308,29 @@ model TreballadorJornadaPlantilla {
   @@index([plantillaId])
 }
 
+model AbsenciaEmpresa {
+  id        Int                  @id @default(autoincrement())
+  empresaId Int
+  titol     String
+  inici     DateTime
+  fi        DateTime
+  tipus     TipusAbsenciaEmpresa
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  empresa   Empresa              @relation(fields: [empresaId], references: [id])
+
+  @@index([empresaId, inici])
+}
+
+model TokenBlacklist {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
 enum Rol {
   ADMIN_GENERAL
   EMPLEAT
@@ -325,6 +353,19 @@ enum TipusAbsencia {
   VACANCES
   MALALTIA
   PERMIS
+  ALTRE
+}
+
+enum EstatAbsencia {
+  PENDENT
+  APROVADA
+  REBUTJADA
+}
+
+enum TipusAbsenciaEmpresa {
+  FESTA_LOCAL
+  FESTA_ESTATAL
+  PONT
   ALTRE
 }
 

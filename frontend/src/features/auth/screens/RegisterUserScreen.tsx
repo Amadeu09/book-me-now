@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -18,6 +20,8 @@ import {
   Alert,
 } from "react-native";
 import { signup } from "@/features/auth/services/auth.service";
+import { uploadFotoUsuari } from "@/features/horarios/services/treballadors.service";
+import { uploadFotoEmpresa, uploadBannerEmpresa } from "@/features/empresas/services/empresas.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
@@ -31,11 +35,29 @@ export default function RegisterUser() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  const pickPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permiso requerido", "Necesitamos acceso a tu galería para subir una foto.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
 
   const handleSignup = async () => {
     setEmailError(null);
@@ -70,6 +92,8 @@ export default function RegisterUser() {
       nom: params.nom as string,
       ubicacio: params.ubicacio as string,
       capacitat: params.capacitat ? parseInt(params.capacitat as string, 10) : undefined,
+      descripcio: (params.descripcio as string) || undefined,
+      colorPrimari: (params.colorPrimari as string) || undefined,
     };
 
     const userData = {
@@ -81,20 +105,31 @@ export default function RegisterUser() {
       setLoading(true);
       const response = await signup(empresaData, userData);
       console.log('✅ Signup exitoso:', { token: response.token.slice(0, 20), user: response.user });
-      
-      // Persistir credenciales
+
+      // Persistir credenciales ANTES de subir imágenes — el interceptor de Axios necesita el token
       await AsyncStorage.setItem("token", response.token);
       await AsyncStorage.setItem("user", JSON.stringify(response.user));
+
+      // Upload images non-blocking — failure doesn't abort signup
+      const empresaId = response.user.empresaId;
+      const fotoEmpresaUri = params.fotoUri as string;
+      const bannerEmpresaUri = params.bannerUri as string;
+
+      await Promise.allSettled([
+        photoUri ? uploadFotoUsuari(parseInt(response.user.id, 10), photoUri) : Promise.resolve(),
+        fotoEmpresaUri ? uploadFotoEmpresa(empresaId, fotoEmpresaUri) : Promise.resolve(),
+        bannerEmpresaUri ? uploadBannerEmpresa(empresaId, bannerEmpresaUri) : Promise.resolve(),
+      ]);
       console.log('✅ Token y user guardados en AsyncStorage');
-      
+
       // Navegar directamente a home
       router.replace({ pathname: "/home" } as any);
       console.log('✅ Navegación ejecutada hacia /home');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error en signup:", error);
       const apiMessage =
-        error?.response?.data?.message ||
-        error?.message ||
+        (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+        (error as { message?: string })?.message ||
         "No se pudo completar el registro. Intenta nuevamente.";
       setGeneralError(apiMessage);
       Alert.alert("Error", apiMessage);
@@ -134,7 +169,26 @@ export default function RegisterUser() {
           <Text style={styles.title}>Crea tu cuenta</Text>
           <Text style={styles.subtitle}>Paso 2 de 2</Text>
 
-          <View style={{ height: 24 }} />
+          <View style={{ height: 20 }} />
+
+          {/* Avatar Picker */}
+          <View style={styles.avatarContainer}>
+            <TouchableOpacity onPress={pickPhoto} style={styles.avatarTouch} activeOpacity={0.8}>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person-outline" size={40} color="rgba(255,255,255,0.4)" />
+                </View>
+              )}
+              <View style={styles.avatarBadge}>
+                <Ionicons name="camera" size={14} color="#000" />
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.avatarHint}>Foto de perfil (opcional)</Text>
+          </View>
+
+          <View style={{ height: 16 }} />
 
           <BlurView intensity={35} tint="dark" style={styles.card}>
             <View style={styles.cardInner}>
@@ -270,6 +324,34 @@ const styles = StyleSheet.create({
   footer: { textAlign: "center", color: "rgba(255,255,255,0.45)", marginTop: 26, fontSize: 11 },
 
   errorText: { color: "#fecaca", marginTop: 6, fontSize: 12 },
+
+  avatarContainer: { alignItems: "center" },
+  avatarTouch: { width: 88, height: 88, borderRadius: 44 },
+  avatar: { width: 88, height: 88, borderRadius: 44 },
+  avatarPlaceholder: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#ffe3aa",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#0b0b10",
+  },
+  avatarHint: { color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 8 },
 
   conicGlow: {
     position: "absolute",

@@ -1,5 +1,17 @@
 import api from '@/core/api/api';
 
+export interface CreateReservaPayload {
+    nom: string;
+    cognoms: string;
+    email: string;
+    telefon: string;
+    data: string;
+    hora: string;
+    observacions: string;
+    idServei: number;
+    idTreballador: number;
+}
+
 const calendarController = '/reserves/setmana';
 
 export const fetchWeekBookings = async (startDate: string, endDate: string, treballadorId?: string) => {
@@ -24,7 +36,7 @@ export const fetchGetServeis = async () => {
   return response.data.data || response.data;
 };
 
-export const createReserva = async (data: any) => {
+export const createReserva = async (data: CreateReservaPayload) => {
   const response = await api.post(`/reserves`, data);
   return response.data;
 };

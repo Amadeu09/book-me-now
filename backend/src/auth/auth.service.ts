@@ -24,15 +24,16 @@ export class AuthService {
    * Login user and generate JWT token
    */
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
-    this.logger.debug(`Attempt login for email: ${loginDto.email}`);
+    this.logger.debug('Login attempt');
 
     // Find user by email
     const user = await this.prisma.usuari.findUnique({
       where: { email: loginDto.email },
+      include: { empresa: { select: { id: true, nom: true, ubicacio: true, capacitat: true, fotoPerfil: true, bannerUrl: true, descripcio: true, colorPrimari: true } } },
     });
 
     if (!user) {
-      this.logger.warn(`Login attempt with non-existent email: ${loginDto.email}`);
+      this.logger.warn('Login attempt with unknown credentials');
       throw new UnauthorizedException('Credencials invàlides');
     }
 
@@ -54,7 +55,7 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload);
 
-    this.logger.log(`Login successful for user: ${user.id} (${user.email})`);
+    this.logger.log(`Login successful for user: ${user.id}`);
 
     return {
       token,
@@ -63,6 +64,7 @@ export class AuthService {
         email: user.email,
         rol: user.rol,
         empresaId: user.empresaId,
+        empresa: user.empresa ?? undefined,
       },
     };
   }
@@ -71,13 +73,13 @@ export class AuthService {
    * Logout user and blacklist JWT token
    */
   async logout(userId: number, token: string): Promise<{ message: string }> {
-    // Decode token to get expiration time
+    // Verify signature and extract expiration — rejects tampered tokens
     try {
-      const decoded = this.jwtService.decode(token) as any;
+      const decoded = this.jwtService.verify(token) as any;
       const expiresAt = new Date(decoded.exp * 1000);
       
       // Add token to blacklist
-      this.tokenBlacklistService.addToBlacklist(token, expiresAt);
+      await this.tokenBlacklistService.addToBlacklist(token, expiresAt);
       
       this.logger.log(`User logged out successfully: ${userId}`);
       
@@ -93,7 +95,7 @@ export class AuthService {
    * Executed in atomic transaction
    */
   async signup(signupDto: SignupDto): Promise<LoginResponseDto> {
-    this.logger.debug(`Signup attempt for email: ${signupDto.usuari.email}`);
+    this.logger.debug('Signup attempt');
 
     // Check if email already exists
     const existingUser = await this.prisma.usuari.findUnique({
@@ -101,7 +103,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      this.logger.warn(`Signup attempt with existing email: ${signupDto.usuari.email}`);
+      this.logger.warn('Signup attempt with already-registered email');
       throw new ConflictException('Aquest email ja està registrat');
     }
 
@@ -117,6 +119,8 @@ export class AuthService {
           ubicacio: signupDto.empresa.ubicacio,
           capacitat: signupDto.empresa.capacitat ?? null,
           activa: true,
+          descripcio: signupDto.empresa.descripcio ?? null,
+          colorPrimari: signupDto.empresa.colorPrimari ?? null,
         },
       });
 
@@ -156,6 +160,16 @@ export class AuthService {
         email: result.usuari.email,
         rol: result.usuari.rol,
         empresaId: result.usuari.empresaId,
+        empresa: {
+          id: result.empresa.id,
+          nom: result.empresa.nom,
+          ubicacio: result.empresa.ubicacio,
+          capacitat: result.empresa.capacitat,
+          fotoPerfil: result.empresa.fotoPerfil ?? undefined,
+          bannerUrl: result.empresa.bannerUrl ?? undefined,
+          descripcio: result.empresa.descripcio ?? undefined,
+          colorPrimari: result.empresa.colorPrimari ?? undefined,
+        },
       },
     };
   }

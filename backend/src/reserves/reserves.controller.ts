@@ -4,19 +4,23 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { ApiOperation, ApiResponse, ApiTags, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto } from './dto/reserves.dto';
 
 @ApiTags('reserves')
+@ApiBearerAuth('JWT-auth')
 @Controller('reserves')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ReservesController {
   constructor(private readonly reservesService: ReservesService) { }
 
   @Post()
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Crear una nueva reserva' })
   @ApiBody({ type: CreateReservaDto })
-  @ApiResponse({ status: 201, description: 'Reserva creada correctamente', type: ReservaResponseDto })
+  @ApiResponse({ status: 201, description: 'Reserva creada correctament', type: ReservaResponseDto })
   @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Servicio o trabajador no encontrados' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
@@ -25,10 +29,12 @@ export class ReservesController {
   }
 
   @Put('update/:id')
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Actualizar el estado de una reserva' })
   @ApiBody({ type: UpdateReservaEstatDto })
   @ApiResponse({ status: 200, description: 'Estado de reserva actualizado', type: ReservaResponseDto })
   @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
@@ -40,9 +46,11 @@ export class ReservesController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Eliminar una reserva' })
-  @ApiResponse({ status: 200, description: 'Reserva eliminada correctamente', type: ReservaResponseDto })
+  @ApiResponse({ status: 200, description: 'Reserva eliminada correctament', type: ReservaResponseDto })
   @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
@@ -51,10 +59,12 @@ export class ReservesController {
   }
 
   @Put(':id')
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Actualizar una reserva' })
   @ApiBody({ type: CreateReservaDto })
-  @ApiResponse({ status: 200, description: 'Reserva actualizada correctamente', type: ReservaResponseDto })
+  @ApiResponse({ status: 200, description: 'Reserva actualitzada correctament', type: ReservaResponseDto })
   @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })

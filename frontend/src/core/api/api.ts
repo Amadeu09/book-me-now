@@ -7,13 +7,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // 2. extra.apiUrl definida en app.config.ts
 // 3. hostUri de Expo (ej: 192.168.x.x:8081) -> construimos http://IP:3000
 // 4. Fallback final localhost:3000
+
+interface ExpoConfigExtra {
+  apiUrl?: string;
+}
+
 function resolveApiBase(): string {
-  const extra = Constants.expoConfig?.extra as any;
-  let candidate = extra?.apiUrl as string | undefined;
+  const extra = Constants.expoConfig?.extra as ExpoConfigExtra | undefined;
+  let candidate: string | undefined = extra?.apiUrl;
 
   // Fallbacks: IP del host desde Expo o localhost
   if (!candidate) {
-    const hostUri: string | undefined = (Constants as any).expoConfig?.hostUri;
+    const hostUri = (Constants.expoConfig as { hostUri?: string } | null | undefined)?.hostUri;
     if (hostUri) {
       const host = hostUri.split(':')[0];
       if (host && /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
@@ -29,8 +34,7 @@ function resolveApiBase(): string {
   return candidate;
 }
 
-// HARDCODED para forzar el puerto correcto - cambiar solo si backend cambia de puerto
-const API_URL = 'http://localhost:3000/api';
+const API_URL = `${resolveApiBase()}/api`;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -41,6 +45,7 @@ if (__DEV__) {
   // eslint-disable-next-line no-console
   console.log('[API] Base URL:', API_URL);
 }
+
 
 // Interceptor de respuesta para loguear errores de red detallados en desarrollo
 api.interceptors.response.use(
@@ -62,7 +67,7 @@ api.interceptors.response.use(
   }
 );
 
-// Request interceptor to add bearer token
+// Request interceptor: add bearer token + fix Content-Type for multipart uploads
 api.interceptors.request.use(async (config) => {
   try {
     const token = await AsyncStorage.getItem('token');
@@ -70,6 +75,13 @@ api.interceptors.request.use(async (config) => {
   } catch (err) {
     // ignore
   }
+
+  // When sending FormData, remove the default 'application/json' Content-Type so the
+  // browser / React Native XHR can set 'multipart/form-data; boundary=...' automatically.
+  if (config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type'];
+  }
+
   return config;
 });
 

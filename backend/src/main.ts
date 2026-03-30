@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { cloudinaryConfig } from './cloudinary.config';
 import * as dotenv from 'dotenv';
+import helmet from 'helmet';
 
 dotenv.config();
 
@@ -16,7 +17,12 @@ async function bootstrap() {
   // Configure Cloudinary
   cloudinaryConfig();
 
-  // Security: CORS configuration (restrict origins)
+  // M5: Security headers
+  app.use(helmet());
+
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // M1: CORS — no-origin requests only allowed outside production
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
     'http://localhost:3000',
     'http://localhost:19000',
@@ -25,8 +31,15 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin (Expo mobile, Postman) only in non-production
+      if (!origin) {
+        if (isProduction) {
+          callback(new Error('Not allowed by CORS'));
+        } else {
+          callback(null, true);
+        }
+        return;
+      }
 
       if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         callback(null, true);
@@ -39,7 +52,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['X-Total-Count', 'X-Page'],
-    maxAge: 3600, // Cache preflight for 1 hour
+    maxAge: 3600,
   });
 
   // Global validation pipe
@@ -87,32 +100,36 @@ async function bootstrap() {
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'BookMeNow API Docs',
-    customfavIcon: 'https://nestjs.com/favicon.ico',
-    customCss: '.swagger-ui .topbar { display: none }',
-  });
-
-  // Healthcheck endpoint (outside /api prefix)
-  app.getHttpAdapter().get('/health', (req, res) => {
-    res.status(200).json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV,
+  // M2: Only expose Swagger in non-production environments
+  if (!isProduction) {
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      customSiteTitle: 'BookMeNow API Docs',
+      customfavIcon: 'https://nestjs.com/favicon.ico',
+      customCss: '.swagger-ui .topbar { display: none }',
     });
+  }
+
+  // M3: Healthcheck — expose uptime/env only outside production
+  app.getHttpAdapter().get('/health', (_req, res) => {
+    const base = { status: 'ok' };
+    const payload = isProduction
+      ? base
+      : { ...base, uptime: process.uptime(), environment: process.env.NODE_ENV };
+    res.status(200).json(payload);
   });
 
   const port = parseInt(process.env.PORT || '3000', 10);
   await app.listen(port);
 
-  logger.log(`🚀 BookMeNow API running on: http://localhost:${port}/api`);
-  logger.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.log(`📖 Swagger docs available at: http://localhost:${port}/api/docs`);
-  logger.log(`🔒 CORS allowed origins: ${allowedOrigins.join(', ')}`);
-  logger.log(`💚 Healthcheck available at: http://localhost:${port}/health`);
-  logger.log(`🛡️  Rate limiting enabled: 10 req/s, 100 req/min, 500 req/15min`);
+  logger.log(`BookMeNow API running on: http://localhost:${port}/api`);
+  logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  if (!isProduction) {
+    logger.log(`Swagger docs: http://localhost:${port}/api/docs`);
+  }
+  logger.log(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
+  logger.log(`Healthcheck: http://localhost:${port}/health`);
+  logger.log(`Rate limiting enabled: 10 req/s, 100 req/min, 500 req/15min`);
 }
 
 bootstrap().catch((error) => {

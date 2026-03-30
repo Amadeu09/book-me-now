@@ -113,6 +113,19 @@ export class TreballadorsController {
     return this.treballadorsService.getTreballadorsPaginats(empresaId, page, rows, user.userId);
   }
 
+  @Get('my/absencies-calendari')
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @ApiOperation({ summary: 'Obtenir absències del treballador autenticat + festius de l\'empresa' })
+  @ApiQuery({ name: 'any', required: false, type: Number, description: 'Filtrar per any (p.ex. 2026)' })
+  @ApiResponse({ status: 200, description: '{ treballador: Absencia[], empresa: AbsenciaEmpresa[] }' })
+  getMyAbsenciesCalendari(
+    @CurrentUser() user: CurrentUserData,
+    @Query('any') anyStr?: string,
+  ) {
+    const any = anyStr !== undefined ? parseInt(anyStr, 10) : undefined;
+    return this.treballadorsService.getMyAbsenciesCalendari(user, any);
+  }
+
   @Get()
   @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Listar trabajadores paginados por empresa' })

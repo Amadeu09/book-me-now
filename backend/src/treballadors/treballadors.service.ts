@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateJornadaTreballadorExistDto, CreateTreballadorDto, JornadaTreballadorDto } from './dto/CreateTreballadorDto';
 import { AssignarServeisDto } from './dto/AssignarServeisDto';
 import { UpdateTreballadorDto } from './dto/UpdateTreballadorDto';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 @Injectable()
 export class TreballadorsService {
@@ -334,10 +335,17 @@ export class TreballadorsService {
     const absencies = await this.prisma.absencia.findMany({
       where: {
         treballadorId: id,
-        OR: [
-          { fi: { gte: today } },
-          { inici: { lte: endDate } },
-        ],
+        estat: 'APROVADA',
+        inici: { lte: endDate },
+        fi: { gte: today },
+      },
+    });
+
+    const absenciesEmpresa = await this.prisma.absenciaEmpresa.findMany({
+      where: {
+        empresaId: empresaId,
+        inici: { lte: endDate },
+        fi: { gte: today },
       },
     });
 
@@ -353,6 +361,20 @@ export class TreballadorsService {
       const assignment = assignments.find(a =>
         new Date(a.dataInici) <= currentDate && (!a.dataFi || new Date(a.dataFi) >= currentDate)
       );
+
+      // Check if the day is blocked by a company-wide absence (holiday, etc.)
+      const dayStart = new Date(currentDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(currentDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const isEmpresaAbsence = absenciesEmpresa.some(
+        a => a.inici <= dayEnd && a.fi >= dayStart,
+      );
+      if (isEmpresaAbsence) {
+        disponibilitat[dateString] = [];
+        continue;
+      }
 
       if (!assignment) {
         console.log(`No assignment for ${dateString}`);
@@ -555,6 +577,7 @@ export class TreballadorsService {
         Usuari: {
           select: {
             email: true,
+            fotoPerfil: true,
           }
         },
         serveis: {
@@ -611,12 +634,13 @@ export class TreballadorsService {
 
     // Process update in a transaction
     return await this.prisma.$transaction(async (tx) => {
-      // 1. Update basic info (nom)
-      if (dto.nom) {
+      // 1. Update basic info
+      if (dto.nom || dto.diesVacancesAnuals !== undefined) {
         await tx.treballador.update({
           where: { id: id },
           data: {
-            nom: dto.nom,
+            ...(dto.nom ? { nom: dto.nom } : {}),
+            ...(dto.diesVacancesAnuals !== undefined ? { diesVacancesAnuals: dto.diesVacancesAnuals } : {}),
           },
         });
       }
@@ -768,5 +792,45 @@ export class TreballadorsService {
 
       return deletedTreballador;
     });
+  }
+
+  async getMyAbsenciesCalendari(user: CurrentUserData, any?: number) {
+    const treballador = await this.prisma.treballador.findFirst({
+      where: { idUsuari: user.userId },
+      select: { id: true, diesVacancesAnuals: true },
+    });
+
+    const yearFilter = any
+      ? {
+          inici: {
+            gte: new Date(`${any}-01-01T00:00:00.000Z`),
+            lte: new Date(`${any}-12-31T23:59:59.999Z`),
+          },
+        }
+      : {};
+
+    const [treballadorAbsencies, empresaAbsencies] = await Promise.all([
+      treballador
+        ? this.prisma.absencia.findMany({
+            where: { treballadorId: treballador.id, estat: 'APROVADA', ...yearFilter },
+            orderBy: { inici: 'asc' },
+          })
+        : Promise.resolve([]),
+      this.prisma.absenciaEmpresa.findMany({
+        where: { empresaId: user.empresaId, ...yearFilter },
+        orderBy: { inici: 'asc' },
+      }),
+    ]);
+
+    const diesVacancesAnuals = treballador?.diesVacancesAnuals ?? 0;
+
+    return {
+      treballador: treballadorAbsencies,
+      empresa: empresaAbsencies,
+      diesVacancesAnuals,
+      missatgeDies: diesVacancesAnuals === 0
+        ? 'No hi ha dies de vacances assignats per aquest treballador.'
+        : null,
+    };
   }
 }

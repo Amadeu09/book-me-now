@@ -57,7 +57,7 @@ describe('UsuarisController', () => {
 
             const result = await controller.findAll(user);
 
-            expect(service.findAll).toHaveBeenCalledWith(user.empresaId, user.rol);
+            expect(service.findAll).toHaveBeenCalledWith(user.empresaId);
             expect(result).toEqual(['usuaris']);
         });
     });
@@ -69,7 +69,7 @@ describe('UsuarisController', () => {
 
             const result = await controller.findOne(1, user);
 
-            expect(service.findOne).toHaveBeenCalledWith(1, user.empresaId, user.rol);
+            expect(service.findOne).toHaveBeenCalledWith(1, user.empresaId);
             expect(result).toBe('usuari');
         });
     });
@@ -82,7 +82,7 @@ describe('UsuarisController', () => {
 
             const result = await controller.update(1, dto, user);
 
-            expect(service.update).toHaveBeenCalledWith(1, dto, user.empresaId, user.rol);
+            expect(service.update).toHaveBeenCalledWith(1, dto, user.empresaId);
             expect(result).toBe('updated');
         });
     });
@@ -94,7 +94,7 @@ describe('UsuarisController', () => {
 
             const result = await controller.remove(1, user);
 
-            expect(service.remove).toHaveBeenCalledWith(1, user.empresaId, user.rol);
+            expect(service.remove).toHaveBeenCalledWith(1, user.empresaId);
             expect(result).toBe('removed');
         });
     });

@@ -1,8 +1,26 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { v2 as cloudinary } from 'cloudinary';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuariDto, UpdateUsuariDto } from './dto/usuari.dto';
 import * as bcrypt from 'bcrypt';
-import { Rol } from '@prisma/client';
+
+/** Camps retornats a totes les consultes de usuari */
+const USUARI_SELECT = {
+  id: true,
+  email: true,
+  rol: true,
+  empresaId: true,
+  fotoPerfil: true,
+  createdAt: true,
+} as const;
 
 @Injectable()
 export class UsuarisService {
@@ -11,7 +29,6 @@ export class UsuarisService {
   constructor(private prisma: PrismaService) { }
 
   async create(createUsuariDto: CreateUsuariDto, currentUserId: number) {
-    // Check if email already exists
     const existing = await this.prisma.usuari.findUnique({
       where: { email: createUsuariDto.email },
     });
@@ -32,7 +49,6 @@ export class UsuarisService {
       throw new ConflictException('Aquest email ja està registrat');
     }
 
-    // Hash password
     const hash = await bcrypt.hash(createUsuariDto.password, 10);
 
     const usuari = await this.prisma.usuari.create({
@@ -42,55 +58,33 @@ export class UsuarisService {
         rol: createUsuariDto.rol,
         empresaId: createUsuariDto.empresaId,
       },
-      select: {
-        id: true,
-        email: true,
-        rol: true,
-        empresaId: true,
-        createdAt: true,
-      },
+      select: USUARI_SELECT,
     });
 
     this.logger.log(`Usuari created: ${usuari.id} by user ${currentUserId}`);
     return usuari;
   }
 
-  async findAll(empresaId: number, userRol: Rol) {
-    // ADMIN_GENERAL can only see users from their empresa
-    const where = userRol === 'ADMIN_GENERAL' ? { empresaId } : {};
-
+  async findAll(empresaId: number) {
     return this.prisma.usuari.findMany({
-      where,
+      where: { empresaId },
       select: {
-        id: true,
-        email: true,
-        rol: true,
-        empresaId: true,
-        createdAt: true,
+        ...USUARI_SELECT,
         empresa: {
-          select: {
-            nom: true,
-          },
+          select: { nom: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(id: number, currentUserEmpresaId: number, userRol: Rol) {
+  async findOne(id: number, currentUserEmpresaId: number) {
     const usuari = await this.prisma.usuari.findUnique({
       where: { id },
       select: {
-        id: true,
-        email: true,
-        rol: true,
-        empresaId: true,
-        createdAt: true,
+        ...USUARI_SELECT,
         empresa: {
-          select: {
-            nom: true,
-            ubicacio: true,
-          },
+          select: { nom: true, ubicacio: true },
         },
       },
     });
@@ -99,40 +93,33 @@ export class UsuarisService {
       throw new NotFoundException('Usuari no trobat');
     }
 
-    // ADMIN_GENERAL can only see users from their empresa
-    if (userRol === 'ADMIN_GENERAL' && usuari.empresaId !== currentUserEmpresaId) {
+    if (usuari.empresaId !== currentUserEmpresaId) {
       throw new ForbiddenException('No tens permís per veure aquest usuari');
     }
 
     return usuari;
   }
 
-  async update(id: number, updateUsuariDto: UpdateUsuariDto, currentUserEmpresaId: number, userRol: Rol) {
-    const usuari = await this.prisma.usuari.findUnique({
-      where: { id },
-    });
+  async update(id: number, updateUsuariDto: UpdateUsuariDto, currentUserEmpresaId: number) {
+    const usuari = await this.prisma.usuari.findUnique({ where: { id } });
 
     if (!usuari) {
       throw new NotFoundException('Usuari no trobat');
     }
 
-    // ADMIN_GENERAL can only update users from their empresa
-    if (userRol === 'ADMIN_GENERAL' && usuari.empresaId !== currentUserEmpresaId) {
+    if (usuari.empresaId !== currentUserEmpresaId) {
       throw new ForbiddenException('No tens permís per modificar aquest usuari');
     }
 
-    const dataToUpdate: any = {};
+    const dataToUpdate: Record<string, unknown> = {};
 
     if (updateUsuariDto.email) {
-      // Check if new email is already in use
       const existing = await this.prisma.usuari.findUnique({
         where: { email: updateUsuariDto.email },
       });
-
       if (existing && existing.id !== id) {
         throw new ConflictException('Aquest email ja està en ús');
       }
-
       dataToUpdate.email = updateUsuariDto.email;
     }
 
@@ -140,45 +127,75 @@ export class UsuarisService {
       dataToUpdate.hash = await bcrypt.hash(updateUsuariDto.password, 10);
     }
 
-    if (updateUsuariDto.rol) {
-      dataToUpdate.rol = updateUsuariDto.rol;
-    }
 
     const updated = await this.prisma.usuari.update({
       where: { id },
       data: dataToUpdate,
-      select: {
-        id: true,
-        email: true,
-        rol: true,
-        empresaId: true,
-        createdAt: true,
-      },
+      select: USUARI_SELECT,
     });
 
     this.logger.log(`Usuari updated: ${id}`);
     return updated;
   }
 
-  async remove(id: number, currentUserEmpresaId: number, userRol: Rol) {
-    const usuari = await this.prisma.usuari.findUnique({
-      where: { id },
-    });
+  async remove(id: number, currentUserEmpresaId: number) {
+    const usuari = await this.prisma.usuari.findUnique({ where: { id } });
 
     if (!usuari) {
       throw new NotFoundException('Usuari no trobat');
     }
 
-    // ADMIN_GENERAL can only delete users from their empresa
-    if (userRol === 'ADMIN_GENERAL' && usuari.empresaId !== currentUserEmpresaId) {
+    if (usuari.empresaId !== currentUserEmpresaId) {
       throw new ForbiddenException('No tens permís per eliminar aquest usuari');
     }
 
-    await this.prisma.usuari.delete({
-      where: { id },
-    });
+    await this.prisma.usuari.delete({ where: { id } });
 
     this.logger.log(`Usuari deleted: ${id}`);
     return { message: 'Usuari eliminat correctament' };
+  }
+
+  async uploadFoto(id: number, file: Express.Multer.File, currentUserEmpresaId: number) {
+    const usuari = await this.prisma.usuari.findUnique({ where: { id } });
+
+    if (!usuari) {
+      throw new NotFoundException('Usuari no trobat');
+    }
+
+    if (usuari.empresaId !== currentUserEmpresaId) {
+      throw new ForbiddenException('No tens permís per modificar aquest usuari');
+    }
+
+    if (!file?.buffer) {
+      throw new BadRequestException("No s'ha rebut cap fitxer");
+    }
+
+    const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'usuaris',
+          public_id: `usuari_${id}`,
+          overwrite: true,
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error || !result) {
+            reject(new InternalServerErrorException('Error al pujar la foto'));
+          } else {
+            resolve(result as { secure_url: string });
+          }
+        },
+      );
+      uploadStream.end(file.buffer);
+    });
+
+    const updated = await this.prisma.usuari.update({
+      where: { id },
+      data: { fotoPerfil: uploadResult.secure_url },
+      select: USUARI_SELECT,
+    });
+
+    this.logger.log(`Foto actualizada usuari ${id}: ${uploadResult.secure_url}`);
+    return updated;
   }
 }

@@ -9,7 +9,6 @@ import {
 import { v2 as cloudinary } from 'cloudinary';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmpresaDto, UpdateEmpresaDto } from './dto/empresa.dto';
-import { Rol } from '@prisma/client';
 
 @Injectable()
 export class EmpresasService {
@@ -30,13 +29,14 @@ export class EmpresasService {
     return empresa;
   }
 
-  async findAll() {
+  async findAll(userEmpresaId: number) {
     return this.prisma.empresa.findMany({
+      where: { id: userEmpresaId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(id: number, userEmpresaId: number, userRol: Rol) {
+  async findOne(id: number, userEmpresaId: number) {
     const empresa = await this.prisma.empresa.findUnique({
       where: { id },
     });
@@ -45,10 +45,8 @@ export class EmpresasService {
       throw new NotFoundException('Empresa no trobada');
     }
 
-    if (userRol === 'ADMIN_GENERAL' && empresa.id !== userEmpresaId) {
-      throw new ForbiddenException(
-        'No tens permís per veure aquesta empresa',
-      );
+    if (empresa.id !== userEmpresaId) {
+      throw new ForbiddenException('No tens permís per veure aquesta empresa');
     }
 
     return empresa;
@@ -58,7 +56,6 @@ export class EmpresasService {
     id: number,
     updateEmpresaDto: UpdateEmpresaDto,
     userEmpresaId: number,
-    userRol: Rol,
   ) {
     const empresa = await this.prisma.empresa.findUnique({
       where: { id },
@@ -68,10 +65,8 @@ export class EmpresasService {
       throw new NotFoundException('Empresa no trobada');
     }
 
-    if (userRol === 'ADMIN_GENERAL' && empresa.id !== userEmpresaId) {
-      throw new ForbiddenException(
-        'No tens permís per modificar aquesta empresa',
-      );
+    if (empresa.id !== userEmpresaId) {
+      throw new ForbiddenException('No tens permís per modificar aquesta empresa');
     }
 
     return this.prisma.empresa.update({
@@ -80,13 +75,17 @@ export class EmpresasService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, userEmpresaId: number) {
     const empresa = await this.prisma.empresa.findUnique({
       where: { id },
     });
 
     if (!empresa) {
       throw new NotFoundException('Empresa no trobada');
+    }
+
+    if (empresa.id !== userEmpresaId) {
+      throw new ForbiddenException('No tens permís per desactivar aquesta empresa');
     }
 
     return this.prisma.empresa.update({
@@ -100,7 +99,6 @@ export class EmpresasService {
     id: number,
     file: Express.Multer.File,
     userEmpresaId: number,
-    userRol: Rol,
   ) {
     const empresa = await this.prisma.empresa.findUnique({
       where: { id },
@@ -110,10 +108,8 @@ export class EmpresasService {
       throw new NotFoundException('Empresa no trobada');
     }
 
-    if (userRol === 'ADMIN_GENERAL' && empresa.id !== userEmpresaId) {
-      throw new ForbiddenException(
-        'No tens permís per modificar aquesta empresa',
-      );
+    if (empresa.id !== userEmpresaId) {
+      throw new ForbiddenException('No tens permís per modificar aquesta empresa');
     }
 
     if (!file || !file.buffer) {
@@ -156,6 +152,42 @@ export class EmpresasService {
       `Foto actualizada empresa ${id}: ${uploadResult.secure_url}`,
     );
 
+    return updated;
+  }
+
+  async uploadBanner(
+    id: number,
+    file: Express.Multer.File,
+    userEmpresaId: number,
+  ) {
+    const empresa = await this.prisma.empresa.findUnique({ where: { id } });
+
+    if (!empresa) throw new NotFoundException('Empresa no trobada');
+    if (empresa.id !== userEmpresaId) throw new ForbiddenException('No tens permís per modificar aquesta empresa');
+    if (!file || !file.buffer) throw new BadRequestException("No s'ha rebut cap fitxer");
+
+    const uploadResult: any = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'empresas/banners',
+          public_id: `banner_empresa_${id}`,
+          overwrite: true,
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error) reject(new InternalServerErrorException('Error al pujar el banner'));
+          else resolve(result);
+        },
+      );
+      uploadStream.end(file.buffer);
+    });
+
+    const updated = await this.prisma.empresa.update({
+      where: { id },
+      data: { bannerUrl: uploadResult.secure_url },
+    });
+
+    this.logger.log(`Banner actualitzat empresa ${id}: ${uploadResult.secure_url}`);
     return updated;
   }
 }

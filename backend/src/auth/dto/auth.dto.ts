@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, Min, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Rol } from '@prisma/client';
 
@@ -8,9 +8,13 @@ export class LoginDto {
   @IsNotEmpty({ message: 'Email requerit' })
   email: string;
 
-  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña del usuario', minLength: 6 })
+  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña del usuario', minLength: 8 })
   @IsString()
   @IsNotEmpty({ message: 'Contrasenya requerida' })
+  @MinLength(8, { message: 'La contrasenya ha de tenir mínim 8 caràcters' })
+  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message: 'La contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
+  })
   password: string;
 }
 
@@ -19,9 +23,12 @@ export class SignupUsuariDto {
   @IsEmail({}, { message: 'Email invàlid' })
   email: string;
 
-  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña (mínimo 6 caracteres)', minLength: 6 })
+  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña (mínimo 8 caracteres, majúscula, número i especial)', minLength: 8 })
   @IsString()
-  @MinLength(6, { message: 'La contrasenya ha de tenir mínim 6 caràcters' })
+  @MinLength(8, { message: 'La contrasenya ha de tenir mínim 8 caràcters' })
+  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message: 'La contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
+  })
   password: string;
 }
 
@@ -41,6 +48,16 @@ export class SignupEmpresaDto {
   @IsNumber()
   @Min(1)
   capacitat?: number;
+
+  @ApiProperty({ example: 'Somos un salón de belleza premium...', required: false })
+  @IsOptional()
+  @IsString()
+  descripcio?: string;
+
+  @ApiProperty({ example: '#FF6A00', required: false, description: 'Color primario corporativo (hex)' })
+  @IsOptional()
+  @IsString()
+  colorPrimari?: string;
 }
 
 export class SignupDto {
@@ -66,6 +83,16 @@ export class LoginResponseDto {
     email: string;
     rol: Rol;
     empresaId: number;
+    empresa?: {
+      id: number;
+      nom: string;
+      ubicacio: string;
+      capacitat: number | null;
+      fotoPerfil?: string;
+      bannerUrl?: string;
+      descripcio?: string;
+      colorPrimari?: string;
+    };
   };
 }
 

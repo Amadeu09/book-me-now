@@ -13,10 +13,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private configService: ConfigService,
     private tokenBlacklistService: TokenBlacklistService,
   ) {
+    const secret = configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is not set. Cannot start application.');
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'default-secret-change-me',
+      secretOrKey: secret,
       passReqToCallback: true,
     });
   }
@@ -27,7 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 
       // Check if token is blacklisted
-      if (token && this.tokenBlacklistService.isBlacklisted(token)) {
+      if (token && (await this.tokenBlacklistService.isBlacklisted(token))) {
         throw new UnauthorizedException('Token ha sido invalidado (logout)');
       }
 

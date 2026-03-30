@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray, Min, Max } from 'class-validator';
 import { JornadaTreballadorDto } from './CreateTreballadorDto';
 
 export class UpdateTreballadorDto {
@@ -20,4 +20,11 @@ export class UpdateTreballadorDto {
     @IsInt({ each: true })
     @IsOptional()
     serveisIds?: number[];
+
+    @ApiProperty({ example: 25, required: false, description: 'Dies de vacances anuals assignats al treballador' })
+    @IsInt()
+    @Min(0)
+    @Max(365)
+    @IsOptional()
+    diesVacancesAnuals?: number;
 }

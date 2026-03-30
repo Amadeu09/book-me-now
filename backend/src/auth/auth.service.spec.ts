@@ -24,6 +24,7 @@ describe('AuthService', () => {
 
   const mockJwtService = {
     sign: jest.fn(),
+    verify: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -61,12 +62,18 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
+      const mockEmpresa = {
+        id: 1,
+        nom: 'Empresa Test',
+      };
+
       const mockUser = {
         id: 1,
         email: 'test@example.com',
         hash: await bcrypt.hash('password123', 10),
         rol: 'ADMIN_GENERAL' as const,
         empresaId: 1,
+        empresa: mockEmpresa,
       };
 
       const mockToken = 'mock.jwt.token';
@@ -83,10 +90,12 @@ describe('AuthService', () => {
           email: mockUser.email,
           rol: mockUser.rol,
           empresaId: mockUser.empresaId,
+          empresa: mockUser.empresa,
         },
       });
       expect(prismaService.usuari.findUnique).toHaveBeenCalledWith({
         where: { email: loginDto.email },
+        include: { empresa: { select: { id: true, nom: true } } },
       });
       expect(jwtService.sign).toHaveBeenCalled();
     });
@@ -143,6 +152,7 @@ describe('AuthService', () => {
         capacitat: signupDto.empresa.capacitat,
         activa: true,
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const mockUsuari = {
@@ -178,6 +188,7 @@ describe('AuthService', () => {
           email: mockUsuari.email,
           rol: mockUsuari.rol,
           empresaId: mockUsuari.empresaId,
+          empresa: { id: mockEmpresa.id, nom: mockEmpresa.nom },
         },
       });
     });

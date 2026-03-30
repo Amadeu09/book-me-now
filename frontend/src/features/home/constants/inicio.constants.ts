@@ -15,12 +15,26 @@ export const HC = {
     textLight: '#9CA3AF',
 
     border: '#E5E7EB',
+    borderInput: '#D1D5DB',
     borderSoft: '#F3F4F6',
     card: '#FFFFFF',
     screenBg: '#F8F9FB',
+    inputBg: '#F9FAFB',
 
     white: '#FFFFFF',
     overlay: 'rgba(0,0,0,0.06)',
+    modalOverlay: 'rgba(0,0,0,0.45)',
+
+    // Status badge colors (skills doc §7)
+    statusGreenBg: '#DCFCE7',
+    statusGreenText: '#16A34A',
+    statusYellowBg: '#FEF3C7',
+    statusYellowText: '#D97706',
+    statusRedBg: '#FEE2E2',
+    statusRedText: '#DC2626',
+
+    // Calendar event colors
+    eventBlueBg: '#EBF5FF',
 } as const;
 
 export const cardShadow = {

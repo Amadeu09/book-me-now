@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { UsuarisService } from './usuaris.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { Rol } from '@prisma/client';
@@ -43,7 +43,7 @@ describe('UsuarisService', () => {
         email: 'newuser@example.com',
         password: 'SecurePass123!',
         nom: 'Test User',
-        rol: 'TREBALLADOR' as Rol,
+        rol: 'EMPLEAT' as Rol,
         empresaId: 1,
       };
 
@@ -57,7 +57,6 @@ describe('UsuarisService', () => {
 
       mockPrismaService.usuari.create.mockResolvedValue(mockUser);
 
-      // Mock findUnique based on arguments key presence
       mockPrismaService.usuari.findUnique.mockImplementation((args) => {
         if (args?.where?.email) return Promise.resolve(null);
         if (args?.where?.id) return Promise.resolve({ id: 1, rol: 'ADMIN_GENERAL' });
@@ -75,7 +74,7 @@ describe('UsuarisService', () => {
         email: 'existing@example.com',
         password: 'SecurePass123!',
         nom: 'Existing User',
-        rol: 'TREBALLADOR' as Rol,
+        rol: 'EMPLEAT' as Rol,
         empresaId: 1,
       };
 
@@ -86,31 +85,29 @@ describe('UsuarisService', () => {
   });
 
   describe('findAll', () => {
-    it('debería devolver todos los usuarios para ADMIN_GENERAL de su empresa', async () => {
+    it('debería devolver usuarios de la empresa del usuario autenticado', async () => {
       const mockUsers = [
-        { id: 1, email: 'user1@example.com', rol: 'TREBALLADOR', empresaId: 1 },
-        { id: 2, email: 'user2@example.com', rol: 'TREBALLADOR', empresaId: 1 },
+        { id: 1, email: 'user1@example.com', rol: 'EMPLEAT', empresaId: 1 },
+        { id: 2, email: 'user2@example.com', rol: 'EMPLEAT', empresaId: 1 },
       ];
 
       mockPrismaService.usuari.findMany.mockResolvedValue(mockUsers);
 
-      const result = await service.findAll(1, 'ADMIN_GENERAL');
+      const result = await service.findAll(1);
 
       expect(result).toEqual(mockUsers);
-      expect(prismaService.usuari.findMany).toHaveBeenCalledWith({
-        where: { empresaId: 1 },
-        select: expect.any(Object),
-        orderBy: { createdAt: 'desc' },
-      });
+      expect(prismaService.usuari.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { empresaId: 1 } }),
+      );
     });
   });
 
   describe('findOne', () => {
-    it('debería devolver un usuario por ID', async () => {
+    it('debería devolver un usuario del mismo tenant', async () => {
       const mockUser = {
         id: 1,
         email: 'user@example.com',
-        rol: 'TREBALLADOR' as Rol,
+        rol: 'EMPLEAT' as Rol,
         empresaId: 1,
         createdAt: new Date(),
         empresa: { nom: 'Test Company', ubicacio: 'Barcelona' },
@@ -118,86 +115,80 @@ describe('UsuarisService', () => {
 
       mockPrismaService.usuari.findUnique.mockResolvedValue(mockUser);
 
-      const result = await service.findOne(1, 1, 'ADMIN_GENERAL');
+      const result = await service.findOne(1, 1);
 
       expect(result).toEqual(mockUser);
     });
 
+    it('debería lanzar ForbiddenException si el usuario es de otro tenant', async () => {
+      const mockUser = { id: 2, email: 'other@example.com', rol: 'EMPLEAT' as Rol, empresaId: 2 };
+      mockPrismaService.usuari.findUnique.mockResolvedValue(mockUser);
+
+      await expect(service.findOne(2, 1)).rejects.toThrow(ForbiddenException);
+    });
+
     it('debería lanzar NotFoundException si el usuario no existe', async () => {
       mockPrismaService.usuari.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999, 1, 'ADMIN_GENERAL')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne(999, 1)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('debería actualizar un usuario', async () => {
-      const updateDto = {
-        email: 'updated@example.com',
-      };
-
-      const existingUser = {
-        id: 1,
-        email: 'old@example.com',
-        empresaId: 1,
-      };
-
-      const updatedUser = {
-        id: 1,
-        email: updateDto.email,
-        rol: 'TREBALLADOR' as Rol,
-        empresaId: 1,
-        createdAt: new Date(),
-      };
+    it('debería actualizar un usuario del mismo tenant', async () => {
+      const updateDto = { email: 'updated@example.com' };
+      const existingUser = { id: 1, email: 'old@example.com', empresaId: 1 };
+      const updatedUser = { id: 1, email: updateDto.email, rol: 'EMPLEAT' as Rol, empresaId: 1, createdAt: new Date() };
 
       mockPrismaService.usuari.findUnique
-        .mockResolvedValueOnce(existingUser) // Primera llamada: verificar existencia
-        .mockResolvedValueOnce(null); // Segunda llamada: verificar email único
+        .mockResolvedValueOnce(existingUser)
+        .mockResolvedValueOnce(null);
 
       mockPrismaService.usuari.update.mockResolvedValue(updatedUser);
 
-      const result = await service.update(1, updateDto, 1, 'ADMIN_GENERAL');
+      const result = await service.update(1, updateDto, 1);
 
       expect(result.email).toBe(updateDto.email);
-      expect(prismaService.usuari.update).toHaveBeenCalled();
+    });
+
+    it('debería lanzar ForbiddenException si el usuario es de otro tenant', async () => {
+      const existingUser = { id: 2, email: 'other@example.com', empresaId: 2 };
+      mockPrismaService.usuari.findUnique.mockResolvedValue(existingUser);
+
+      await expect(service.update(2, {}, 1)).rejects.toThrow(ForbiddenException);
     });
 
     it('debería lanzar NotFoundException si el usuario no existe', async () => {
       mockPrismaService.usuari.findUnique.mockResolvedValue(null);
 
-      await expect(service.update(999, {}, 1, 'ADMIN_GENERAL')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.update(999, {}, 1)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
-    it('debería eliminar un usuario', async () => {
-      const mockUser = {
-        id: 1,
-        email: 'user@example.com',
-        empresaId: 1,
-      };
+    it('debería eliminar un usuario del mismo tenant', async () => {
+      const mockUser = { id: 1, email: 'user@example.com', empresaId: 1 };
 
       mockPrismaService.usuari.findUnique.mockResolvedValue(mockUser);
       mockPrismaService.usuari.delete.mockResolvedValue(mockUser);
 
-      const result = await service.remove(1, 1, 'ADMIN_GENERAL');
+      const result = await service.remove(1, 1);
 
       expect(result).toHaveProperty('message');
-      expect(prismaService.usuari.delete).toHaveBeenCalledWith({
-        where: { id: 1 },
-      });
+      expect(prismaService.usuari.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+
+    it('debería lanzar ForbiddenException si el usuario es de otro tenant', async () => {
+      const mockUser = { id: 2, email: 'other@example.com', empresaId: 2 };
+      mockPrismaService.usuari.findUnique.mockResolvedValue(mockUser);
+
+      await expect(service.remove(2, 1)).rejects.toThrow(ForbiddenException);
     });
 
     it('debería lanzar NotFoundException si el usuario no existe', async () => {
       mockPrismaService.usuari.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove(999, 1, 'ADMIN_GENERAL')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.remove(999, 1)).rejects.toThrow(NotFoundException);
     });
   });
 });

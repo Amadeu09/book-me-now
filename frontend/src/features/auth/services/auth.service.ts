@@ -10,6 +10,8 @@ export type SignupInput = {
     nom: string;
     ubicacio: string;
     capacitat?: number;
+    descripcio?: string;
+    colorPrimari?: string;
   };
   usuari: {
     email: string;
@@ -22,6 +24,16 @@ export type AuthUser = {
   email: string;
   rol: string;
   empresaId: number;
+  empresa?: {
+    id: number;
+    nom: string;
+    ubicacio: string;
+    capacitat: number | null;
+    fotoPerfil?: string;
+    bannerUrl?: string;
+    descripcio?: string;
+    colorPrimari?: string;
+  };
 };
 
 export type AuthResponse = {
