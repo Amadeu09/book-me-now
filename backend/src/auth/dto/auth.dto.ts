@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, Min, Matches } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, Min, Matches, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Rol } from '@prisma/client';
 
@@ -94,6 +94,21 @@ export class LoginResponseDto {
       colorPrimari?: string;
     };
   };
+}
+
+export class ChangePasswordDto {
+  @ApiProperty({ description: 'Contrasenya actual del usuari' })
+  @IsString()
+  @IsNotEmpty({ message: 'La contrasenya actual és obligatòria' })
+  currentPassword: string;
+
+  @ApiProperty({ description: 'Nova contrasenya (mínim 8, majúscula, número i especial)', minLength: 8 })
+  @IsString()
+  @MinLength(8, { message: 'La nova contrasenya ha de tenir mínim 8 caràcters' })
+  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message: 'La nova contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
+  })
+  newPassword: string;
 }
 
 export interface JwtPayload {

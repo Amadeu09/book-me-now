@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { palette, spacing } from "@/constants/theme";
 import { HOURS, HOUR_HEIGHT, START_HOUR } from './constants';
 import { CalendarEvent } from './types';
@@ -10,9 +10,10 @@ interface WeekGridProps {
     events: CalendarEvent[];
     currentDate: Date;
     onEventPress: (event: CalendarEvent) => void;
+    loading?: boolean;
 }
 
-export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEventPress }) => {
+export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEventPress, loading = false }) => {
 
     // Generate the 7 days of the current week
     const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -48,15 +49,8 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEvent
             // If end hour is smaller than start (crossing midnight), we already adjusted. 
             // If end matches start but is next day... logic handles it if duration > 0
 
-            let durationHours = (endHour - startHour) + (endMin - startMin) / 60;
+            const durationHours = (endHour - startHour) + (endMin - startMin) / 60;
             const height = durationHours * HOUR_HEIGHT;
-
-            // Mock layout logic for overlaps (simple hardcoded check / simple alternating)
-            // In a real app, calculate overlaps dynamically
-            let style: any = {};
-            // Using ID check from mock to keep visual consistent if it matches
-            if (event.id === '3') { style = { width: '48%', left: '0%' }; }
-            else if (event.id === '4') { style = { width: '48%', left: '52%' }; }
 
             return (
                 <EventCard
@@ -64,11 +58,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEvent
                     event={event}
                     onPress={onEventPress}
                     hourHeight={HOUR_HEIGHT}
-                    style={{
-                        ...style,
-                        top,
-                        height // explicit height pass might be needed or handled by component
-                    }}
+                    style={{ top, height }}
                 />
             );
         });
@@ -114,7 +104,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEvent
                     </View>
 
                     {/* Columns for Days */}
-                    {weekDays.map((date, index) => (
+                    {weekDays.map((date) => (
                         <View key={date.toISOString()} style={styles.dayColumn}>
                             {/* Grid Lines */}
                             {HOURS.map((_, i) => (
@@ -129,6 +119,13 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEvent
                     ))}
                 </View>
             </ScrollView>
+
+            {/* Empty state overlay — shown only when no events and not loading */}
+            {!loading && events.length === 0 && (
+                <View style={styles.emptyOverlay} pointerEvents="none">
+                    <Text style={styles.emptyText}>No hay reservas esta semana</Text>
+                </View>
+            )}
         </View>
     );
 };
@@ -207,5 +204,15 @@ const styles = StyleSheet.create({
     gridCell: {
         borderBottomWidth: 1,
         borderBottomColor: '#f1f5f9',
+    },
+    emptyOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        top: 56, // below the header row
+    },
+    emptyText: {
+        fontSize: 14,
+        color: palette.textMuted,
     },
 });

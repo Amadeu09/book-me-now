@@ -1,16 +1,25 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto, SignupDto, LoginResponseDto } from './dto/auth.dto';
+import { LoginDto, SignupDto, LoginResponseDto, ChangePasswordDto } from './dto/auth.dto';
+import { UsuarisService } from '../usuaris/usuaris.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usuarisService: UsuarisService,
+  ) { }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -55,5 +64,46 @@ export class AuthController {
     const token = req.headers.authorization?.split(' ')[1];
     this.logger.debug(`POST /api/auth/logout - User: ${userId}`);
     return this.authService.logout(userId, token);
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cambiar contraseña (self-service)', description: 'Requiere la contraseña actual para validar' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({ status: 200, description: 'Contraseña actualizada' })
+  @ApiResponse({ status: 400, description: 'Contraseña actual incorrecta o nueva inválida' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<{ message: string }> {
+    this.logger.debug(`POST /api/auth/change-password - User: ${user.userId}`);
+    return this.authService.changePassword(user.userId, dto);
+  }
+
+  @Patch('me/foto')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Subir foto de perfil propia (self-service)' })
+  @ApiResponse({ status: 200, description: 'Foto actualizada' })
+  @ApiResponse({ status: 400, description: 'Archivo no válido' })
+  @UseInterceptors(FileInterceptor('foto', { storage: memoryStorage() }))
+  async uploadMyFoto(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5, message: 'Màx 5MB' })],
+      }),
+    )
+    file: Express.Multer.File,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    this.logger.debug(`PATCH /api/auth/me/foto - User: ${user.userId}`);
+    return this.usuarisService.uploadFoto(user.userId, file, user.empresaId);
   }
 }

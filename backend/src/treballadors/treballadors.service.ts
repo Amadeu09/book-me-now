@@ -812,7 +812,7 @@ export class TreballadorsService {
     const [treballadorAbsencies, empresaAbsencies] = await Promise.all([
       treballador
         ? this.prisma.absencia.findMany({
-            where: { treballadorId: treballador.id, estat: 'APROVADA', ...yearFilter },
+            where: { treballadorId: treballador.id, ...yearFilter },
             orderBy: { inici: 'asc' },
           })
         : Promise.resolve([]),

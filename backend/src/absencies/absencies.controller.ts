@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Param, ParseIntPipe, Patch, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { AbsenciesService } from './absencies.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateAbsenciaDto, UpdateAbsenciaDto, UpdateEstatAbsenciaDto } from './dto/absencia.dto';
 
 @ApiTags('absencies')
@@ -12,6 +12,21 @@ import { CreateAbsenciaDto, UpdateAbsenciaDto, UpdateEstatAbsenciaDto } from './
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AbsenciesController {
     constructor(private readonly absenciesService: AbsenciesService) { }
+
+    @Get('pendents')
+    @Roles('ADMIN_GENERAL')
+    @ApiOperation({ summary: 'Llista paginada d\'absències pendents d\'aprovació (ADMIN_GENERAL)' })
+    @ApiQuery({ name: 'page', required: false, type: Number, description: 'Pàgina (per defecte 1)' })
+    @ApiQuery({ name: 'rows', required: false, type: Number, description: 'Files per pàgina (per defecte 4)' })
+    @ApiResponse({ status: 200, description: 'Llista paginada retornada correctament' })
+    @ApiResponse({ status: 403, description: 'No autoritzat' })
+    getPendents(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('rows', new DefaultValuePipe(4), ParseIntPipe) rows: number,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        return this.absenciesService.getPendents(user.empresaId, page, rows);
+    }
 
     @Post()
     @Roles('ADMIN_GENERAL', 'EMPLEAT')

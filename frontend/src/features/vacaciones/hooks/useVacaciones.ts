@@ -35,7 +35,11 @@ export function useVacaciones(year: number) {
     const refetch = useCallback(() => setRefreshKey(k => k + 1), []);
 
     const holidayDates = useMemo(() => expandToMap<TipusAbsenciaEmpresa>(data.empresa), [data.empresa]);
-    const absenciaDates = useMemo(() => expandToMap<TipusAbsenciaTreballador>(data.treballador), [data.treballador]);
+    // Only approved absències colour the calendar days
+    const absenciaDates = useMemo(
+        () => expandToMap<TipusAbsenciaTreballador>(data.treballador.filter(a => a.estat === 'APROVADA')),
+        [data.treballador],
+    );
 
     return { data, isLoading, error, holidayDates, absenciaDates, refetch };
 }

@@ -18,6 +18,7 @@ import type { AuthUser } from '@/features/auth/services/auth.service';
 import { updateEmpresa } from '../../services/empresas.service';
 
 const PALETAS = [
+    { label: 'Blanco',   value: '#FFFFFF' },
     { label: 'Naranja',  value: '#FF6A00' },
     { label: 'Rojo',     value: '#E53E3E' },
     { label: 'Azul',     value: '#3182CE' },
@@ -44,6 +45,8 @@ interface EmpresaFormState {
     colorPrimari: string;
 }
 
+import { useTheme } from '@/core/theme/ThemeProvider';
+
 export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
     visible,
     initialData,
@@ -52,6 +55,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const queryClient = useQueryClient();
+    const theme = useTheme();
 
     const [form, setForm] = useState<EmpresaFormState>({
         nom: '',
@@ -106,6 +110,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
         try {
             setLoading(true);
             await updateEmpresa(initialData.id, payload);
+            theme.setPrimaryColor(payload.colorPrimari);
             queryClient.invalidateQueries({ queryKey: ['empresa', initialData.id] });
             onClose();
         } catch (err: any) {
@@ -212,7 +217,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                                         activeOpacity={0.8}
                                     >
                                         {form.colorPrimari === p.value && (
-                                            <Ionicons name="checkmark" size={16} color="#fff" />
+                                            <Ionicons name="checkmark" size={16} color={p.value === '#FFFFFF' ? '#000' : '#fff'} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -335,7 +340,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 2,
-        borderColor: 'transparent',
+        borderColor: '#e2e8f0',
     },
     swatchSelected: {
         borderColor: HC.textPrimary,

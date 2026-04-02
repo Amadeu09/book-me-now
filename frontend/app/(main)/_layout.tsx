@@ -3,13 +3,15 @@ import React from 'react';
 import { Platform, View, useWindowDimensions } from 'react-native';
 import Navbar from "@/ui/components/navBar";
 import { HC } from "@/features/home/constants/inicio.constants";
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 export default function MainLayout() {
     const { width } = useWindowDimensions();
     const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
+    const theme = useTheme();
 
     return (
-        <View style={{ flex: 1, flexDirection: isDesktopWeb ? 'row' : 'column', backgroundColor: HC.white }}>
+        <View style={{ flex: 1, flexDirection: isDesktopWeb ? 'row' : 'column', backgroundColor: theme.background }}>
             {isDesktopWeb && (
                 <Navbar variant="desktop" />
             )}

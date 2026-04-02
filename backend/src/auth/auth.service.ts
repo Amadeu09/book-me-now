@@ -2,11 +2,12 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginDto, SignupDto, LoginResponseDto, JwtPayload } from './dto/auth.dto';
+import { LoginDto, SignupDto, LoginResponseDto, JwtPayload, ChangePasswordDto } from './dto/auth.dto';
 import { TokenBlacklistService } from './token-blacklist.service';
 import * as bcrypt from 'bcrypt';
 
@@ -174,6 +175,23 @@ export class AuthService {
     };
   }
 
+
+  /**
+   * Self-service password change — verifies current password before updating
+   */
+  async changePassword(userId: number, dto: ChangePasswordDto): Promise<{ message: string }> {
+    const user = await this.prisma.usuari.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('Usuari no trobat');
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.hash);
+    if (!valid) throw new BadRequestException('La contrasenya actual és incorrecta');
+
+    const hash = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.usuari.update({ where: { id: userId }, data: { hash } });
+
+    this.logger.log(`Password changed for user: ${userId}`);
+    return { message: 'Contrasenya actualitzada correctament' };
+  }
 
   /**
    * Validate user by ID (used by JWT strategy)

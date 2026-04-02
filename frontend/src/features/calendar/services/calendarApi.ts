@@ -25,6 +25,16 @@ export const fetchWeekBookings = async (startDate: string, endDate: string, treb
   return response.data;
 };
 
+export const fetchWorkerBookings = async (treballadorId: string, startDate: string, endDate: string) => {
+  const response = await api.get(`/reserves/treballador/${treballadorId}`, {
+    params: {
+      inici: startDate,
+      fi: endDate,
+    },
+  });
+  return response.data;
+};
+
 export const fetchGetTreballadors = async () => {
   const response = await api.get(`/treballadors`);
   return response.data;

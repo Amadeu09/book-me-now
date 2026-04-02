@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { MONTH_NAMES, DAY_LABELS, TREBALLADOR_COLORS, EMPRESA_COLORS } from '../constants/vacaciones.constants';
 import type { TipusAbsenciaTreballador, TipusAbsenciaEmpresa } from '../types/vacaciones.types';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const BADGE_SIZE = 30;
 const CELL_HEIGHT = 38;
@@ -32,6 +33,7 @@ function getDayInfo(
     year: number, month: number, day: number,
     holidayDates: Map<string, TipusAbsenciaEmpresa>,
     absenciaDates: Map<string, TipusAbsenciaTreballador>,
+    themePrimary: string
 ): DayInfo {
     const today = new Date();
     if (today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === day) {
@@ -41,7 +43,7 @@ function getDayInfo(
     const empresaTipus = holidayDates.get(str);
     if (empresaTipus) return { kind: 'empresa', color: EMPRESA_COLORS[empresaTipus] ?? '#F97316' };
     const treballadorTipus = absenciaDates.get(str);
-    if (treballadorTipus) return { kind: 'treballador', color: TREBALLADOR_COLORS[treballadorTipus] ?? HC.primary };
+    if (treballadorTipus) return { kind: 'treballador', color: TREBALLADOR_COLORS[treballadorTipus] ?? themePrimary };
     return null;
 }
 
@@ -56,12 +58,13 @@ type Props = {
 };
 
 export function MonthMini({ month, year, holidayDates, absenciaDates, selStart, selEnd, onDayPress }: Props) {
+    const theme = useTheme();
     const cells = useMemo(() => buildCells(year, month), [year, month]);
     const rows: (number | null)[][] = [];
     for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight }]}>
             <Text style={styles.monthName}>{MONTH_NAMES[month - 1]}</Text>
 
             {/* Day-of-week header */}
@@ -89,22 +92,22 @@ export function MonthMini({ month, year, holidayDates, absenciaDates, selStart, 
                         const isRangeMid = selStart !== null && selEnd !== null
                             && dateStr > selStart && dateStr < selEnd;
                         const isSelected = isRangeStart || isRangeEnd;
-                        const info = (isSelected || isRangeMid) ? null : getDayInfo(year, month, day, holidayDates, absenciaDates);
+                        const info = (isSelected || isRangeMid) ? null : getDayInfo(year, month, day, holidayDates, absenciaDates, theme.primary);
 
                         // Badge background color
                         let badgeColor: string | null = null;
-                        let textColor = HC.textSecondary;
+                        let textColor: string = HC.textSecondary;
                         let badgeBorder: object | null = null;
 
                         if (isSelected) {
-                            badgeColor = HC.primary;
-                            textColor = HC.white;
+                            badgeColor = theme.primary;
+                            textColor = theme.textOnPrimary;
                         } else if (info?.kind === 'treballador' || info?.kind === 'empresa') {
                             badgeColor = info.color;
                             textColor = HC.white;
                         } else if (info?.kind === 'today') {
-                            badgeBorder = { borderWidth: 2, borderColor: HC.primary };
-                            textColor = HC.primary;
+                            badgeBorder = { borderWidth: 2, borderColor: theme.primary };
+                            textColor = theme.primary;
                         }
 
                         return (
@@ -113,7 +116,7 @@ export function MonthMini({ month, year, holidayDates, absenciaDates, selStart, 
                                 style={[
                                     styles.cell,
                                     isWeekend && !isRangeMid && !isSelected && styles.weekendCell,
-                                    isRangeMid && styles.rangeMidCell,
+                                    isRangeMid && { backgroundColor: theme.primaryLight },
                                 ]}
                                 onPress={() => onDayPress(dateStr)}
                                 activeOpacity={0.7}
@@ -125,7 +128,7 @@ export function MonthMini({ month, year, holidayDates, absenciaDates, selStart, 
                                 ]}>
                                     <Text style={[styles.dayNum, { color: textColor },
                                         (isSelected || info?.kind === 'treballador' || info?.kind === 'empresa') && styles.dayNumBold,
-                                        isRangeMid && styles.rangeMidText,
+                                        isRangeMid && { color: theme.primary, fontWeight: '600' },
                                     ]}>
                                         {day}
                                     </Text>

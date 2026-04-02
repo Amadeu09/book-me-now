@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
-import { fetchGetTreballadors, fetchWeekBookings } from '../services/calendarApi';
+import { fetchGetTreballadors, fetchWeekBookings, fetchWorkerBookings } from '../services/calendarApi';
 import type { ApiReserva, ApiTreballador } from '../types';
 import type { CalendarEvent } from '../components/types';
 import { HC } from '@/features/home/constants/inicio.constants';
 
-export const useBookings = (startDate: Date, endDate: Date, isAdmin: boolean, treballadorId?: string, serveiId?: string) => {
+export const useBookings = (startDate: Date, endDate: Date, userRole: string | undefined, loggedInUserId: string | undefined, treballadorId?: string, serveiId?: string) => {
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -18,8 +18,8 @@ export const useBookings = (startDate: Date, endDate: Date, isAdmin: boolean, tr
 
     useEffect(() => {
         const loadBookings = async () => {
-            // Only fetch if it's admin (for now, based on your instructions)
-            if (!isAdmin) {
+            // Only fetch if it's admin or empleat
+            if (userRole !== 'ADMIN_GENERAL' && userRole !== 'EMPLEAT') {
                 setEvents([]);
                 return;
             }
@@ -31,7 +31,13 @@ export const useBookings = (startDate: Date, endDate: Date, isAdmin: boolean, tr
                 const startStr = format(startDate, 'yyyy-MM-dd');
                 const endStr = format(endDate, 'yyyy-MM-dd');
 
-                const data: ApiReserva[] = await fetchWeekBookings(startStr, endStr, treballadorId);
+                let data: ApiReserva[] = [];
+                
+                if (userRole === 'ADMIN_GENERAL') {
+                    data = await fetchWeekBookings(startStr, endStr, treballadorId);
+                } else if (userRole === 'EMPLEAT' && loggedInUserId) {
+                    data = await fetchWorkerBookings(loggedInUserId, startStr, endStr);
+                }
                 
                 // Filter by service if provided
                 const filteredData = serveiId 
@@ -84,7 +90,7 @@ export const useBookings = (startDate: Date, endDate: Date, isAdmin: boolean, tr
         };
 
         loadBookings();
-    }, [startDate, endDate, isAdmin, treballadorId, serveiId, refreshTrigger]);
+    }, [startDate, endDate, userRole, loggedInUserId, treballadorId, serveiId, refreshTrigger]);
 
     return { events, loading, error, refetch };
 };

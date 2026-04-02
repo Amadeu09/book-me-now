@@ -3,6 +3,8 @@ export type DayStatus = 'approved' | 'holiday' | 'today' | null;
 export type TipusAbsenciaTreballador = 'VACANCES' | 'MALALTIA' | 'PERMIS' | 'ALTRE';
 export type TipusAbsenciaEmpresa = 'FESTA_LOCAL' | 'FESTA_ESTATAL' | 'PONT' | 'ALTRE';
 
+export type EstatAbsencia = 'PENDENT' | 'APROVADA' | 'REBUTJADA';
+
 export interface AbsenciaTreballador {
     id: number;
     treballadorId: number;
@@ -10,6 +12,7 @@ export interface AbsenciaTreballador {
     fi: string;
     motiu?: string;
     tipus: TipusAbsenciaTreballador;
+    estat: EstatAbsencia;
     createdAt: string;
 }
 

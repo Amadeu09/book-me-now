@@ -219,7 +219,7 @@ export class ReservesService {
 
 
 
-  async findAllByTreballador(idTreballador: number, currentUserEmpresaId: number, currentUserId: number) {
+  async findAllByTreballador(idTreballador: number, currentUserEmpresaId: number, currentUserId: number, inici?: string, fi?: string) {
     const user = await this.prisma.usuari.findUnique({
       where: { id: currentUserId },
     });
@@ -228,9 +228,24 @@ export class ReservesService {
       throw new NotFoundException('Usuari no trobat');
     }
 
-    const treballador = await this.prisma.treballador.findUnique({
-      where: { id: idTreballador },
-    });
+    let treballador;
+    if (user.rol === 'EMPLEAT') {
+      // Find the worker profile for this employee user
+      treballador = await this.prisma.treballador.findFirst({
+        where: { idUsuari: currentUserId },
+      });
+    } else {
+      // Admins can search by worker id OR user id (since sometimes they pass the user ID from the URL)
+      treballador = await this.prisma.treballador.findFirst({
+        where: {
+          OR: [
+            { id: idTreballador },
+            { idUsuari: idTreballador }
+          ],
+          empresaId: currentUserEmpresaId
+        },
+      });
+    }
 
     if (!treballador) {
       throw new NotFoundException('Treballador no trobat');
@@ -240,8 +255,27 @@ export class ReservesService {
       throw new ForbiddenException('No pots veure les reserves d\'un treballador d\'una altra empresa');
     }
 
+    let dateFilter = {};
+    if (inici && fi) {
+      const dataInici = new Date(inici);
+      dataInici.setHours(0, 0, 0, 0);
+
+      const dataFi = new Date(fi);
+      dataFi.setHours(23, 59, 59, 999);
+
+      dateFilter = {
+        dataHora: {
+          gte: dataInici,
+          lte: dataFi,
+        }
+      };
+    }
+
     const reserves = await this.prisma.reserva.findMany({
-      where: { treballadorId: idTreballador },
+      where: { 
+        treballadorId: treballador.id,
+        ...dateFilter
+      },
       include: {
         servei: true,
         treballador: true,

@@ -1,16 +1,30 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
-import type { AbsenciaTreballador, TipusAbsenciaTreballador } from '../types/vacaciones.types';
+import type { AbsenciaTreballador, TipusAbsenciaTreballador, EstatAbsencia } from '../types/vacaciones.types';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
-const TIPUS_CONFIG: Record<TipusAbsenciaTreballador, {
-    icon: string; label: string; bg: string; text: string;
-}> = {
-    VACANCES: { icon: 'airplane-outline',       label: 'VACANCES',  bg: HC.statusGreenBg,   text: HC.statusGreenText },
-    MALALTIA: { icon: 'medkit-outline',          label: 'MALALTIA',  bg: HC.statusYellowBg,  text: HC.statusYellowText },
-    PERMIS:   { icon: 'document-text-outline',   label: 'PERMÍS',    bg: HC.primaryLight,    text: HC.primary },
-    ALTRE:    { icon: 'ellipsis-horizontal-outline', label: 'ALTRE', bg: HC.borderSoft,       text: HC.textMuted },
+const PAGE_SIZE = 5;
+
+const TIPUS_ICON: Record<TipusAbsenciaTreballador, string> = {
+    VACANCES: 'airplane-outline',
+    MALALTIA: 'medkit-outline',
+    PERMIS: 'document-text-outline',
+    ALTRE: 'ellipsis-horizontal-outline',
+};
+
+const TIPUS_LABEL: Record<TipusAbsenciaTreballador, string> = {
+    VACANCES: 'Vacances',
+    MALALTIA: 'Malaltia',
+    PERMIS: 'Permís',
+    ALTRE: 'Altre',
+};
+
+const ESTAT_CONFIG: Record<EstatAbsencia, { label: string; bg: string; text: string }> = {
+    APROVADA: { label: 'Acceptada', bg: HC.statusGreenBg, text: HC.statusGreenText },
+    REBUTJADA: { label: 'Rebutjada', bg: HC.statusRedBg, text: HC.statusRedText },
+    PENDENT: { label: 'Pendent', bg: HC.statusYellowBg, text: HC.statusYellowText },
 };
 
 function formatRange(inici: string, fi: string): string {
@@ -24,31 +38,62 @@ function formatRange(inici: string, fi: string): string {
 type Props = { items: AbsenciaTreballador[] };
 
 export function SolicitudesRecientes({ items }: Props) {
-    const recent = [...items]
-        .sort((a, b) => new Date(b.inici).getTime() - new Date(a.inici).getTime())
-        .slice(0, 5);
+    const [page, setPage] = useState(0);
+    const theme = useTheme();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcoming = [...items]
+        .filter(a => new Date(a.inici) >= today)
+        .sort((a, b) => new Date(a.inici).getTime() - new Date(b.inici).getTime());
+
+    const totalPages = Math.max(1, Math.ceil(upcoming.length / PAGE_SIZE));
+    const safePage = Math.min(page, totalPages - 1);
+    const pageItems = upcoming.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight }]}>
             <View style={styles.headerRow}>
-                <Text style={styles.sectionTitle}>Absències Recents</Text>
+                <Text style={styles.sectionTitle}>Pròximes Absències</Text>
+                {upcoming.length > PAGE_SIZE && (
+                    <View style={styles.pagination}>
+                        <TouchableOpacity
+                            onPress={() => setPage(p => Math.max(0, p - 1))}
+                            disabled={safePage === 0}
+                            style={[styles.arrowBtn, safePage === 0 && styles.arrowBtnDisabled]}
+                        >
+                            <Ionicons name="chevron-back" size={16} color={safePage === 0 ? HC.textMuted : HC.textPrimary} />
+                        </TouchableOpacity>
+                        <Text style={styles.pageIndicator}>{safePage + 1}/{totalPages}</Text>
+                        <TouchableOpacity
+                            onPress={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={safePage === totalPages - 1}
+                            style={[styles.arrowBtn, safePage === totalPages - 1 && styles.arrowBtnDisabled]}
+                        >
+                            <Ionicons name="chevron-forward" size={16} color={safePage === totalPages - 1 ? HC.textMuted : HC.textPrimary} />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
-            {recent.length === 0 ? (
-                <Text style={styles.empty}>No hi ha absències registrades.</Text>
+            {upcoming.length === 0 ? (
+                <Text style={styles.empty}>No hi ha absències pròximes.</Text>
             ) : (
-                recent.map((r, i) => {
-                    const cfg = TIPUS_CONFIG[r.tipus];
+                pageItems.map((r, i) => {
+                    const icon = TIPUS_ICON[r.tipus];
+                    const tipusLabel = TIPUS_LABEL[r.tipus];
+                    const estatCfg = ESTAT_CONFIG[r.estat] ?? ESTAT_CONFIG.PENDENT;
                     return (
-                        <View key={r.id} style={[styles.item, i < recent.length - 1 && styles.itemBorder]}>
+                        <View key={r.id} style={[styles.item, i < pageItems.length - 1 && styles.itemBorder]}>
                             <View style={styles.iconBox}>
-                                <Ionicons name={cfg.icon as any} size={18} color={HC.textMuted} />
+                                <Ionicons name={icon as any} size={18} color={HC.textMuted} />
                             </View>
                             <View style={styles.itemBody}>
-                                <Text style={styles.itemTitle}>{r.motiu || cfg.label}</Text>
+                                <Text style={styles.itemTitle}>{r.motiu || tipusLabel}</Text>
                                 <Text style={styles.itemDates}>{formatRange(r.inici, r.fi)}</Text>
                             </View>
-                            <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
-                                <Text style={[styles.badgeText, { color: cfg.text }]}>{cfg.label}</Text>
+                            <View style={[styles.badge, { backgroundColor: estatCfg.bg }]}>
+                                <Text style={[styles.badgeText, { color: estatCfg.text }]}>{estatCfg.label}</Text>
                             </View>
                         </View>
                     );
@@ -66,12 +111,38 @@ const styles = StyleSheet.create({
         ...cardShadow,
     },
     headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: 14,
     },
     sectionTitle: {
         fontSize: 15,
         fontWeight: '700',
         color: HC.textPrimary,
+    },
+    pagination: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    arrowBtn: {
+        width: 28,
+        height: 28,
+        borderRadius: 7,
+        backgroundColor: HC.inputBg,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    arrowBtnDisabled: {
+        opacity: 0.4,
+    },
+    pageIndicator: {
+        fontSize: 11,
+        color: HC.textMuted,
+        fontWeight: '600',
+        minWidth: 28,
+        textAlign: 'center',
     },
     empty: {
         fontSize: 13,

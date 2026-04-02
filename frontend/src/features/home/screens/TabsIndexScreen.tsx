@@ -1,32 +1,40 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { palette, spacing } from "@/constants/theme";
+import type { AuthUser } from '@/features/auth/services/auth.service';
 
 // Components
 import { InicioHeader } from '../components/InicioHeader';
 import { LocalDataCard } from '../components/LocalDataCard';
 import { ScheduleCard } from '../components/ScheduleCard';
-import { StatsCard } from '../components/StatsCard';
+import { AbsenciesPendentsCard } from '../components/AbsenciesPendentsCard';
 
 export default function Home() {
     const { width } = useWindowDimensions();
-    const isDesktop = width >= 768; // Based on the standard rules
+    const isDesktop = width >= 768;
+
+    const [user, setUser] = useState<AuthUser | null>(null);
+
+    useEffect(() => {
+        AsyncStorage.getItem('user').then(u => setUser(u ? JSON.parse(u) : null));
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
             <InicioHeader />
-            
-            <ScrollView 
+
+            <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={[styles.mainWrapper, isDesktop && styles.desktopWrapper]}>
                     <LocalDataCard />
-                    
+
                     <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
                         <ScheduleCard />
-                        <StatsCard />
+                        {user?.rol === 'ADMIN_GENERAL' && <AbsenciesPendentsCard />}
                     </View>
                 </View>
             </ScrollView>
@@ -35,15 +43,15 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: palette.background 
+    container: {
+        flex: 1,
+        backgroundColor: palette.background
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        padding: spacing.xl, // Default spacing
+        padding: spacing.xl,
         paddingBottom: 40,
     },
     mainWrapper: {

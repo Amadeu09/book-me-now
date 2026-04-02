@@ -3,22 +3,25 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, spacing, typography } from '@/constants/theme';
 import { HC } from '@/features/home/constants/inicio.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 export function VacacionesHeader() {
+    const theme = useTheme();
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.headerBg }]}>
             <View style={styles.leftBlock}>
-                <Text style={styles.title}>Gestión de Vacaciones</Text>
+                <Text style={[styles.title, { color: theme.headerText }]}>Gestión de Vacaciones</Text>
                 <View style={styles.subtitleRow}>
-                    <View style={styles.subtitleDot} />
-                    <Text style={styles.subtitle}>
+                    <View style={[styles.subtitleDot, { backgroundColor: theme.primary }]} />
+                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>
                         Planifica tus descansos y consulta tu saldo de días para el año 2025.
                     </Text>
                 </View>
             </View>
-            <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.85}>
-                <Ionicons name="add" size={18} color={HC.white} />
-                <Text style={styles.btnPrimaryText}>Solicitar Días</Text>
+            <TouchableOpacity style={[styles.btnPrimary, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
+                <Ionicons name="add" size={18} color={theme.textOnPrimary} />
+                <Text style={[styles.btnPrimaryText, { color: theme.textOnPrimary }]}>Solicitar Días</Text>
             </TouchableOpacity>
         </View>
     );

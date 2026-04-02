@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { palette, shadow } from "@/constants/theme";
 import { Feather } from '@expo/vector-icons';
@@ -7,7 +7,6 @@ import { CalendarHeader } from "@/features/calendar/components/CalendarHeader";
 import { CalendarControls } from "@/features/calendar/components/CalendarControls";
 import { CreateBookingModal } from "@/features/calendar/components/CreateBookingModal";
 import { WeekGrid } from "@/features/calendar/components/WeekGrid";
-import { MOCK_EVENTS } from "@/features/calendar/components/constants";
 import { ViewMode } from "@/features/calendar/components/types";
 import { getUser } from '@/utils/session';
 import { useBookings } from '@/features/calendar/hooks/useBookings';
@@ -18,6 +17,8 @@ import { addWeeks, subWeeks, format, startOfWeek, endOfWeek } from 'date-fns';
 
 export default function Bookings() {
     const [isAdmin, setIsAdmin] = useState(false);
+    const [userRole, setUserRole] = useState<string | undefined>(undefined);
+    const [userId, setUserId] = useState<string | undefined>(undefined);
     const [workers, setWorkers] = useState<ApiTreballador[]>([]);
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | undefined>(undefined);
     const [services, setServices] = useState<ApiServei[]>([]);
@@ -25,9 +26,12 @@ export default function Bookings() {
 
     useEffect(() => {
         getUser().then(user => {
+            setUserRole(user?.rol);
+            setUserId(user?.id?.toString());
+
             if (user?.rol === 'ADMIN_GENERAL') {
                 setIsAdmin(true);
-                
+
                 Promise.all([
                     fetchGetTreballadors().catch(err => {
                         console.error("Error fetching workers in Screen:", err);
@@ -42,12 +46,19 @@ export default function Bookings() {
                     if (workersData.length > 0) {
                         setSelectedWorkerId(workersData[0].id.toString());
                     }
-                    
+
                     setServices(servicesData);
                     // Optionally set default service
                     // if (servicesData.length > 0) {
                     //     setSelectedServiceId(servicesData[0].id.toString());
                     // }
+                });
+            } else if (user?.rol === 'EMPLEAT') {
+                fetchGetServeis().catch(err => {
+                    console.error("Error fetching services in Screen:", err);
+                    return [];
+                }).then(servicesData => {
+                    setServices(servicesData);
                 });
             }
         });
@@ -57,8 +68,10 @@ export default function Bookings() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+    // Memoised so Date references only change when currentDate changes,
+    // preventing the useBookings effect from firing on unrelated re-renders.
+    const start = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
+    const end = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
     const dateRange = `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
 
     const handlePrev = () => setCurrentDate(subWeeks(currentDate, 1));
@@ -66,7 +79,7 @@ export default function Bookings() {
     const handleQuickCreate = () => setIsCreateModalVisible(true);
 
     // Fetch API data for the current week
-    const { events, loading, error, refetch } = useBookings(start, end, isAdmin, selectedWorkerId, selectedServiceId);
+    const { events, loading, error, refetch } = useBookings(start, end, userRole, userId, selectedWorkerId, selectedServiceId);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -86,9 +99,10 @@ export default function Bookings() {
                 services={services}
                 selectedServiceId={selectedServiceId}
                 onServiceSelect={(id) => setSelectedServiceId(id || undefined)}
+                showWorkerFilter={isAdmin}
             />
 
-            <CreateBookingModal 
+            <CreateBookingModal
                 visible={isCreateModalVisible}
                 onClose={() => setIsCreateModalVisible(false)}
                 onSuccess={() => refetch()}
@@ -99,12 +113,13 @@ export default function Bookings() {
             <View style={styles.content}>
                 {loading ? (
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                         <Feather name="loader" size={24} color={palette.accent} />
+                        <Feather name="loader" size={24} color={palette.accent} />
                     </View>
                 ) : (
                     <WeekGrid
-                        events={events.length > 0 ? events : MOCK_EVENTS} // Fallback to MOCK_EVENTS for UI if empty
+                        events={events}
                         currentDate={currentDate}
+                        loading={loading}
                         onEventPress={(event) => console.log('Event pressed:', event.title)}
                     />
                 )}

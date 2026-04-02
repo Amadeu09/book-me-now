@@ -14,6 +14,7 @@ const BANNER_HEIGHT = 200;
 const AVATAR_SIZE = 100;
 
 const PALETAS = [
+    { label: 'Blanco',   value: '#FFFFFF' },
     { label: 'Naranja',  value: '#FF6A00' },
     { label: 'Rojo',     value: '#E53E3E' },
     { label: 'Azul',     value: '#3182CE' },

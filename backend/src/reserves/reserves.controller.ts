@@ -84,11 +84,15 @@ export class ReservesController {
   @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Trabajador no encontrado' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  @ApiQuery({ name: 'inici', required: false, type: String, description: 'Fecha de inicio (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'fi', required: false, type: String, description: 'Fecha de fin (YYYY-MM-DD)' })
   findAllByTreballador(
     @Param('id', ParseIntPipe) id: number,
+    @Query('inici') inici: string,
+    @Query('fi') fi: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return this.reservesService.findAllByTreballador(id, user.empresaId, user.userId);
+    return this.reservesService.findAllByTreballador(id, user.empresaId, user.userId, inici, fi);
   }
 
   @Get('setmana')

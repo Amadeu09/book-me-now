@@ -8,6 +8,41 @@ import { CurrentUserData } from '../common/decorators/current-user.decorator';
 export class AbsenciesService {
     constructor(private prisma: PrismaService) { }
 
+    async getPendents(empresaId: number, page: number, rows: number) {
+        const skip = (page - 1) * rows;
+        const where = {
+            estat: EstatAbsencia.PENDENT,
+            treballador: { empresaId },
+        };
+
+        const [data, total] = await Promise.all([
+            this.prisma.absencia.findMany({
+                where,
+                include: {
+                    treballador: {
+                        select: {
+                            id: true,
+                            nom: true,
+                            Usuari: { select: { fotoPerfil: true } },
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'asc' },
+                skip,
+                take: rows,
+            }),
+            this.prisma.absencia.count({ where }),
+        ]);
+
+        return {
+            data,
+            total,
+            page,
+            rows,
+            totalPages: Math.ceil(total / rows),
+        };
+    }
+
     async create(dto: CreateAbsenciaDto, user: CurrentUserData) {
         const isAdmin = user.rol === 'ADMIN_GENERAL';
 

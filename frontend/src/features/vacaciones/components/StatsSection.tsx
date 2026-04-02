@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { AbsenciaTreballador, AbsenciaEmpresa } from '../types/vacaciones.types';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 /* ── Helpers ──────────────────────────────── */
 function countDays(inici: string, fi: string): number {
@@ -32,9 +33,11 @@ function daysUntil(inici: string): string {
 
 /* ── Sub-cards ────────────────────────────── */
 function BalanceCard({ vacancesUsed, diesVacancesAnuals, missatgeDies }: { vacancesUsed: number; diesVacancesAnuals: number; missatgeDies: string | null }) {
+    const theme = useTheme();
+
     if (missatgeDies) {
         return (
-            <View style={[styles.card, styles.balanceCard, styles.balanceCardEmpty]}>
+            <View style={[styles.card, styles.balanceCard, styles.balanceCardEmpty, { backgroundColor: theme.primaryLight }]}>
                 <Ionicons name="calendar-clear-outline" size={32} color={HC.textMuted} style={styles.emptyIcon} />
                 <Text style={styles.emptyText}>{missatgeDies}</Text>
             </View>
@@ -45,14 +48,14 @@ function BalanceCard({ vacancesUsed, diesVacancesAnuals, missatgeDies }: { vacan
     const disponibles = Math.max(0, diesVacancesAnuals - vacancesUsed);
 
     return (
-        <View style={[styles.card, styles.balanceCard]}>
+        <View style={[styles.card, styles.balanceCard, { backgroundColor: theme.primaryLight }]}>
             <Text style={styles.cardLabel}>VACANCES USADES</Text>
             <View style={styles.balanceRow}>
-                <Text style={styles.balanceBig}>{vacancesUsed}</Text>
+                <Text style={[styles.balanceBig, { color: theme.primary }]}>{vacancesUsed}</Text>
                 <Text style={styles.balanceFraction}> / {diesVacancesAnuals} dies</Text>
             </View>
             <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: pct + '%' as any }]} />
+                <View style={[styles.progressFill, { backgroundColor: theme.primary, width: pct + '%' as any }]} />
             </View>
             <View style={styles.balanceFooter}>
                 <Text style={styles.footerLabel}>{Math.round(pct)}% CONSUMIT</Text>
@@ -63,10 +66,11 @@ function BalanceCard({ vacancesUsed, diesVacancesAnuals, missatgeDies }: { vacan
 }
 
 function AccumulatedCard({ vacancesUsed }: { vacancesUsed: number }) {
+    const theme = useTheme();
     return (
-        <View style={[styles.card, styles.miniCard]}>
+        <View style={[styles.card, styles.miniCard, { backgroundColor: theme.primaryLight }]}>
             <View style={styles.miniRow}>
-                <Ionicons name="airplane-outline" size={18} color={HC.primary} />
+                <Ionicons name="airplane-outline" size={18} color={theme.primary} />
                 <View style={styles.miniText}>
                     <Text style={styles.cardLabel}>DIES ACUMULATS</Text>
                     <Text style={styles.miniValue}>{vacancesUsed} dies</Text>
@@ -77,8 +81,9 @@ function AccumulatedCard({ vacancesUsed }: { vacancesUsed: number }) {
 }
 
 function HolidayCountCard({ count }: { count: number }) {
+    const theme = useTheme();
     return (
-        <View style={[styles.card, styles.miniCard]}>
+        <View style={[styles.card, styles.miniCard, { backgroundColor: theme.primaryLight }]}>
             <View style={styles.miniRow}>
                 <Ionicons name="calendar-outline" size={18} color={HC.textMuted} />
                 <View style={styles.miniText}>
@@ -91,22 +96,23 @@ function HolidayCountCard({ count }: { count: number }) {
 }
 
 function NextHolidayCard({ next }: { next: AbsenciaEmpresa | null }) {
+    const theme = useTheme();
     return (
-        <View style={[styles.card, styles.darkCard]}>
-            <View style={styles.holidayBadge}>
-                <Text style={styles.holidayBadgeText}>PRÒXIM FESTIU</Text>
+        <View style={[styles.card, styles.darkCard, { backgroundColor: theme.primary }]}>
+            <View style={[styles.holidayBadge, { backgroundColor: theme.textOnPrimary + '22' }]}>
+                <Text style={[styles.holidayBadgeText, { color: theme.textOnPrimary }]}>PRÒXIM FESTIU</Text>
             </View>
             {next ? (
                 <>
-                    <Text style={styles.holidayTitle} numberOfLines={2}>{next.titol}</Text>
-                    <Text style={styles.holidayDate}>{formatShortDate(next.inici)}</Text>
+                    <Text style={[styles.holidayTitle, { color: theme.textOnPrimary }]} numberOfLines={2}>{next.titol}</Text>
+                    <Text style={[styles.holidayDate, { color: theme.textOnPrimary + 'cc' }]}>{formatShortDate(next.inici)}</Text>
                     <View style={styles.holidayTag}>
-                        <Ionicons name="time-outline" size={12} color={HC.primary} />
-                        <Text style={styles.holidayTagText}>{daysUntil(next.inici)}</Text>
+                        <Ionicons name="time-outline" size={12} color={theme.textOnPrimary} />
+                        <Text style={[styles.holidayTagText, { color: theme.textOnPrimary }]}>{daysUntil(next.inici)}</Text>
                     </View>
                 </>
             ) : (
-                <Text style={styles.holidayDate}>Sense festius propers</Text>
+                <Text style={[styles.holidayDate, { color: theme.textOnPrimary + 'cc' }]}>Sense festius propers</Text>
             )}
         </View>
     );
@@ -126,7 +132,7 @@ export function StatsSection({ isDesktop, treballador, empresa, diesVacancesAnua
     today.setHours(0, 0, 0, 0);
 
     const vacancesUsed = treballador
-        .filter(a => a.tipus === 'VACANCES')
+        .filter(a => a.tipus === 'VACANCES' && a.estat === 'APROVADA')
         .reduce((sum, a) => sum + countDays(a.inici, a.fi), 0);
 
     const upcomingCount = empresa.filter(a => new Date(a.fi) >= today).length;
@@ -155,7 +161,7 @@ export function StatsSection({ isDesktop, treballador, empresa, diesVacancesAnua
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.mobileScroll}
         >
-            <BalanceCard vacancesUsed={vacancesUsed} />
+            <BalanceCard vacancesUsed={vacancesUsed} diesVacancesAnuals={diesVacancesAnuals} missatgeDies={missatgeDies} />
             <AccumulatedCard vacancesUsed={vacancesUsed} />
             <HolidayCountCard count={upcomingCount} />
             <NextHolidayCard next={next} />

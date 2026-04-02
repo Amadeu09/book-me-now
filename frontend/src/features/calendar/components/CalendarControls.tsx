@@ -14,6 +14,7 @@ interface CalendarControlsProps {
     services?: ApiServei[];
     selectedServiceId?: string;
     onServiceSelect?: (serviceId: string | null) => void;
+    showWorkerFilter?: boolean;
 }
 
 const FilterButton = ({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress?: () => void }) => (
@@ -33,7 +34,8 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
     onWorkerSelect,
     services = [],
     selectedServiceId,
-    onServiceSelect
+    onServiceSelect,
+    showWorkerFilter = true
 }) => {
     const [isWorkerMenuOpen, setIsWorkerMenuOpen] = useState(false);
     const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false);
@@ -61,62 +63,64 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
     return (
         <View style={styles.container}>
             <View style={styles.filters}>
-                <View style={{ zIndex: 100 }}>
-                    <FilterButton 
-                        icon="people-outline" 
-                        label={workerLabel} 
-                        onPress={() => {
-                            setIsWorkerMenuOpen(!isWorkerMenuOpen);
-                            setIsServiceMenuOpen(false);
-                        }}
-                    />
-                    
-                    {isWorkerMenuOpen && (
-                        <View style={styles.dropdownMenu}>
-                            <ScrollView style={{ maxHeight: 200 }} bounces={false}>
-                                <TouchableOpacity 
-                                    style={styles.menuItem} 
-                                    onPress={() => handleWorkerSelect(null)}
-                                >
-                                    <Text style={styles.menuItemText}>All Employees</Text>
-                                </TouchableOpacity>
-                                {workers.map(w => (
-                                    <TouchableOpacity 
-                                        key={w.id} 
-                                        style={styles.menuItem} 
-                                        onPress={() => handleWorkerSelect(w)}
+                {showWorkerFilter && (
+                    <View style={{ zIndex: 100 }}>
+                        <FilterButton
+                            icon="people-outline"
+                            label={workerLabel}
+                            onPress={() => {
+                                setIsWorkerMenuOpen(!isWorkerMenuOpen);
+                                setIsServiceMenuOpen(false);
+                            }}
+                        />
+
+                        {isWorkerMenuOpen && (
+                            <View style={styles.dropdownMenu}>
+                                <ScrollView style={{ maxHeight: 200 }} bounces={false}>
+                                    <TouchableOpacity
+                                        style={styles.menuItem}
+                                        onPress={() => handleWorkerSelect(null)}
                                     >
-                                        <Text style={styles.menuItemText}>{w.nom}</Text>
+                                        <Text style={styles.menuItemText}>All Employees</Text>
                                     </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    )}
-                </View>
+                                    {workers.map(w => (
+                                        <TouchableOpacity
+                                            key={w.id}
+                                            style={styles.menuItem}
+                                            onPress={() => handleWorkerSelect(w)}
+                                        >
+                                            <Text style={styles.menuItemText}>{w.nom}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        )}
+                    </View>
+                )}
 
                 <View style={{ zIndex: 99 }}>
-                    <FilterButton 
-                        icon="shapes-outline" 
-                        label={serviceLabel} 
+                    <FilterButton
+                        icon="shapes-outline"
+                        label={serviceLabel}
                         onPress={() => {
                             setIsServiceMenuOpen(!isServiceMenuOpen);
                             setIsWorkerMenuOpen(false);
                         }}
                     />
-                    
+
                     {isServiceMenuOpen && (
                         <View style={styles.dropdownMenu}>
                             <ScrollView style={{ maxHeight: 200 }} bounces={false}>
-                                <TouchableOpacity 
-                                    style={styles.menuItem} 
+                                <TouchableOpacity
+                                    style={styles.menuItem}
                                     onPress={() => handleServiceSelect(null)}
                                 >
                                     <Text style={styles.menuItemText}>All Services Types</Text>
                                 </TouchableOpacity>
                                 {services.map(s => (
-                                    <TouchableOpacity 
-                                        key={s.id} 
-                                        style={styles.menuItem} 
+                                    <TouchableOpacity
+                                        key={s.id}
+                                        style={styles.menuItem}
                                         onPress={() => handleServiceSelect(s)}
                                     >
                                         <Text style={styles.menuItemText}>{s.nom}</Text>
@@ -127,7 +131,6 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
                     )}
                 </View>
 
-                <FilterButton icon="business-outline" label="All Rooms" />
             </View>
 
             <View style={styles.navigation}>
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     },
     dropdownMenu: {
         position: 'absolute',
-        top: 45, 
+        top: 45,
         left: 0,
         backgroundColor: '#ffffff',
         borderWidth: 1,

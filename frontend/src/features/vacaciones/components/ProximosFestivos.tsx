@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { AbsenciaEmpresa } from '../types/vacaciones.types';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const MONTH_SHORT = ['GEN','FEB','MAR','ABR','MAI','JUN','JUL','AGO','SET','OCT','NOV','DES'];
 
@@ -15,6 +16,7 @@ function daysUntil(inici: string): string {
 type Props = { items: AbsenciaEmpresa[] };
 
 export function ProximosFestivos({ items }: Props) {
+    const theme = useTheme();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -23,7 +25,7 @@ export function ProximosFestivos({ items }: Props) {
         .slice(0, 5);
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight }]}>
             <Text style={styles.sectionTitle}>Pròxims Festius</Text>
             {upcoming.length === 0 ? (
                 <Text style={styles.empty}>No hi ha festius propers.</Text>
@@ -32,9 +34,9 @@ export function ProximosFestivos({ items }: Props) {
                     const d = new Date(h.inici);
                     return (
                         <View key={h.id} style={[styles.item, i < upcoming.length - 1 && styles.itemBorder]}>
-                            <View style={styles.dateBox}>
-                                <Text style={styles.dateDay}>{String(d.getDate()).padStart(2, '0')}</Text>
-                                <Text style={styles.dateMonth}>{MONTH_SHORT[d.getMonth()]}</Text>
+                            <View style={[styles.dateBox, { backgroundColor: theme.primary + '22' }]}>
+                                <Text style={[styles.dateDay, { color: theme.primary }]}>{String(d.getDate()).padStart(2, '0')}</Text>
+                                <Text style={[styles.dateMonth, { color: theme.primary }]}>{MONTH_SHORT[d.getMonth()]}</Text>
                             </View>
                             <View style={styles.itemBody}>
                                 <Text style={styles.itemName} numberOfLines={1}>{h.titol}</Text>

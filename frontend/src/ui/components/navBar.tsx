@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const NAV_ITEMS = [
   { name: 'Inicio', icon: 'home-outline', activeIcon: 'home', path: '/home' },
@@ -30,6 +31,7 @@ export default function Navbar({ variant }: NavbarProps) {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
 
   const isDesktopWeb = variant === 'desktop' || (variant !== 'mobile' && Platform.OS === 'web' && width >= 1024);
 
@@ -65,6 +67,7 @@ export default function Navbar({ variant }: NavbarProps) {
     <View
       style={[
         styles.container,
+        { backgroundColor: theme.sidebarBg },
         isDesktopWeb
           ? { ...styles.containerWeb, width: sidebarWidth, position: 'relative' }
           : { ...styles.containerMobile, paddingBottom: insets.bottom || 8 },
@@ -77,15 +80,15 @@ export default function Navbar({ variant }: NavbarProps) {
       {isDesktopWeb && !collapsed && (
         <View style={styles.webHeaderRow}>
           <View style={styles.webHeaderTextContainer}>
-            <Text style={styles.webLogo}>BookMeNow</Text>
-            <Text style={styles.webSubtitle}>Panel</Text>
+            <Text style={[styles.webLogo, { color: theme.headerText }]}>BookMeNow</Text>
+            <Text style={[styles.webSubtitle, { color: theme.headerSubtitle }]}>Panel</Text>
           </View>
 
           <TouchableOpacity
             onPress={() => setCollapsed(true)}
             style={styles.toggleButtonHeader}
           >
-            <Ionicons name="chevron-back" size={22} color="#334155" />
+            <Ionicons name="chevron-back" size={22} color={theme.sidebarText} />
           </TouchableOpacity>
         </View>
       )}
@@ -98,7 +101,7 @@ export default function Navbar({ variant }: NavbarProps) {
           onPress={() => setCollapsed(false)}
           style={styles.toggleButtonCollapsed}
         >
-          <Ionicons name="chevron-forward" size={22} color="#334155" />
+          <Ionicons name="chevron-forward" size={22} color={theme.sidebarText} />
         </TouchableOpacity>
       )}
 
@@ -119,13 +122,13 @@ export default function Navbar({ variant }: NavbarProps) {
                 styles.navItemBase,
                 isDesktopWeb ? styles.navItemWeb : styles.navItemMobile,
                 collapsed && isDesktopWeb && styles.navItemCollapsed,
-                isActive && isDesktopWeb && styles.navItemWebActive,
+                isActive && isDesktopWeb && { backgroundColor: theme.sidebarActiveBg, borderWidth: 1, borderColor: theme.sidebarActiveBorder },
               ]}
             >
               <Ionicons
                 name={iconName}
                 size={24}
-                color={isActive ? '#0f172a' : '#6b7280'}
+                color={isActive ? theme.sidebarText : theme.sidebarTextInactive}
                 style={isDesktopWeb ? styles.iconLeft : {}}
               />
 
@@ -134,7 +137,7 @@ export default function Navbar({ variant }: NavbarProps) {
                 <Text
                   style={[
                     styles.navText,
-                    isActive ? styles.navTextActive : styles.navTextInactive,
+                    { color: isActive ? theme.sidebarText : theme.sidebarTextInactive }
                   ]}
                 >
                   {item.name}
@@ -149,20 +152,20 @@ export default function Navbar({ variant }: NavbarProps) {
           PERFIL USUARIO WEB (Bottom)
          =========================== */}
       {isDesktopWeb && user && (
-        <View style={[styles.profileContainerWeb, collapsed && styles.profileContainerCollapsed]}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{user?.nom ? user.nom.substring(0, 2).toUpperCase() : 'U'}</Text>
+        <View style={[styles.profileContainerWeb, collapsed && styles.profileContainerCollapsed, { backgroundColor: theme.sidebarBg, borderTopColor: theme.sidebarActiveBorder }]}>
+          <View style={[styles.avatarCircle, { backgroundColor: theme.sidebarActiveBg }]}>
+            <Text style={[styles.avatarText, { color: theme.sidebarText }]}>{user?.nom ? user.nom.substring(0, 2).toUpperCase() : 'U'}</Text>
           </View>
           
           {!collapsed && (
             <View style={styles.profileTextContainer}>
-              <Text style={styles.profileName} numberOfLines={1}>{user?.nom}</Text>
-              <Text style={styles.profileEmail} numberOfLines={1}>{user?.email}</Text>
+              <Text style={[styles.profileName, { color: theme.sidebarText }]} numberOfLines={1}>{user?.nom}</Text>
+              <Text style={[styles.profileEmail, { color: theme.sidebarTextInactive }]} numberOfLines={1}>{user?.email}</Text>
             </View>
           )}
 
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-             <Ionicons name="log-out-outline" size={20} color="#6b7280" />
+             <Ionicons name="log-out-outline" size={20} color={theme.sidebarTextInactive} />
           </TouchableOpacity>
         </View>
       )}

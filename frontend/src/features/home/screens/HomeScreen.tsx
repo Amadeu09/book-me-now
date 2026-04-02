@@ -10,7 +10,7 @@ import { HC } from '../constants/inicio.constants';
 import { InicioHeader } from '../components/InicioHeader';
 import { LocalDataCard } from '../components/LocalDataCard';
 import { ScheduleCard } from '../components/ScheduleCard';
-import { StatsCard } from '../components/StatsCard';
+import { AbsenciesPendentsCard } from '../components/AbsenciesPendentsCard';
 
 // Hooks
 import { useEmpresa } from '@/features/empresas/hooks/useEmpresa';
@@ -57,7 +57,7 @@ export default function Home() {
           {/* The responsive blocks grid */}
           <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
             <ScheduleCard />
-            <StatsCard />
+            {user?.rol === 'ADMIN_GENERAL' && <AbsenciesPendentsCard />}
           </View>
 
         </View>
