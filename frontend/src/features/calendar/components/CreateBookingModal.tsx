@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, spacing, radius, shadow } from "@/constants/theme";
+import { useTheme } from '@/core/theme/ThemeProvider';
 import type { ApiTreballador, ApiServei } from '../types';
 import { createReserva } from '../services/calendarApi';
 
@@ -32,6 +33,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     // Form State
     const [nom, setNom] = useState('');
@@ -208,7 +210,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                                 return (
                                     <TouchableOpacity
                                         key={w.id}
-                                        style={[styles.chip, isSelected && styles.chipSelected]}
+                                        style={[styles.chip, isSelected && { borderColor: theme.primary, backgroundColor: theme.primary }]}
                                         onPress={() => setIdTreballador(isSelected ? null : w.id)}
                                     >
                                         <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
@@ -226,7 +228,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                                 return (
                                     <TouchableOpacity
                                         key={s.id}
-                                        style={[styles.chip, isSelected && styles.chipSelected]}
+                                        style={[styles.chip, isSelected && { borderColor: theme.primary, backgroundColor: theme.primary }]}
                                         onPress={() => setIdServei(isSelected ? null : s.id)}
                                     >
                                         <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
@@ -261,7 +263,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.btnSave, isSubmitting && styles.btnSaveDisabled]}
+                            style={[styles.btnSave, { backgroundColor: theme.primary }, isSubmitting && styles.btnSaveDisabled]}
                             onPress={handleSave}
                             activeOpacity={0.8}
                             disabled={isSubmitting}

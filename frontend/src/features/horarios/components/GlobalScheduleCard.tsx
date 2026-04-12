@@ -6,6 +6,7 @@ import {
     MOCK_DAY_SCHEDULE, DAY_STATUS_CONFIG, WEEKDAY_LABELS,
     type DayScheduleConfig,
 } from '../constants/horarios.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 /* ──────────────────────────────────────────
    GlobalScheduleCard
@@ -25,23 +26,26 @@ export const GlobalScheduleCard: React.FC<GlobalScheduleCardProps> = ({
 }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
+
+    const onPrimary = theme.isDefault ? '#0f172a' : theme.textOnPrimary;
+    const onPrimaryFaint = theme.isDefault ? '#e2e8f0' : onPrimary + '33';
+    const onPrimaryMuted = theme.isDefault ? '#6b7280' : onPrimary + 'aa';
+    const cardBg = theme.isDefault ? '#ffffff' : theme.primary;
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: cardBg, borderWidth: theme.isDefault ? 1 : 0, borderColor: '#e2e8f0' }]}>
             {/* ── Top row: icon + title + toggle ── */}
             <View style={styles.topRow}>
-                <View style={styles.iconCircle}>
-                    <Ionicons name="time" size={22} color={HC.primary} />
-                </View>
                 <View style={styles.titleBlock}>
-                    <Text style={styles.title}>Horario Global de Apertura</Text>
-                    <Text style={styles.subtitle}>Configuración predeterminada para el establecimiento</Text>
+                    <Text style={[styles.title, { color: onPrimary }]}>Horario Global de Apertura</Text>
+                    <Text style={[styles.subtitle, { color: onPrimaryMuted }]}>Configuración predeterminada para el establecimiento</Text>
                 </View>
                 <View style={styles.toggleRow}>
                     <View style={[styles.toggleTrack, isActive && styles.toggleTrackActive]}>
                         <View style={[styles.toggleThumb, isActive && styles.toggleThumbActive]} />
                     </View>
-                    <Text style={[styles.toggleLabel, isActive && { color: HC.green }]}>
+                    <Text style={[styles.toggleLabel, { color: isActive ? HC.green : onPrimaryMuted }]}>
                         {isActive ? 'Activo' : 'Inactivo'}
                     </Text>
                 </View>
@@ -49,7 +53,7 @@ export const GlobalScheduleCard: React.FC<GlobalScheduleCardProps> = ({
 
             {/* ── Day columns (desktop) or compact card (mobile) ── */}
             {isDesktop ? (
-                <View style={styles.daysRow}>
+                <View style={[styles.daysRow, { borderTopColor: onPrimaryFaint }]}>
                     {schedule.map((day, i) => {
                         const cfg = DAY_STATUS_CONFIG[day.status];
                         return (
@@ -57,11 +61,11 @@ export const GlobalScheduleCard: React.FC<GlobalScheduleCardProps> = ({
                                 key={day.label}
                                 style={[
                                     styles.dayColumn,
-                                    i < schedule.length - 1 && styles.dayColumnBorder,
+                                    i < schedule.length - 1 && { borderRightWidth: 1, borderRightColor: onPrimaryFaint },
                                 ]}
                             >
                                 <View style={styles.dayHeaderRow}>
-                                    <Text style={styles.dayLabel}>{day.label}</Text>
+                                    <Text style={[styles.dayLabel, { color: onPrimary }]}>{day.label}</Text>
                                     <View style={[styles.statusBadge, { backgroundColor: cfg.bgColor }]}>
                                         <View style={[styles.statusDot, { backgroundColor: cfg.color }]} />
                                         <Text style={[styles.statusBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
@@ -69,18 +73,18 @@ export const GlobalScheduleCard: React.FC<GlobalScheduleCardProps> = ({
                                 </View>
                                 {day.status !== 'closed' ? (
                                     <View style={styles.timeRow}>
-                                        <View style={styles.timeBox}>
-                                            <Text style={styles.timeText}>{day.timeStart}</Text>
-                                            <Ionicons name="chevron-down" size={14} color={HC.textMuted} />
+                                        <View style={[styles.timeBox, { borderColor: onPrimaryFaint }]}>
+                                            <Text style={[styles.timeText, { color: onPrimary }]}>{day.timeStart}</Text>
+                                            <Ionicons name="chevron-down" size={14} color={onPrimaryMuted} />
                                         </View>
-                                        <Text style={styles.timeSep}>a</Text>
-                                        <View style={styles.timeBox}>
-                                            <Text style={styles.timeText}>{day.timeEnd}</Text>
-                                            <Ionicons name="chevron-down" size={14} color={HC.textMuted} />
+                                        <Text style={[styles.timeSep, { color: onPrimaryMuted }]}>a</Text>
+                                        <View style={[styles.timeBox, { borderColor: onPrimaryFaint }]}>
+                                            <Text style={[styles.timeText, { color: onPrimary }]}>{day.timeEnd}</Text>
+                                            <Ionicons name="chevron-down" size={14} color={onPrimaryMuted} />
                                         </View>
                                     </View>
                                 ) : (
-                                    <Text style={styles.closedText}>Sin disponibilidad configurada</Text>
+                                    <Text style={[styles.closedText, { color: onPrimaryMuted }]}>Sin disponibilidad configurada</Text>
                                 )}
                             </View>
                         );
@@ -88,23 +92,23 @@ export const GlobalScheduleCard: React.FC<GlobalScheduleCardProps> = ({
                 </View>
             ) : (
                 /* ── Mobile compact ── */
-                <View style={styles.mobileBody}>
+                <View style={[styles.mobileBody, { borderTopColor: onPrimaryFaint }]}>
                     <View style={styles.mobileInfoRow}>
                         <View>
-                            <Text style={styles.mobileDayTitle}>Lunes a Viernes</Text>
-                            <Text style={styles.mobileTime}>09:00 AM - 06:00 PM</Text>
+                            <Text style={[styles.mobileDayTitle, { color: onPrimary }]}>Lunes a Viernes</Text>
+                            <Text style={[styles.mobileTime, { color: onPrimaryMuted }]}>09:00 AM - 06:00 PM</Text>
                         </View>
                     </View>
                     <View style={styles.mobileBottomRow}>
                         <View style={styles.weekdayDots}>
                             {WEEKDAY_LABELS.map((d, i) => (
-                                <View key={i} style={styles.weekdayCircle}>
-                                    <Text style={styles.weekdayText}>{d}</Text>
+                                <View key={i} style={[styles.weekdayCircle, { backgroundColor: onPrimary + '22' }]}>
+                                    <Text style={[styles.weekdayText, { color: onPrimary }]}>{d}</Text>
                                 </View>
                             ))}
                         </View>
-                        <View style={styles.activeBadge}>
-                            <Text style={styles.activeBadgeText}>Activo ahora</Text>
+                        <View style={[styles.activeBadge, { borderColor: HC.green }]}>
+                            <Text style={[styles.activeBadgeText, { color: HC.green }]}>Activo ahora</Text>
                         </View>
                     </View>
                 </View>
@@ -285,7 +289,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: HC.textPrimary,
+        backgroundColor: HC.textPrimary, // intentional: dark dot for weekday labels
         justifyContent: 'center',
         alignItems: 'center',
     },

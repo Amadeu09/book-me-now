@@ -1,7 +1,8 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Servei } from "@/types/servei.types";
-import { palette, radius, spacing } from "@/constants/theme";
+import { radius, spacing } from "@/constants/theme";
+import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { Button } from '@/ui/components/common';
 
 type Props = {
@@ -32,7 +33,7 @@ export default function DeleteConfirmModal({ visible, service, onConfirm, onCanc
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: palette.overlay,
+        backgroundColor: HC.modalOverlay,
         alignItems: 'center',
         justifyContent: 'center',
         padding: spacing.gutter,
@@ -40,15 +41,14 @@ const styles = StyleSheet.create({
     card: {
         width: '100%',
         maxWidth: 420,
-        backgroundColor: palette.background,
+        backgroundColor: HC.card,
         borderRadius: radius.modal,
         padding: spacing.gutter,
         gap: spacing.md,
-        borderWidth: 1,
-        borderColor: palette.borderSoft,
+        ...cardShadow,
     },
-    title: { fontSize: 18, fontWeight: '800', color: palette.textPrimary },
-    body: { fontSize: 15, color: palette.textPrimary },
+    title: { fontSize: 18, fontWeight: '800', color: HC.textPrimary },
+    body: { fontSize: 15, color: HC.textSecondary },
     actions: {
         flexDirection: 'row',
         justifyContent: 'flex-end',

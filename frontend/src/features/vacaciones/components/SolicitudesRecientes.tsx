@@ -53,7 +53,7 @@ export function SolicitudesRecientes({ items }: Props) {
     const pageItems = upcoming.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
     return (
-        <View style={[styles.card, { backgroundColor: theme.primaryLight }]}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.headerRow}>
                 <Text style={styles.sectionTitle}>Pròximes Absències</Text>
                 {upcoming.length > PAGE_SIZE && (

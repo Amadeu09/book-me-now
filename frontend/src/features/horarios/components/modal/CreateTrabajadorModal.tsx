@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { HC, cardShadow } from '../../constants/horarios.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import { RotationTabs } from './RotationTabs';
 import { DatePickerField } from '../DatePickerField';
 
@@ -39,6 +40,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     // Tabs
     const [activeTab, setActiveTab] = useState(0);
@@ -278,7 +280,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                                 <Ionicons name="person-outline" size={32} color={HC.textMuted} />
                             </View>
                         )}
-                        <View style={styles.avatarBadge}>
+                        <View style={[styles.avatarBadge, { backgroundColor: theme.primary }]}>
                             <Ionicons name="camera" size={12} color={HC.white} />
                         </View>
                     </TouchableOpacity>
@@ -341,7 +343,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
             <Text style={styles.sectionTitle}>Selecciona los servicios asignados:</Text>
             
             {isLoadingServeis ? (
-                <ActivityIndicator size="large" color={HC.primary} style={{ marginTop: 20 }} />
+                <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 20 }} />
             ) : serveisList.length === 0 ? (
                 <Text style={styles.emptyText}>No hay servicios disponibles.</Text>
             ) : (
@@ -351,16 +353,16 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                         return (
                             <TouchableOpacity
                                 key={servei.id}
-                                style={[styles.serviceCard, isSelected && styles.serviceCardSelected]}
+                                style={[styles.serviceCard, isSelected && { borderColor: theme.primary, backgroundColor: '#F1F5F9' }]}
                                 onPress={() => toggleService(servei.id)}
                                 activeOpacity={0.7}
                             >
                                 <Ionicons
                                     name={isSelected ? "checkbox" : "square-outline"}
                                     size={20}
-                                    color={isSelected ? HC.primary : HC.textMuted}
+                                    color={isSelected ? theme.primary : HC.textMuted}
                                 />
-                                <Text style={[styles.serviceText, isSelected && styles.serviceTextSelected]}>
+                                <Text style={[styles.serviceText, isSelected && { fontWeight: '600', color: theme.primary }]}>
                                     {servei.nom}
                                 </Text>
                             </TouchableOpacity>
@@ -387,7 +389,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                         return (
                             <TouchableOpacity
                                 key={j.id}
-                                style={[styles.chip, isSelected && styles.chipSelected]}
+                                style={[styles.chip, isSelected && { borderColor: theme.primary, backgroundColor: theme.primary }]}
                                 onPress={() => setPlantillaJornadaId(isSelected ? null : j.id)}
                             >
                                 <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
@@ -475,7 +477,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.btnSave, isSubmitting && styles.btnSaveDisabled]}
+                            style={[styles.btnSave, { backgroundColor: theme.primary }, isSubmitting && styles.btnSaveDisabled]}
                             onPress={handleSave}
                             activeOpacity={0.8}
                             disabled={isSubmitting}

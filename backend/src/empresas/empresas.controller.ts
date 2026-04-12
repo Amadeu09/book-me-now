@@ -12,6 +12,8 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -30,6 +32,7 @@ import { CreateEmpresaDto, UpdateEmpresaDto } from './dto/empresa.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import {
   CurrentUser,
   CurrentUserData,
@@ -41,6 +44,25 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmpresasController {
   constructor(private readonly empresasService: EmpresasService) { }
+
+  @Get('public/:id')
+  @Public()
+  @ApiOperation({ summary: 'Obtenir perfil públic d\'una empresa per ID' })
+  @ApiParam({ name: 'id' })
+  findOnePublic(@Param('id', ParseIntPipe) id: number) {
+    return this.empresasService.findOnePublic(id);
+  }
+
+  @Get('cerca')
+  @Public()
+  @ApiOperation({ summary: 'Cercar empreses públicament per nom (sense autenticació)' })
+  @ApiResponse({ status: 200, description: 'Llista de fins a 10 empreses actives' })
+  searchPublic(@Query('q') q: string) {
+    if (!q || q.trim().length === 0) {
+      throw new BadRequestException("El paràmetre 'q' és obligatori");
+    }
+    return this.empresasService.searchPublic(q);
+  }
 
   @Post()
   @Roles('ADMIN_GENERAL')

@@ -249,6 +249,166 @@ export class TreballadorsService {
     });
   }
 
+  async getDisponibilitatPublic(treballadorId: number, serveiId: number) {
+    const treballador = await this.prisma.treballador.findUnique({ where: { id: treballadorId } });
+    if (!treballador || !treballador.actiu) throw new NotFoundException('El treballador no existeix');
+
+    const servei = await this.prisma.servei.findUnique({ where: { id: serveiId } });
+    if (!servei || !servei.actiu) throw new NotFoundException('El servei no existeix');
+
+    if (servei.empresaId !== treballador.empresaId) throw new NotFoundException('El servei no pertany a aquest treballador');
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + 14);
+
+    const assignments = await this.prisma.treballadorJornadaPlantilla.findMany({
+      where: {
+        treballadorId,
+        OR: [{ dataFi: null }, { dataFi: { gte: today } }],
+        dataInici: { lte: endDate },
+      },
+      include: {
+        plantilla: {
+          include: {
+            rotacions: { include: { dies: { include: { trams: true } } } },
+          },
+        },
+      },
+    });
+
+    const reserves = await this.prisma.reserva.findMany({
+      where: {
+        treballadorId,
+        dataHora: { gte: today, lt: endDate },
+        estat: { not: 'CANCELLADA' },
+      },
+      include: { servei: true },
+    });
+
+    const absencies = await this.prisma.absencia.findMany({
+      where: {
+        treballadorId,
+        estat: 'APROVADA',
+        inici: { lte: endDate },
+        fi: { gte: today },
+      },
+    });
+
+    const absenciesEmpresa = await this.prisma.absenciaEmpresa.findMany({
+      where: {
+        empresaId: treballador.empresaId,
+        inici: { lte: endDate },
+        fi: { gte: today },
+      },
+    });
+
+    const disponibilitat: Record<string, string[]> = {};
+    const MS_PER_MIN = 60000;
+
+    const getMonday = (d: Date) => {
+      const date = new Date(d);
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+      date.setDate(diff);
+      date.setHours(0, 0, 0, 0);
+      return date;
+    };
+
+    for (let i = 0; i < 14; i++) {
+      const currentDate = new Date(today);
+      currentDate.setDate(currentDate.getDate() + i);
+      const dateString = currentDate.toISOString().split('T')[0];
+
+      const dayStart = new Date(currentDate); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(currentDate); dayEnd.setHours(23, 59, 59, 999);
+
+      const isEmpresaAbsence = absenciesEmpresa.some(a => a.inici <= dayEnd && a.fi >= dayStart);
+      if (isEmpresaAbsence) { disponibilitat[dateString] = []; continue; }
+
+      const assignment = assignments.find(a =>
+        new Date(a.dataInici) <= currentDate && (!a.dataFi || new Date(a.dataFi) >= currentDate)
+      );
+      if (!assignment) { disponibilitat[dateString] = []; continue; }
+
+      const plantilla = assignment.plantilla;
+      if (!plantilla.rotacions || plantilla.rotacions.length === 0) { disponibilitat[dateString] = []; continue; }
+
+      let dow = currentDate.getDay();
+      if (dow === 0) dow = 7;
+
+      const oneDay = 24 * 60 * 60 * 1000;
+      const assignmentStartMonday = getMonday(new Date(assignment.dataInici));
+      const currentMonday = getMonday(currentDate);
+      const diffWeeks = Math.floor((currentMonday.getTime() - assignmentStartMonday.getTime()) / (7 * oneDay));
+
+      if (diffWeeks < 0) { disponibilitat[dateString] = []; continue; }
+
+      const rotationIndex = (assignment.anchorRotacioIndex + diffWeeks) % plantilla.rotacions.length;
+      const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
+      const rotacio = rotacionsOrdenades[rotationIndex];
+      if (!rotacio) { disponibilitat[dateString] = []; continue; }
+
+      const diaRotacio = rotacio.dies.find(d => d.dow === dow);
+      if (!diaRotacio || diaRotacio.esDescans || !diaRotacio.trams) { disponibilitat[dateString] = []; continue; }
+
+      const dayReserves = reserves.filter(r => { const d = new Date(r.dataHora); return d >= dayStart && d < dayEnd; });
+      const dayAbsencies = absencies.filter(a => a.inici <= dayEnd && a.fi >= dayStart);
+
+      const slots: string[] = [];
+      for (const tram of diaRotacio.trams) {
+        let currentMin = tram.iniciMin;
+        const tramEnd = tram.fiMin;
+
+        while (currentMin + servei.duradaMin <= tramEnd) {
+          const slotStartMin = currentMin;
+          const slotEndMin = currentMin + servei.duradaMin;
+
+          const slotStartDate = new Date(currentDate);
+          slotStartDate.setHours(Math.floor(slotStartMin / 60), slotStartMin % 60, 0, 0);
+          const slotEndDate = new Date(currentDate);
+          slotEndDate.setHours(Math.floor(slotEndMin / 60), slotEndMin % 60, 0, 0);
+
+          let isBlocked = false;
+          let jumpToMin = -1;
+
+          for (const res of dayReserves) {
+            const resStart = new Date(res.dataHora);
+            const resEnd = new Date(resStart.getTime() + res.servei.duradaMin * MS_PER_MIN);
+            if (slotStartDate < resEnd && slotEndDate > resStart) {
+              isBlocked = true;
+              jumpToMin = resEnd.getHours() * 60 + resEnd.getMinutes();
+              break;
+            }
+          }
+
+          if (!isBlocked) {
+            for (const abs of dayAbsencies) {
+              if (slotStartDate < abs.fi && slotEndDate > abs.inici) {
+                isBlocked = true;
+                const absEndMin = abs.fi.getHours() * 60 + abs.fi.getMinutes();
+                jumpToMin = absEndMin > currentMin ? absEndMin : currentMin + servei.duradaMin;
+                break;
+              }
+            }
+          }
+
+          if (!isBlocked) {
+            slots.push(`${String(Math.floor(slotStartMin / 60)).padStart(2, '0')}:${String(slotStartMin % 60).padStart(2, '0')} - ${String(Math.floor(slotEndMin / 60)).padStart(2, '0')}:${String(slotEndMin % 60).padStart(2, '0')}`);
+            currentMin += servei.duradaMin;
+          } else {
+            currentMin = jumpToMin > currentMin ? jumpToMin : currentMin + servei.duradaMin;
+          }
+        }
+      }
+
+      disponibilitat[dateString] = slots;
+    }
+
+    return disponibilitat;
+  }
+
   async getDisponibilitat(empresaId: number, id: number, serveiId: number, currentUser: number) {
     const user = await this.prisma.usuari.findUnique({
       where: { id: currentUser },
@@ -431,9 +591,12 @@ export class TreballadorsService {
 
       console.log(`Date: ${dateString}, AssignmentStart: ${assignment.dataInici.toISOString()}, MondayStart: ${assignmentStartMonday.toISOString()}, CurrentMonday: ${currentMonday.toISOString()}, WeeksDiff: ${diffWeeks}, RotationIndex: ${rotationIndex}`);
 
-      const rotacio = plantilla.rotacions.find(r => r.index === rotationIndex);
+      // Sort rotations by their index field and access by position,
+      // so it works even when index values are not 0-based or have gaps.
+      const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
+      const rotacio = rotacionsOrdenades[rotationIndex];
       if (!rotacio) {
-        console.log(`No rotation found for ${dateString} index ${rotationIndex}`);
+        console.log(`No rotation found for ${dateString} position ${rotationIndex}`);
         disponibilitat[dateString] = [];
         continue;
       }
@@ -449,19 +612,15 @@ export class TreballadorsService {
       // Flatten trams to usable minutes (e.g. 480 to 860)
       // Check collisions with reserves and absencies
 
-      // Filter reserves for this day
+      // Filter reserves for this day — use Date range to avoid timezone issues
+      // (dayStart/dayEnd already computed above for empresa absence check)
       const dayReserves = reserves.filter(r => {
         const rDate = new Date(r.dataHora);
-        return rDate.getDate() === currentDate.getDate() &&
-          rDate.getMonth() === currentDate.getMonth() &&
-          rDate.getFullYear() === currentDate.getFullYear();
+        return rDate >= dayStart && rDate < dayEnd;
       });
 
-      // Filter absencies for this day
-      const dayAbsencies = absencies.filter(a => {
-        // Simple overlap check
-        return (a.inici <= new Date(currentDate.setHours(23, 59, 59, 999))) && (a.fi >= new Date(currentDate.setHours(0, 0, 0, 0)));
-      });
+      // Filter absencies for this day — use pre-built dayStart/dayEnd (no currentDate mutation)
+      const dayAbsencies = absencies.filter(a => a.inici <= dayEnd && a.fi >= dayStart);
 
       // Generate slots
       for (const tram of diaRotacio.trams) {
@@ -481,57 +640,38 @@ export class TreballadorsService {
 
           let isBlocked = false;
 
-          // Check reserves
+          // Check reserves — jump to end of blocker to avoid redundant iterations
+          let jumpToMin = -1;
           for (const res of dayReserves) {
             const resStart = new Date(res.dataHora);
             const resEnd = new Date(resStart.getTime() + res.servei.duradaMin * MS_PER_MIN);
-
-            // Overlap: (StartA < EndB) && (EndA > StartB)
             if (slotStartDate < resEnd && slotEndDate > resStart) {
               isBlocked = true;
-              // Optimization: Jump currentMin to end of reservation
-              const resEndMin = resEnd.getHours() * 60 + resEnd.getMinutes();
-              // But we are in a tight loop. Let's just break for now or jump.
-              // Jumping is better for tight packing.
-              // currentMin = resEndMin; // be careful with date crossover
+              jumpToMin = resEnd.getHours() * 60 + resEnd.getMinutes();
               break;
             }
           }
 
           if (isBlocked) {
-            // If blocked, just increment by standard step? 
-            // Or jump?
-            // If we are tight packing (08:00, 08:30...), if 08:00 is blocked, we try next minute? 
-            // User prompt: "Basicamente cada dia vendra representado como: ... hora 1: 7 - 8:30"
-            // Implies we return valid intervals.
-            // The simplest robust way is to step 1 minute? Too slow.
-            // Step 15 mins?
-            // Or "tight tiling" as proposed in plan (contiguous if empty).
-            // If blocked, we skip 15 mins or jump to end of blocker?
-
-            // BETTER APPROACH:
-            // 1. Create a "Free Time" timeline for the day [TramStart, TramEnd].
-            // 2. Subtract all blockers (Reserves, Absences).
-            // 3. In the remaining chunks, fit the service duration.
-
-            currentMin += 15; // Granularity step?
+            currentMin = jumpToMin > currentMin ? jumpToMin : currentMin + servei.duradaMin;
             continue;
           }
 
-          // Check absences
+          // Check absences — jump to end of blocker
           for (const abs of dayAbsencies) {
             if (slotStartDate < abs.fi && slotEndDate > abs.inici) {
               isBlocked = true;
+              const absEndMin = abs.fi.getHours() * 60 + abs.fi.getMinutes();
+              jumpToMin = absEndMin > currentMin ? absEndMin : currentMin + servei.duradaMin;
               break;
             }
           }
 
           if (!isBlocked) {
             slots.push(`${String(Math.floor(slotStartMin / 60)).padStart(2, '0')}:${String(slotStartMin % 60).padStart(2, '0')} - ${String(Math.floor(slotEndMin / 60)).padStart(2, '0')}:${String(slotEndMin % 60).padStart(2, '0')}`);
-            // If found valid slot, jump by duration (tight packing)?
             currentMin += servei.duradaMin;
           } else {
-            currentMin += 15; // Try slightly later
+            currentMin = jumpToMin;
           }
         }
       }

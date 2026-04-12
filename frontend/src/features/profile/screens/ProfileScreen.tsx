@@ -10,6 +10,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HC } from '@/features/home/constants/inicio.constants';
 import { spacing } from '@/constants/theme';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import type { AuthUser } from '@/features/auth/services/auth.service';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileCard } from '../components/ProfileCard';
@@ -21,6 +22,7 @@ export default function ProfileScreen() {
     const [user, setUser] = useState<AuthUser | null>(null);
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     useEffect(() => {
         AsyncStorage.getItem('user').then((raw) => {
@@ -30,11 +32,9 @@ export default function ProfileScreen() {
 
     const usuariId = user?.id ? parseInt(user.id, 10) : null;
     const empresaId = user?.empresaId ?? null;
-    const isEmpleat = user?.rol === 'EMPLEAT';
-
     const { data: treballador, isLoading: loadingTreballador } = useMiTreballador(
-        isEmpleat ? empresaId : null,
-        isEmpleat ? usuariId : null,
+        empresaId,
+        usuariId,
     );
 
     const treballadorId = treballador?.id ?? null;
@@ -50,7 +50,7 @@ export default function ProfileScreen() {
     const jornada = treballador?.jornadesPlantillaAssignacions?.[0]?.plantilla?.nom ?? null;
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="dark-content" />
             <ProfileHeader />
 
@@ -70,13 +70,13 @@ export default function ProfileScreen() {
                     fotoPerfil={fotoPerfil}
                     jornada={jornada}
                     usuariId={usuariId}
-                    treballador={isEmpleat ? treballador : undefined}
+                    treballador={treballador}
                     location={location}
-                    isLoading={isEmpleat && loadingTreballador}
+                    isLoading={loadingTreballador}
                 />
 
-                {/* Appointments + Services blocks */}
-                {isEmpleat && (
+                {/* Appointments + Services — shown for any role if user has an associated worker */}
+                {treballadorId && (
                     <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
                         <TodayAppointments
                             bookings={bookings}
@@ -102,9 +102,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: 24,
+        paddingTop: 70,
+        paddingHorizontal: 30,
         paddingBottom: 80,
         gap: 24,
+        maxWidth: 1600,
+        alignSelf: 'center',
+        width: '100%',
     },
     contentDesktop: {
         paddingBottom: 40,

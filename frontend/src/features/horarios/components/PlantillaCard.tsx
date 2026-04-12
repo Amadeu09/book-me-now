@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/horarios.constants';
 import type { PlantillaSummary } from '../types/jornades.types';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 interface PlantillaCardProps {
     template: PlantillaSummary;
@@ -13,9 +14,17 @@ interface PlantillaCardProps {
 
 export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOptions, onEdit, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
+    const theme = useTheme();
 
     return (
-        <View style={[styles.card, { borderLeftColor: template.accentColor, zIndex: showMenu ? 100 : 1 }]}>
+        <View style={[styles.card, {
+            backgroundColor: theme.primaryLight,
+            borderWidth: theme.softBorderWidth,
+            borderColor: theme.softBorderColor,
+            borderLeftWidth: 4,
+            borderLeftColor: template.accentColor,
+            zIndex: showMenu ? 100 : 1,
+        }]}>
             <View style={styles.content}>
                 <View style={styles.nameRow}>
                     <Text style={styles.name}>{template.nom}</Text>

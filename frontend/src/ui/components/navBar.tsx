@@ -13,14 +13,14 @@ import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/core/theme/ThemeProvider';
 
-const NAV_ITEMS = [
-  { name: 'Inicio', icon: 'home-outline', activeIcon: 'home', path: '/home' },
-  { name: 'Reservas', icon: 'calendar-outline', activeIcon: 'calendar', path: '/bookings' },
-  { name: 'Servicios', icon: 'grid-outline', activeIcon: 'grid', path: '/services' },
-  { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', path: '/profile' },
-  { name: 'Horarios y disponibilidad', icon: 'time-outline', activeIcon: 'time', path: '/horarios' },
-  { name: 'Vacaciones', icon: 'sunny-outline', activeIcon: 'sunny', path: '/vacaciones' },
-] as const;
+const ALL_NAV_ITEMS = [
+  { name: 'Inicio', icon: 'home-outline', activeIcon: 'home', path: '/home', adminOnly: true },
+  { name: 'Reservas', icon: 'calendar-outline', activeIcon: 'calendar', path: '/bookings', adminOnly: false },
+  { name: 'Servicios', icon: 'grid-outline', activeIcon: 'grid', path: '/services', adminOnly: true },
+  { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', path: '/profile', adminOnly: false },
+  { name: 'Horarios y disponibilidad', icon: 'time-outline', activeIcon: 'time', path: '/horarios', adminOnly: true },
+  { name: 'Vacaciones', icon: 'sunny-outline', activeIcon: 'sunny', path: '/vacaciones', adminOnly: false },
+];
 
 type NavbarProps = {
   variant?: 'desktop' | 'mobile';
@@ -51,6 +51,11 @@ export default function Navbar({ variant }: NavbarProps) {
     };
     loadUser();
   }, [pathname]);
+
+  const isEmpleat = user?.rol === 'EMPLEAT';
+  const NAV_ITEMS = isEmpleat
+    ? ALL_NAV_ITEMS.filter(item => !item.adminOnly)
+    : ALL_NAV_ITEMS;
 
   const handleLogout = async () => {
     try {

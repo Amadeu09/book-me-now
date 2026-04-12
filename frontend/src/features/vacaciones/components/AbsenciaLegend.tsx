@@ -5,29 +5,43 @@ import {
     TREBALLADOR_COLORS, EMPRESA_COLORS,
     TREBALLADOR_LABELS, EMPRESA_LABELS,
 } from '../constants/vacaciones.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const TREBALLADOR_KEYS = Object.keys(TREBALLADOR_COLORS) as string[];
 const EMPRESA_KEYS = Object.keys(EMPRESA_COLORS) as string[];
 
-function LegendRow({ color, label }: { color: string; label: string }) {
+function LegendRow({ color, label, borderColor }: { color: string; label: string; borderColor?: string }) {
     return (
         <View style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: color }]} />
+            <View style={[
+                styles.dot,
+                { backgroundColor: color },
+                borderColor ? { borderWidth: 1.5, borderColor: borderColor } : null,
+            ]} />
             <Text style={styles.label}>{label}</Text>
         </View>
     );
 }
 
 export function AbsenciaLegend() {
+    const theme = useTheme();
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <Text style={styles.title}>Llegenda del Calendari</Text>
             <View style={styles.columns}>
                 <View style={styles.col}>
                     <Text style={styles.colTitle}>Absències Treballador</Text>
-                    {TREBALLADOR_KEYS.map(key => (
-                        <LegendRow key={key} color={TREBALLADOR_COLORS[key]} label={TREBALLADOR_LABELS[key]} />
-                    ))}
+                    {TREBALLADOR_KEYS.map(key => {
+                        const isVacances = key === 'VACANCES';
+                        return (
+                            <LegendRow
+                                key={key}
+                                color={isVacances ? theme.primaryMid : TREBALLADOR_COLORS[key]}
+                                label={TREBALLADOR_LABELS[key]}
+                                borderColor={isVacances ? theme.primary : undefined}
+                            />
+                        );
+                    })}
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.col}>

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, IsOptional, IsInt, IsEnum } from "class-validator";
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsInt, IsEnum, Matches } from "class-validator";
 import { ReservaEstat } from "@prisma/client";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
@@ -26,11 +26,13 @@ export class CreateReservaDto {
     @ApiProperty({ example: '2026-02-20', description: 'Fecha de la reserva (YYYY-MM-DD)' })
     @IsNotEmpty()
     @IsString()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'data must be in YYYY-MM-DD format' })
     data: string;
 
     @ApiProperty({ example: '10:00', description: 'Hora de la reserva (HH:MM)' })
     @IsNotEmpty()
     @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: 'hora must be in HH:MM format' })
     hora: string;
 
     @ApiPropertyOptional({ example: 'Alergia al tinte', description: 'Observaciones adicionales' })

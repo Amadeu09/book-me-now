@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { ProfileReserva } from '../services/profile.service';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const MAX_VISIBLE = 3;
 
@@ -46,6 +47,7 @@ interface AppointmentItemProps {
 }
 
 const AppointmentItem: React.FC<AppointmentItemProps> = ({ item }) => {
+    const theme = useTheme();
     const durada = item.servei?.duradaMin ?? 60;
     const startTime = formatTime(item.dataHora);
     const endTime = formatEndTime(item.dataHora, durada);
@@ -56,15 +58,15 @@ const AppointmentItem: React.FC<AppointmentItemProps> = ({ item }) => {
 
     return (
         <View style={styles.appointmentCard}>
-            <View style={[styles.timeBadge, upcoming ? styles.timeBadgeUpcoming : styles.timeBadgePast]}>
-                <Text style={[styles.timeText, upcoming ? styles.timeTextUpcoming : styles.timeTextPast]}>
+            <View style={[styles.timeBadge, upcoming ? { backgroundColor: theme.primaryMid } : styles.timeBadgePast]}>
+                <Text style={[styles.timeText, upcoming ? { color: theme.primary } : styles.timeTextPast]}>
                     {startTime} – {endTime}
                 </Text>
             </View>
 
             <View style={styles.apptRow}>
-                <View style={styles.avatarCircle}>
-                    <Text style={styles.avatarText}>{initials}</Text>
+                <View style={[styles.avatarCircle, { backgroundColor: theme.primaryMid }]}>
+                    <Text style={[styles.avatarText, { color: theme.primary }]}>{initials}</Text>
                 </View>
                 <View style={styles.apptInfo}>
                     <Text style={styles.clientName}>{clientName}</Text>
@@ -82,6 +84,7 @@ interface TodayAppointmentsProps {
 
 export const TodayAppointments: React.FC<TodayAppointmentsProps> = ({ bookings, isLoading }) => {
     const [expanded, setExpanded] = useState(false);
+    const theme = useTheme();
 
     const sorted = [...bookings].sort(
         (a, b) => new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime(),
@@ -90,18 +93,18 @@ export const TodayAppointments: React.FC<TodayAppointmentsProps> = ({ bookings, 
     const visible = expanded ? sorted : sorted.slice(0, MAX_VISIBLE);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.header}>
                 <Text style={styles.title}>Citas de Hoy</Text>
                 {hasMore && (
                     <TouchableOpacity onPress={() => setExpanded((v) => !v)}>
-                        <Text style={styles.link}>{expanded ? 'Ver menos' : 'Ver todas →'}</Text>
+                        <Text style={[styles.link, { color: theme.primary }]}>{expanded ? 'Ver menos' : 'Ver todas →'}</Text>
                     </TouchableOpacity>
                 )}
             </View>
 
             {isLoading ? (
-                <ActivityIndicator color={HC.primary} style={styles.spinner} />
+                <ActivityIndicator color={theme.primary} style={styles.spinner} />
             ) : sorted.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Ionicons name="calendar-outline" size={32} color={HC.textLight} />

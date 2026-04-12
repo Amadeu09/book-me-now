@@ -3,18 +3,25 @@ import {
   Controller,
   Delete,
   Get,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   ParseIntPipe,
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ServeisService } from './serveis.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { CreateServeiDto, UpdateServeiDto } from './dto/servei.dto';
-import { ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
+import { ApiConsumes, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 
 @Controller('serveis')
 @UseGuards(JwtAuthGuard)
@@ -58,6 +65,15 @@ export class ServeisController {
     return this.serveisService.findByTreballador(user.empresaId, id);
   }
 
+  @Get('public/:empresaId')
+  @Public()
+  @ApiOperation({ summary: 'Llistar serveis actius d\'una empresa (sense autenticació)' })
+  @ApiResponse({ status: 200, description: 'Llista de serveis actius' })
+  @ApiResponse({ status: 404, description: 'Empresa no trobada' })
+  findAllPublic(@Param('empresaId', ParseIntPipe) empresaId: number) {
+    return this.serveisService.findAllPublic(empresaId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un servicio por ID' })
   @ApiParam({ name: 'id', description: 'ID del servicio' })
@@ -87,6 +103,24 @@ export class ServeisController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.serveisService.update(user.empresaId, id, dto);
+  }
+
+  @Patch(':id/foto')
+  @ApiOperation({ summary: 'Subir foto de un servicio' })
+  @ApiParam({ name: 'id', description: 'ID del servicio' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('foto', { storage: memoryStorage() }))
+  uploadFoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 })],
+      }),
+    )
+    file: Express.Multer.File,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.serveisService.uploadFoto(id, file, user.empresaId);
   }
 
   @Delete(':id')

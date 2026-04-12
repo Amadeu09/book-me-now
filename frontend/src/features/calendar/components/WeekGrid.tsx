@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { palette, spacing } from "@/constants/theme";
+import { useTheme } from '@/core/theme/ThemeProvider';
 import { HOURS, HOUR_HEIGHT, START_HOUR } from './constants';
 import { CalendarEvent } from './types';
 import { EventCard } from './EventCard';
@@ -14,6 +15,7 @@ interface WeekGridProps {
 }
 
 export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEventPress, loading = false }) => {
+    const theme = useTheme();
 
     // Generate the 7 days of the current week
     const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -77,8 +79,8 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEvent
                     return (
                         <View key={date.toISOString()} style={styles.dayHeader}>
                             <Text style={styles.dayName}>{name}</Text>
-                            <View style={[styles.dayNumber, isToday && styles.todayBadge]}>
-                                <Text style={[styles.dayNumberText, isToday && styles.todayText]}>
+                            <View style={[styles.dayNumber, isToday && { backgroundColor: theme.primary }]}>
+                                <Text style={[styles.dayNumberText, isToday && { color: theme.textOnPrimary }]}>
                                     {num}
                                 </Text>
                             </View>

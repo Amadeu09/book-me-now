@@ -7,6 +7,7 @@ export interface ProfileServei {
     duradaMin: number;
     preu: number;
     actiu: boolean;
+    fotoUrl?: string | null;
 }
 
 export interface ProfileReserva {

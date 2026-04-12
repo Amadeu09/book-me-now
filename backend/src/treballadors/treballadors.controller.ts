@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { CreateJornadaTreballadorExistDto, CreateTreballadorDto, JornadaTreballadorDto } from './dto/CreateTreballadorDto';
 import { AssignarServeisDto } from './dto/AssignarServeisDto';
@@ -82,6 +83,20 @@ export class TreballadorsController {
     return this.treballadorsService.eliminarServeis(user.empresaId, id, user.userId);
   }
 
+  @Get('disponibilitat-publica/:id')
+  @Public()
+  @ApiOperation({ summary: 'Obtenir disponibilitat pública d\'un treballador per a un servei (sense autenticació)' })
+  @ApiParam({ name: 'id', description: 'ID del treballador' })
+  @ApiQuery({ name: 'serveiId', required: true, type: Number })
+  @ApiResponse({ status: 200, description: 'Disponibilitat obtinguda' })
+  @ApiResponse({ status: 404, description: 'Treballador o servei no trobat' })
+  getDisponibilitatPublic(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('serveiId', ParseIntPipe) serveiId: number,
+  ) {
+    return this.treballadorsService.getDisponibilitatPublic(id, serveiId);
+  }
+
   @Get("disponibilitat/:id")
   @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Obtener disponibilidad de un trabajador' })
@@ -91,7 +106,7 @@ export class TreballadorsController {
   @ApiResponse({ status: 404, description: 'No encontrado: Trabajador no existe' })
   @ApiResponse({ status: 409, description: 'Conflicto' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  getDisponibilitat(@Param('id', ParseIntPipe) id: number, @Body() dto: GetDisponibilitatDto, @CurrentUser() user: CurrentUserData) {
+  getDisponibilitat(@Param('id', ParseIntPipe) id: number, @Query() dto: GetDisponibilitatDto, @CurrentUser() user: CurrentUserData) {
     return this.treballadorsService.getDisponibilitat(user.empresaId, id, dto.serveiId, user.userId);
   }
 

@@ -37,7 +37,7 @@ function BalanceCard({ vacancesUsed, diesVacancesAnuals, missatgeDies }: { vacan
 
     if (missatgeDies) {
         return (
-            <View style={[styles.card, styles.balanceCard, styles.balanceCardEmpty, { backgroundColor: theme.primaryLight }]}>
+            <View style={[styles.card, styles.balanceCard, styles.balanceCardEmpty, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
                 <Ionicons name="calendar-clear-outline" size={32} color={HC.textMuted} style={styles.emptyIcon} />
                 <Text style={styles.emptyText}>{missatgeDies}</Text>
             </View>
@@ -48,7 +48,7 @@ function BalanceCard({ vacancesUsed, diesVacancesAnuals, missatgeDies }: { vacan
     const disponibles = Math.max(0, diesVacancesAnuals - vacancesUsed);
 
     return (
-        <View style={[styles.card, styles.balanceCard, { backgroundColor: theme.primaryLight }]}>
+        <View style={[styles.card, styles.balanceCard, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <Text style={styles.cardLabel}>VACANCES USADES</Text>
             <View style={styles.balanceRow}>
                 <Text style={[styles.balanceBig, { color: theme.primary }]}>{vacancesUsed}</Text>
@@ -68,7 +68,7 @@ function BalanceCard({ vacancesUsed, diesVacancesAnuals, missatgeDies }: { vacan
 function AccumulatedCard({ vacancesUsed }: { vacancesUsed: number }) {
     const theme = useTheme();
     return (
-        <View style={[styles.card, styles.miniCard, { backgroundColor: theme.primaryLight }]}>
+        <View style={[styles.card, styles.miniCard, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.miniRow}>
                 <Ionicons name="airplane-outline" size={18} color={theme.primary} />
                 <View style={styles.miniText}>
@@ -83,7 +83,7 @@ function AccumulatedCard({ vacancesUsed }: { vacancesUsed: number }) {
 function HolidayCountCard({ count }: { count: number }) {
     const theme = useTheme();
     return (
-        <View style={[styles.card, styles.miniCard, { backgroundColor: theme.primaryLight }]}>
+        <View style={[styles.card, styles.miniCard, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.miniRow}>
                 <Ionicons name="calendar-outline" size={18} color={HC.textMuted} />
                 <View style={styles.miniText}>

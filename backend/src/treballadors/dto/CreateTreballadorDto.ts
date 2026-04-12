@@ -1,6 +1,31 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray, IsDateString } from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+
+/** `dataFi`, if present, must be strictly after `dataInici` */
+function IsAfter(property: string, validationOptions?: ValidationOptions) {
+    return (object: object, propertyName: string) => {
+        registerDecorator({
+            name: 'isAfter',
+            target: (object as any).constructor,
+            propertyName,
+            constraints: [property],
+            options: validationOptions,
+            validator: {
+                validate(value: any, args: ValidationArguments) {
+                    const [relatedProp] = args.constraints;
+                    const relatedValue = (args.object as any)[relatedProp];
+                    if (!value || !relatedValue) return true; // optional — skip if either missing
+                    return new Date(value) > new Date(relatedValue);
+                },
+                defaultMessage(args: ValidationArguments) {
+                    return `${args.property} ha de ser posterior a ${args.constraints[0]}`;
+                },
+            },
+        });
+    };
+}
 import { AssignarServeisDto } from './AssignarServeisDto';
 
 export class JornadaTreballadorDto {
@@ -12,12 +37,13 @@ export class JornadaTreballadorDto {
     plantillaJornadaId: number;
 
     @ApiProperty({ example: '2026-02-07T09:00:00.000Z', description: 'Fecha de inicio de la asignación' })
-    @IsString()
+    @IsDateString()
     @IsNotEmpty()
     dataInici: string;
 
-    @ApiProperty({ example: '2026-02-07T18:00:00.000Z', description: 'Fecha de fin de la asignación (opcional)', required: false })
-    @IsString()
+    @ApiProperty({ example: '2026-12-31T18:00:00.000Z', description: 'Fecha de fin de la asignación (opcional)', required: false })
+    @IsDateString()
+    @IsAfter('dataInici', { message: 'dataFi ha de ser posterior a dataInici' })
     @IsOptional()
     dataFi?: string;
 }
@@ -61,12 +87,13 @@ export class CreateJornadaTreballadorExistDto {
     plantillaJornadaId: number;
 
     @ApiProperty({ example: '2026-02-07T09:00:00.000Z', description: 'Fecha de inicio de la asignación' })
-    @IsString()
+    @IsDateString()
     @IsNotEmpty()
     dataInici: string;
 
-    @ApiProperty({ example: '2026-02-07T18:00:00.000Z', description: 'Fecha de fin de la asignación (opcional)', required: false })
-    @IsString()
+    @ApiProperty({ example: '2026-12-31T18:00:00.000Z', description: 'Fecha de fin de la asignación (opcional)', required: false })
+    @IsDateString()
+    @IsAfter('dataInici', { message: 'dataFi ha de ser posterior a dataInici' })
     @IsOptional()
     dataFi?: string;
 }

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/inicio.constants';
 import { useAbsenciesPendents, useUpdateEstatAbsencia } from '../hooks/useAbsenciesPendents';
 import type { AbsenciaPendent, TipusAbsencia } from '../services/absencies-pendents.service';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const TIPUS_LABEL: Record<TipusAbsencia, string> = {
     VACANCES: 'Vacances',
@@ -26,14 +27,14 @@ function formatRange(inici: string, fi: string): string {
         : `${fmt(inici)} – ${fmt(fi)} · ${days}d`;
 }
 
-function Avatar({ nom, fotoPerfil }: { nom: string; fotoPerfil: string | null }) {
+function Avatar({ nom, fotoPerfil, bgColor, textColor }: { nom: string; fotoPerfil: string | null; bgColor: string; textColor: string }) {
     if (fotoPerfil) {
         return <Image source={{ uri: fotoPerfil }} style={styles.avatar} />;
     }
     const initial = nom.trim().charAt(0).toUpperCase();
     return (
-        <View style={styles.avatarFallback}>
-            <Text style={styles.avatarInitial}>{initial}</Text>
+        <View style={[styles.avatarFallback, { backgroundColor: bgColor }]}>
+            <Text style={[styles.avatarInitial, { color: textColor }]}>{initial}</Text>
         </View>
     );
 }
@@ -44,21 +45,25 @@ function AbsenciaRow({
     onAprovar,
     onRebutjar,
     loading,
+    primaryColor,
+    primaryMidColor,
 }: {
     item: AbsenciaPendent;
     isLast: boolean;
     onAprovar: () => void;
     onRebutjar: () => void;
     loading: boolean;
+    primaryColor: string;
+    primaryMidColor: string;
 }) {
     return (
         <View style={[styles.row, !isLast && styles.rowBorder]}>
-            <Avatar nom={item.treballador.nom} fotoPerfil={item.treballador.Usuari.fotoPerfil} />
+            <Avatar nom={item.treballador.nom} fotoPerfil={item.treballador.Usuari.fotoPerfil} bgColor={primaryMidColor} textColor={primaryColor} />
             <View style={styles.rowBody}>
                 <Text style={styles.workerName} numberOfLines={1}>{item.treballador.nom}</Text>
                 <View style={styles.rowMeta}>
-                    <View style={styles.tipusBadge}>
-                        <Text style={styles.tipusText}>{TIPUS_LABEL[item.tipus]}</Text>
+                    <View style={[styles.tipusBadge, { backgroundColor: primaryMidColor }]}>
+                        <Text style={[styles.tipusText, { color: primaryColor }]}>{TIPUS_LABEL[item.tipus]}</Text>
                     </View>
                     <Text style={styles.dates}>{formatRange(item.inici, item.fi)}</Text>
                 </View>
@@ -83,6 +88,7 @@ function AbsenciaRow({
 
 export function AbsenciesPendentsCard() {
     const [page, setPage] = useState(1);
+    const theme = useTheme();
     const { data, isLoading } = useAbsenciesPendents(page);
     const { mutate: updateEstat, variables: pendingVars, isPending } = useUpdateEstatAbsencia();
 
@@ -90,7 +96,7 @@ export function AbsenciesPendentsCard() {
     const items = data?.data ?? [];
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             {/* Header */}
             <View style={styles.headerRow}>
                 <Text style={styles.title}>Absències pendents</Text>
@@ -122,7 +128,7 @@ export function AbsenciesPendentsCard() {
                 </View>
             ) : items.length === 0 ? (
                 <View style={styles.center}>
-                    <Ionicons name="checkmark-circle-outline" size={32} color={HC.textMuted} />
+                    <Ionicons name="checkmark-circle-outline" size={32} color={theme.primary} />
                     <Text style={styles.emptyText}>Cap absència per aprovar</Text>
                 </View>
             ) : (
@@ -134,6 +140,8 @@ export function AbsenciesPendentsCard() {
                         loading={isPending && pendingVars?.id === item.id}
                         onAprovar={() => updateEstat({ id: item.id, estat: 'APROVADA' })}
                         onRebutjar={() => updateEstat({ id: item.id, estat: 'REBUTJADA' })}
+                        primaryColor={theme.primary}
+                        primaryMidColor={theme.primaryMid}
                     />
                 ))
             )}
@@ -145,9 +153,8 @@ const styles = StyleSheet.create({
     card: {
         backgroundColor: HC.white,
         borderRadius: 16,
-        padding: 18,
+        padding: 14,
         ...cardShadow,
-        flex: 1,
     },
     headerRow: {
         flexDirection: 'row',
@@ -198,7 +205,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        paddingVertical: 10,
+        paddingVertical: 7,
     },
     rowBorder: {
         borderBottomWidth: 1,
@@ -213,14 +220,14 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: HC.primaryLight,
+        backgroundColor: HC.primaryLight, // overridden inline via theme
         alignItems: 'center',
         justifyContent: 'center',
     },
     avatarInitial: {
         fontSize: 14,
         fontWeight: '700',
-        color: HC.primary,
+        color: HC.primary, // overridden inline via theme
     },
     rowBody: {
         flex: 1,

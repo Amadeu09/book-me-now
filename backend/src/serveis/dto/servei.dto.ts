@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUrl, Min } from 'class-validator';
 
 export class CreateServeiDto {
   @ApiProperty({ example: 'Corte de cabello', description: 'Nombre del servicio' })
@@ -21,6 +21,17 @@ export class CreateServeiDto {
   @IsOptional()
   @IsBoolean()
   actiu?: boolean;
+
+  @ApiPropertyOptional({ example: 'https://res.cloudinary.com/...', description: 'URL de la foto del servicio' })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  fotoUrl?: string;
+
+  @ApiPropertyOptional({ example: 'Inclou tallat, rentat i assecat', description: 'Descripció del servei' })
+  @IsOptional()
+  @IsString()
+  descripcio?: string;
 }
 
 export class UpdateServeiDto {
@@ -46,4 +57,15 @@ export class UpdateServeiDto {
   @IsOptional()
   @IsBoolean()
   actiu?: boolean;
+
+  @ApiPropertyOptional({ example: 'https://res.cloudinary.com/...', description: 'URL de la foto del servicio' })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  fotoUrl?: string;
+
+  @ApiPropertyOptional({ example: 'Inclou tallat, rentat i assecat', description: 'Descripció del servei' })
+  @IsOptional()
+  @IsString()
+  descripcio?: string;
 }

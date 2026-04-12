@@ -32,6 +32,21 @@ export async function getEmpresaId(): Promise<number | null> {
     return user?.empresaId ?? null;
 }
 
+/**
+ * Patches the stored user's empresa fields.
+ * Call this after any successful company update so the theme
+ * survives a reload without needing a new login.
+ */
+export async function patchStoredEmpresa(patch: Partial<NonNullable<AuthUser['empresa']>>): Promise<void> {
+    const user = await getUser();
+    if (!user) return;
+    const updated: AuthUser = {
+        ...user,
+        empresa: user.empresa ? { ...user.empresa, ...patch } : user.empresa,
+    };
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(updated));
+}
+
 /** Limpia la sesión (logout) */
 export async function clearSession(): Promise<void> {
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);

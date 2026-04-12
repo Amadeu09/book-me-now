@@ -80,6 +80,8 @@ model Servei {
   preu         Decimal             @db.Decimal(10, 2)
   empresaId    Int
   actiu        Boolean             @default(true)
+  fotoUrl      String?
+  descripcio   String?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   reserves     Reserva[]

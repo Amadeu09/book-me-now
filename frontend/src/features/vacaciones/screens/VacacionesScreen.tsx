@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC } from '@/features/home/constants/inicio.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import { VacacionesHeader } from '../components/VacacionesHeader';
 import { StatsSection } from '../components/StatsSection';
 import { AnnualCalendar } from '../components/AnnualCalendar';
@@ -28,6 +29,7 @@ function fmtShort(d: string): string {
 export default function VacacionesScreen() {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     const { data, isLoading, error, holidayDates, absenciaDates, refetch } = useVacaciones(YEAR);
 
@@ -82,10 +84,10 @@ export default function VacacionesScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
                 <VacacionesHeader />
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color={HC.primary} />
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             </SafeAreaView>
         );
@@ -93,7 +95,7 @@ export default function VacacionesScreen() {
 
     if (error) {
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
                 <VacacionesHeader />
                 <View style={styles.center}>
                     <Text style={styles.errorText}>{error}</Text>
@@ -120,7 +122,7 @@ export default function VacacionesScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="dark-content" />
             <VacacionesHeader />
             <ScrollView
@@ -160,9 +162,9 @@ export default function VacacionesScreen() {
             </ScrollView>
 
             {selStart !== null && (
-                <View style={styles.actionBar}>
+                <View style={[styles.actionBar, { borderColor: theme.primary, shadowColor: theme.primary }]}>
                     <View style={styles.actionInfo}>
-                        <Ionicons name="calendar-outline" size={16} color={HC.primary} />
+                        <Ionicons name="calendar-outline" size={16} color={theme.primary} />
                         <Text style={styles.actionText}>
                             {selEnd
                                 ? `${fmtShort(selStart)} → ${fmtShort(selEnd)}  ·  ${daysCount} dies`
@@ -173,7 +175,7 @@ export default function VacacionesScreen() {
                         <TouchableOpacity style={styles.btnCancel} onPress={clearSelection} activeOpacity={0.7}>
                             <Ionicons name="close" size={20} color={HC.red} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.btnConfirm} onPress={handleConfirm} activeOpacity={0.8}>
+                        <TouchableOpacity style={[styles.btnConfirm, { backgroundColor: theme.primary }]} onPress={handleConfirm} activeOpacity={0.8}>
                             <Ionicons name="checkmark" size={20} color={HC.white} />
                         </TouchableOpacity>
                     </View>

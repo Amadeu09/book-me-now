@@ -24,7 +24,7 @@ function buildCells(year: number, month: number): (number | null)[] {
 }
 
 type DayInfo =
-    | { kind: 'treballador'; color: string }
+    | { kind: 'treballador'; color: string; borderColor?: string }
     | { kind: 'empresa'; color: string }
     | { kind: 'today' }
     | null;
@@ -33,7 +33,8 @@ function getDayInfo(
     year: number, month: number, day: number,
     holidayDates: Map<string, TipusAbsenciaEmpresa>,
     absenciaDates: Map<string, TipusAbsenciaTreballador>,
-    themePrimary: string
+    themePrimary: string,
+    themePrimaryMid: string,
 ): DayInfo {
     const today = new Date();
     if (today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === day) {
@@ -43,7 +44,12 @@ function getDayInfo(
     const empresaTipus = holidayDates.get(str);
     if (empresaTipus) return { kind: 'empresa', color: EMPRESA_COLORS[empresaTipus] ?? '#F97316' };
     const treballadorTipus = absenciaDates.get(str);
-    if (treballadorTipus) return { kind: 'treballador', color: TREBALLADOR_COLORS[treballadorTipus] ?? themePrimary };
+    if (treballadorTipus) {
+        if (treballadorTipus === 'VACANCES') {
+            return { kind: 'treballador', color: themePrimaryMid, borderColor: themePrimary };
+        }
+        return { kind: 'treballador', color: TREBALLADOR_COLORS[treballadorTipus] ?? themePrimary };
+    }
     return null;
 }
 
@@ -64,7 +70,7 @@ export function MonthMini({ month, year, holidayDates, absenciaDates, selStart, 
     for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
 
     return (
-        <View style={[styles.card, { backgroundColor: theme.primaryLight }]}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: 1, borderColor: theme.primaryMid }]}>
             <Text style={styles.monthName}>{MONTH_NAMES[month - 1]}</Text>
 
             {/* Day-of-week header */}
@@ -92,7 +98,7 @@ export function MonthMini({ month, year, holidayDates, absenciaDates, selStart, 
                         const isRangeMid = selStart !== null && selEnd !== null
                             && dateStr > selStart && dateStr < selEnd;
                         const isSelected = isRangeStart || isRangeEnd;
-                        const info = (isSelected || isRangeMid) ? null : getDayInfo(year, month, day, holidayDates, absenciaDates, theme.primary);
+                        const info = (isSelected || isRangeMid) ? null : getDayInfo(year, month, day, holidayDates, absenciaDates, theme.primary, theme.primaryMid);
 
                         // Badge background color
                         let badgeColor: string | null = null;
@@ -104,7 +110,12 @@ export function MonthMini({ month, year, holidayDates, absenciaDates, selStart, 
                             textColor = theme.textOnPrimary;
                         } else if (info?.kind === 'treballador' || info?.kind === 'empresa') {
                             badgeColor = info.color;
-                            textColor = HC.white;
+                            if (info.kind === 'treballador' && info.borderColor) {
+                                textColor = info.borderColor;
+                                badgeBorder = { borderWidth: 1.5, borderColor: info.borderColor };
+                            } else {
+                                textColor = HC.white;
+                            }
                         } else if (info?.kind === 'today') {
                             badgeBorder = { borderWidth: 2, borderColor: theme.primary };
                             textColor = theme.primary;

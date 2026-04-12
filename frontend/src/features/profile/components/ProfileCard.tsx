@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { uploadMyFoto } from '../services/profile.service';
 import { EditProfileModal } from './modal/EditProfileModal';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const AVATAR_SIZE_MOBILE = 90;
 const AVATAR_SIZE_DESKTOP = 110;
@@ -48,12 +49,16 @@ function AvatarPicker({
     size,
     onPick,
     uploading,
+    primaryColor,
+    primaryMidColor,
 }: {
     fotoPerfil?: string | null;
     initials: string;
     size: number;
     onPick: () => void;
     uploading: boolean;
+    primaryColor: string;
+    primaryMidColor: string;
 }) {
     return (
         <TouchableOpacity onPress={onPick} activeOpacity={0.85} disabled={uploading}>
@@ -61,11 +66,11 @@ function AvatarPicker({
                 {fotoPerfil ? (
                     <Image source={{ uri: fotoPerfil }} style={{ width: size, height: size, borderRadius: size / 2 }} />
                 ) : (
-                    <View style={[avStyles.fallback, { width: size, height: size, borderRadius: size / 2 }]}>
-                        <Text style={[avStyles.initials, { fontSize: size * 0.32 }]}>{initials}</Text>
+                    <View style={[avStyles.fallback, { width: size, height: size, borderRadius: size / 2, backgroundColor: primaryMidColor }]}>
+                        <Text style={[avStyles.initials, { fontSize: size * 0.32, color: primaryColor }]}>{initials}</Text>
                     </View>
                 )}
-                <View style={avStyles.cameraOverlay}>
+                <View style={[avStyles.cameraOverlay, { backgroundColor: primaryColor }]}>
                     {uploading
                         ? <ActivityIndicator color={HC.white} size="small" />
                         : <Ionicons name="camera" size={14} color={HC.white} />
@@ -88,13 +93,11 @@ const avStyles = StyleSheet.create({
         elevation: 3,
     },
     fallback: {
-        backgroundColor: HC.primaryLight,
         justifyContent: 'center',
         alignItems: 'center',
     },
     initials: {
         fontWeight: '700',
-        color: HC.primary,
     },
     cameraOverlay: {
         position: 'absolute',
@@ -103,7 +106,6 @@ const avStyles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 13,
-        backgroundColor: HC.primary,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
@@ -142,6 +144,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const queryClient = useQueryClient();
+    const theme = useTheme();
 
     const handlePickPhoto = async () => {
         try {
@@ -172,8 +175,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
     if (isLoading) {
         return (
-            <View style={[styles.card, styles.loadingCard]}>
-                <ActivityIndicator color={HC.primary} size="large" />
+            <View style={[styles.card, styles.loadingCard, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
+                <ActivityIndicator color={theme.primary} size="large" />
             </View>
         );
     }
@@ -191,7 +194,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     /* ── Desktop horizontal layout ── */
     if (isDesktop) {
         return (
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
                 <View style={styles.desktopRow}>
                     {/* Avatar */}
                     <AvatarPicker
@@ -200,6 +203,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                         size={AVATAR_SIZE_DESKTOP}
                         onPick={handlePickPhoto}
                         uploading={uploading}
+                        primaryColor={theme.primary}
+                        primaryMidColor={theme.primaryMid}
                     />
 
                     {/* Content */}
@@ -217,12 +222,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                             </View>
 
                             <TouchableOpacity
-                                style={styles.editBtn}
+                                style={[styles.editBtn, { backgroundColor: theme.primary }]}
                                 onPress={() => setEditVisible(true)}
                                 activeOpacity={0.8}
                             >
-                                <Ionicons name="key-outline" size={15} color={HC.white} />
-                                <Text style={styles.editBtnText}>Cambiar contraseña</Text>
+                                <Ionicons name="key-outline" size={15} color={theme.textOnPrimary} />
+                                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Cambiar contraseña</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -247,7 +252,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
     /* ── Mobile vertical layout ── */
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.mobileAvatarWrapper}>
                 <AvatarPicker
                     fotoPerfil={displayPhoto}
@@ -255,6 +260,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                     size={AVATAR_SIZE_MOBILE}
                     onPick={handlePickPhoto}
                     uploading={uploading}
+                    primaryColor={theme.primary}
+                    primaryMidColor={theme.primaryMid}
                 />
             </View>
 
@@ -281,12 +288,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             <View style={styles.mobileDivider} />
 
             <TouchableOpacity
-                style={styles.editBtnWide}
+                style={[styles.editBtnWide, { backgroundColor: theme.primary }]}
                 onPress={() => setEditVisible(true)}
                 activeOpacity={0.8}
             >
-                <Ionicons name="key-outline" size={16} color={HC.white} />
-                <Text style={styles.editBtnText}>Cambiar contraseña</Text>
+                <Ionicons name="key-outline" size={16} color={theme.textOnPrimary} />
+                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Cambiar contraseña</Text>
             </TouchableOpacity>
 
             <EditProfileModal visible={editVisible} onClose={() => setEditVisible(false)} />

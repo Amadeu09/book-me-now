@@ -1,16 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { palette, spacing, typography } from "@/constants/theme";
-import { HC } from '../constants/inicio.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 export const InicioHeader: React.FC = () => {
+    const theme = useTheme();
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
             <View style={styles.leftBlock}>
-                <Text style={styles.title}>Inicio</Text>
+                <Text style={[styles.title, { color: theme.headerText }]}>Inicio</Text>
                 <View style={styles.subtitleRow}>
-                    <View style={styles.subtitleDot} />
-                    <Text style={styles.subtitle}>
+                    <View style={[styles.subtitleDot, { backgroundColor: theme.primary }]} />
+                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>
                         Bienvenido al panel de control de tu negocio.
                     </Text>
                 </View>
@@ -47,7 +48,6 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: HC.yellow,
     },
     subtitle: {
         ...typography.body,

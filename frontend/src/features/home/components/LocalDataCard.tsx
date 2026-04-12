@@ -9,22 +9,25 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { AuthUser } from '@/features/auth/services/auth.service';
 import { EditEmpresaModal } from '@/features/empresas/components/modal/EditEmpresaModal';
 import { uploadFotoEmpresa, uploadBannerEmpresa } from '@/features/empresas/services/empresas.service';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
-const BANNER_HEIGHT = 200;
-const AVATAR_SIZE = 100;
+const BANNER_HEIGHT = 260;
+const AVATAR_SIZE = 130;
 
 const PALETAS = [
-    { label: 'Blanco',   value: '#FFFFFF' },
-    { label: 'Naranja',  value: '#FF6A00' },
-    { label: 'Rojo',     value: '#E53E3E' },
-    { label: 'Azul',     value: '#3182CE' },
-    { label: 'Verde',    value: '#38A169' },
-    { label: 'Violeta',  value: '#805AD5' },
-    { label: 'Ámbar',    value: '#DD6B20' },
-    { label: 'Teal',     value: '#319795' },
-    { label: 'Rosa',     value: '#D53F8C' },
-    { label: 'Amarillo', value: '#D69E2E' },
-    { label: 'Oscuro',   value: '#2D3748' },
+    { label: 'Blanco', value: '#FFFFFF' },
+    { label: 'Pizarra', value: '#5B7A96' },
+    { label: 'Índigo', value: '#6264A0' },
+    { label: 'Lavanda', value: '#7B5E9A' },
+    { label: 'Rosa', value: '#9E5A72' },
+    { label: 'Coral', value: '#B55E54' },
+    { label: 'Terracota', value: '#A86040' },
+    { label: 'Ocre', value: '#9B7030' },
+    { label: 'Oliva', value: '#6C7E4A' },
+    { label: 'Salvia', value: '#4A7E68' },
+    { label: 'Teal', value: '#3E7C7E' },
+    { label: 'Marino', value: '#3E587A' },
+    { label: 'Negro', value: '#000000ff' },
 ];
 
 interface LocalDataCardProps {
@@ -38,6 +41,7 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
     const queryClient = useQueryClient();
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     const handlePickImage = async () => {
         if (!empresa?.id) return;
@@ -84,8 +88,13 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
         }
     };
 
+    const op = theme.isDefault ? '#0f172a' : theme.textOnPrimary;
+    const opFaint = theme.isDefault ? '#e2e8f0' : op + '22';
+    const opMuted = theme.isDefault ? '#6b7280' : op + 'aa';
+    const cardBg = theme.isDefault ? '#ffffff' : theme.primary;
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: cardBg, borderWidth: theme.isDefault ? 1 : 0, borderColor: '#e2e8f0' }]}>
             {/* Banner — avatar lives inside here */}
             <View style={styles.bannerWrapper}>
                 {empresa?.bannerUrl ? (
@@ -96,7 +105,7 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                     />
                 ) : (
                     <LinearGradient
-                        colors={['#FF6A00', '#FF9A40', '#FFB347']}
+                        colors={theme.isDefault ? ['#e2e8f0', '#f1f5f9'] : [theme.primary, theme.primaryMid]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.banner}
@@ -143,33 +152,33 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                 {/* Nombre empresa + edit button on the right */}
                 <View style={styles.row}>
                     <View style={styles.infoBlock}>
-                        <Text style={styles.label}>Nombre de empresa</Text>
-                        <Text style={styles.value}>{empresa?.nom || 'Sin nombre'}</Text>
+                        <Text style={[styles.label, { color: opMuted }]}>Nombre de empresa</Text>
+                        <Text style={[styles.value, { color: op }]}>{empresa?.nom || 'Sin nombre'}</Text>
                     </View>
-                    <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditModalVisible(true)}>
-                        <Ionicons name="pencil" size={16} color={HC.primary} />
+                    <TouchableOpacity style={[styles.editBtn, { backgroundColor: opFaint }]} onPress={() => setIsEditModalVisible(true)}>
+                        <Ionicons name="pencil" size={16} color={op} />
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: opFaint }]} />
 
                 <View style={styles.row}>
-                    <Ionicons name="location-outline" size={20} color={HC.textMuted} />
+                    <Ionicons name="location-outline" size={20} color={opMuted} />
                     <View style={styles.infoBlock}>
-                        <Text style={styles.label}>Ubicación</Text>
-                        <Text style={styles.value}>{empresa?.ubicacio || 'Sin ubicación'}</Text>
+                        <Text style={[styles.label, { color: opMuted }]}>Ubicación</Text>
+                        <Text style={[styles.value, { color: op }]}>{empresa?.ubicacio || 'Sin ubicación'}</Text>
                     </View>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: opFaint }]} />
 
                 <View style={styles.row}>
-                    <Ionicons name="color-palette-outline" size={20} color={HC.textMuted} />
+                    <Ionicons name="color-palette-outline" size={20} color={opMuted} />
                     <View style={styles.infoBlock}>
-                        <Text style={styles.label}>Color Principal</Text>
+                        <Text style={[styles.label, { color: opMuted }]}>Color Principal</Text>
                         <View style={styles.colorRow}>
-                            <View style={[styles.colorDot, { backgroundColor: empresa?.colorPrimari || HC.primary }]} />
-                            <Text style={styles.value}>
+                            <View style={[styles.colorDot, { backgroundColor: empresa?.colorPrimari || HC.primary, borderWidth: 1, borderColor: opFaint }]} />
+                            <Text style={[styles.value, { color: op }]}>
                                 {PALETAS.find(p => p.value === empresa?.colorPrimari)?.label || 'Naranja'}
                             </Text>
                         </View>

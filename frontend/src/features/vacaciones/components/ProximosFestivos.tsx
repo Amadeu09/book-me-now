@@ -25,7 +25,7 @@ export function ProximosFestivos({ items }: Props) {
         .slice(0, 5);
 
     return (
-        <View style={[styles.card, { backgroundColor: theme.primaryLight }]}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <Text style={styles.sectionTitle}>Pròxims Festius</Text>
             {upcoming.length === 0 ? (
                 <Text style={styles.empty}>No hi ha festius propers.</Text>

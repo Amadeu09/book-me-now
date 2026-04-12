@@ -16,19 +16,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { AuthUser } from '@/features/auth/services/auth.service';
 import { updateEmpresa } from '../../services/empresas.service';
+import { patchStoredEmpresa } from '@/utils/session';
 
 const PALETAS = [
-    { label: 'Blanco',   value: '#FFFFFF' },
-    { label: 'Naranja',  value: '#FF6A00' },
-    { label: 'Rojo',     value: '#E53E3E' },
-    { label: 'Azul',     value: '#3182CE' },
-    { label: 'Verde',    value: '#38A169' },
-    { label: 'Violeta',  value: '#805AD5' },
-    { label: 'Ámbar',    value: '#DD6B20' },
-    { label: 'Teal',     value: '#319795' },
-    { label: 'Rosa',     value: '#D53F8C' },
-    { label: 'Amarillo', value: '#D69E2E' },
-    { label: 'Oscuro',   value: '#2D3748' },
+    { label: 'Blanco', value: '#FFFFFF' },
+    { label: 'Pizarra', value: '#5B7A96' },
+    { label: 'Índigo', value: '#6264A0' },
+    { label: 'Lavanda', value: '#7B5E9A' },
+    { label: 'Rosa', value: '#9E5A72' },
+    { label: 'Coral', value: '#B55E54' },
+    { label: 'Terracota', value: '#A86040' },
+    { label: 'Ocre', value: '#9B7030' },
+    { label: 'Oliva', value: '#6C7E4A' },
+    { label: 'Salvia', value: '#4A7E68' },
+    { label: 'Teal', value: '#3E7C7E' },
+    { label: 'Marino', value: '#3E587A' },
+    { label: 'Negro', value: '#000000ff' },
 ];
 
 interface EditEmpresaModalProps {
@@ -110,6 +113,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
         try {
             setLoading(true);
             await updateEmpresa(initialData.id, payload);
+            await patchStoredEmpresa(payload);
             theme.setPrimaryColor(payload.colorPrimari);
             queryClient.invalidateQueries({ queryKey: ['empresa', initialData.id] });
             onClose();
@@ -243,7 +247,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.btnSave, loading && styles.btnDisabled]}
+                            style={[styles.btnSave, { backgroundColor: theme.primary }, loading && styles.btnDisabled]}
                             onPress={handleSave}
                             disabled={loading}
                             activeOpacity={0.8}

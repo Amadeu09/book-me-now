@@ -31,6 +31,7 @@ import {
     type TabKey,
     type Employee,
 } from '../constants/horarios.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import type { PlantillaSummary, JornadaPlantillaResponse } from '../types/jornades.types';
 import type { TreballadorBackendItem } from '../types/treballadors.types';
 
@@ -41,11 +42,12 @@ import type { TreballadorBackendItem } from '../types/treballadors.types';
 export default function HorariosScreen() {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     const [activeTab, setActiveTab] = useState<TabKey>('global');
     const [searchQuery, setSearchQuery] = useState('');
     const [personalPage, setPersonalPage] = useState(1);
-    
+
     // Modal & Edit states
     const [templateModalVisible, setTemplateModalVisible] = useState(false);
     const [trabajadorModalVisible, setTrabajadorModalVisible] = useState(false);
@@ -55,7 +57,7 @@ export default function HorariosScreen() {
     const { plantillas, rawPlantillas, total: plantillasTotal, page: plantillasPage, totalPages: plantillasTotalPages, loading: plantillasLoading, error: plantillasError, refetch: refetchPlantillas } = useJornades(1, 2);
 
     const PAGE_SIZE = 4;
-    
+
     // Custom hook to fetch workers via new implementation
     const { data: treballadorsData, isLoading: treballadorsLoading, refetch: refetchTreballadors } = useTreballadors(personalPage, PAGE_SIZE);
 
@@ -98,13 +100,13 @@ export default function HorariosScreen() {
 
     const handleDeleteTemplate = (template: PlantillaSummary) => {
         const confirmMsg = `¿Estás seguro de que deseas eliminar la plantilla "${template.nom}"?`;
-        
+
         const executeDelete = async () => {
             try {
                 await deleteJornada(template.id);
                 refetchPlantillas(1);
-                Platform.OS === 'web' 
-                    ? window.alert("Plantilla eliminada correctamente.") 
+                Platform.OS === 'web'
+                    ? window.alert("Plantilla eliminada correctamente.")
                     : Alert.alert("Éxito", "Plantilla eliminada correctamente.");
             } catch (error: unknown) {
                 const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -140,14 +142,14 @@ export default function HorariosScreen() {
 
     const handleDeleteWorker = (employee: Employee) => {
         const confirmMsg = `¿Estás seguro de que deseas eliminar a "${employee.name}"?`;
-        
+
         const executeDelete = async () => {
             try {
                 await deleteTreballador(Number(employee.id));
                 setPersonalPage(1);
                 refetchTreballadors(1);
-                Platform.OS === 'web' 
-                    ? window.alert("Trabajador eliminado correctamente.") 
+                Platform.OS === 'web'
+                    ? window.alert("Trabajador eliminado correctamente.")
                     : Alert.alert("Éxito", "Trabajador eliminado correctamente.");
             } catch (error: unknown) {
                 const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -190,14 +192,13 @@ export default function HorariosScreen() {
                         {/* ── Left column ── */}
                         <View style={styles.colLeft}>
                             {/* Plantillas */}
-                            <View style={styles.sectionBox}>
+                            <View style={[styles.sectionBox, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
                                 <View style={styles.sectionHeaderRow}>
                                     <View style={styles.sectionTitleRow}>
-                                        <Ionicons name="layers" size={18} color={HC.primary} />
                                         <Text style={styles.sectionTitle}>Plantillas</Text>
                                     </View>
                                     <TouchableOpacity activeOpacity={0.7} onPress={() => setTemplateModalVisible(true)}>
-                                        <Text style={styles.linkText}>+ Crear Nueva</Text>
+                                        <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nova</Text>
                                     </TouchableOpacity>
                                 </View>
                                 {plantillasLoading ? (
@@ -209,16 +210,16 @@ export default function HorariosScreen() {
                                 ) : (
                                     <>
                                         {plantillas.map((t) => (
-                                            <PlantillaCard 
-                                                key={t.id} 
-                                                template={t} 
+                                            <PlantillaCard
+                                                key={t.id}
+                                                template={t}
                                                 onEdit={handleEditTemplate}
                                                 onDelete={handleDeleteTemplate}
                                             />
                                         ))}
                                         {plantillasTotalPages > 1 && (
                                             <View style={{ marginTop: 8 }}>
-                                                <PaginationRow 
+                                                <PaginationRow
                                                     currentPage={plantillasPage}
                                                     totalPages={plantillasTotalPages}
                                                     totalItems={plantillasTotal}
@@ -238,12 +239,11 @@ export default function HorariosScreen() {
 
                         {/* ── Right column ── */}
                         <View style={styles.colRight}>
-                            <View style={[styles.sectionBox, { flex: 1 }]}>
+                            <View style={[styles.sectionBox, { flex: 1, backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
                                 {/* Header + search */}
                                 <View style={styles.sectionHeaderRow}>
                                     <View style={styles.sectionTitleRow}>
-                                        <Ionicons name="people" size={18} color={HC.primary} />
-                                        <Text style={styles.sectionTitle}>Horarios del Personal</Text>
+                                        <Text style={styles.sectionTitle}>Horaris del Personal</Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                                         <View style={styles.searchBox}>
@@ -257,7 +257,7 @@ export default function HorariosScreen() {
                                             />
                                         </View>
                                         <TouchableOpacity activeOpacity={0.7} onPress={() => setTrabajadorModalVisible(true)}>
-                                            <Text style={styles.linkText}>+ Crear Nuevo</Text>
+                                            <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nou</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -274,10 +274,10 @@ export default function HorariosScreen() {
                                 {treballadorsLoading ? (
                                     <Text style={{ textAlign: 'center', padding: 20 }}>Cargando empleados...</Text>
                                 ) : filteredEmployees.map((emp: Employee) => (
-                                    <EmployeeShiftCard 
-                                        key={emp.id} 
-                                        employee={emp} 
-                                        variant="row" 
+                                    <EmployeeShiftCard
+                                        key={emp.id}
+                                        employee={emp}
+                                        variant="row"
                                         onEdit={handleEditWorker}
                                         onDelete={handleDeleteWorker}
                                     />
@@ -285,7 +285,7 @@ export default function HorariosScreen() {
 
                                 {/* Pagination */}
                                 <View style={{ marginTop: 'auto' }}>
-                                    <PaginationRow 
+                                    <PaginationRow
                                         currentPage={personalPage}
                                         totalPages={totalPages}
                                         totalItems={totalItems}
@@ -342,8 +342,8 @@ export default function HorariosScreen() {
                         <View style={styles.mobileSectionHeader}>
                             <Text style={styles.mobileSectionTitle}>Horario General</Text>
                             <TouchableOpacity style={styles.editBtn} activeOpacity={0.7}>
-                                <Ionicons name="pencil" size={14} color={HC.primary} />
-                                <Text style={styles.linkText}>Editar</Text>
+                                <Ionicons name="pencil" size={14} color={theme.primary} />
+                                <Text style={[styles.linkText, { color: theme.primary }]}>Editar</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -359,19 +359,19 @@ export default function HorariosScreen() {
                         </View>
 
                         <View style={{ paddingHorizontal: 16 }}>
-                                {treballadorsLoading ? (
-                                    <Text style={{ padding: 16 }}>Cargando...</Text>
-                                ) : (
-                                    filteredEmployees.slice(0, 3).map((emp: Employee) => (
-                                        <EmployeeShiftCard 
-                                            key={emp.id} 
-                                            employee={emp} 
-                                            variant="card"
-                                            onEdit={handleEditWorker}
-                                            onDelete={handleDeleteWorker}
-                                        />
-                                    ))
-                                )}
+                            {treballadorsLoading ? (
+                                <Text style={{ padding: 16 }}>Cargando...</Text>
+                            ) : (
+                                filteredEmployees.slice(0, 3).map((emp: Employee) => (
+                                    <EmployeeShiftCard
+                                        key={emp.id}
+                                        employee={emp}
+                                        variant="card"
+                                        onEdit={handleEditWorker}
+                                        onDelete={handleDeleteWorker}
+                                    />
+                                ))
+                            )}
                         </View>
 
                         {/* Exception CTA */}
@@ -384,7 +384,7 @@ export default function HorariosScreen() {
                         <View style={styles.mobileSectionHeader}>
                             <Text style={styles.mobileSectionTitle}>Plantillas de Horario</Text>
                             <TouchableOpacity activeOpacity={0.7} onPress={() => setTemplateModalVisible(true)}>
-                                <Text style={styles.linkText}>+ Crear Nueva</Text>
+                                <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nova</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={{ paddingHorizontal: 16 }}>
@@ -397,8 +397,8 @@ export default function HorariosScreen() {
                             ) : (
                                 <>
                                     {plantillas.map((t) => (
-                                        <PlantillaCard 
-                                            key={t.id} 
+                                        <PlantillaCard
+                                            key={t.id}
                                             template={t}
                                             onEdit={handleEditTemplate}
                                             onDelete={handleDeleteTemplate}
@@ -406,7 +406,7 @@ export default function HorariosScreen() {
                                     ))}
                                     {plantillasTotalPages > 1 && (
                                         <View style={{ marginTop: 8 }}>
-                                            <PaginationRow 
+                                            <PaginationRow
                                                 currentPage={plantillasPage}
                                                 totalPages={plantillasTotalPages}
                                                 totalItems={plantillasTotal}
@@ -430,7 +430,7 @@ export default function HorariosScreen() {
                                 <Text style={styles.countText}>{totalItems} empleados en total</Text>
                             </View>
                             <TouchableOpacity activeOpacity={0.7} onPress={() => setTrabajadorModalVisible(true)}>
-                                <Text style={styles.linkText}>+ Crear Nuevo</Text>
+                                <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nou</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={{ paddingHorizontal: 16 }}>
@@ -439,17 +439,17 @@ export default function HorariosScreen() {
                             ) : (
                                 <>
                                     {filteredEmployees.map((emp: Employee) => (
-                                        <EmployeeShiftCard 
-                                            key={emp.id} 
-                                            employee={emp} 
-                                            variant="card" 
+                                        <EmployeeShiftCard
+                                            key={emp.id}
+                                            employee={emp}
+                                            variant="card"
                                             onEdit={handleEditWorker}
                                             onDelete={handleDeleteWorker}
                                         />
                                     ))}
                                     {totalPages > 1 && (
                                         <View style={{ marginTop: 8 }}>
-                                            <PaginationRow 
+                                            <PaginationRow
                                                 currentPage={personalPage}
                                                 totalPages={totalPages}
                                                 totalItems={totalItems}
@@ -509,9 +509,10 @@ const styles = StyleSheet.create({
 
     /* ── Desktop ─────────────────────────── */
     desktopContent: {
-        padding: 32,
-        paddingBottom: 48,
-        maxWidth: 1900,
+        paddingTop: 70,
+        paddingHorizontal: 30,
+        paddingBottom: 30,
+        maxWidth: 1600,
         alignSelf: 'center',
         width: '100%',
     },

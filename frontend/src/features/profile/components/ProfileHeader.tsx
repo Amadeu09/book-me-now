@@ -1,19 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { palette, spacing, typography } from '@/constants/theme';
-import { HC } from '@/features/home/constants/inicio.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
-export const ProfileHeader: React.FC = () => (
-    <View style={styles.container}>
-        <View style={styles.leftBlock}>
-            <Text style={styles.title}>Perfil</Text>
-            <View style={styles.subtitleRow}>
-                <View style={styles.subtitleDot} />
-                <Text style={styles.subtitle}>Tu información y citas del día.</Text>
+export const ProfileHeader: React.FC = () => {
+    const theme = useTheme();
+    return (
+        <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
+            <View style={styles.leftBlock}>
+                <Text style={[styles.title, { color: theme.headerText }]}>Perfil</Text>
+                <View style={styles.subtitleRow}>
+                    <View style={[styles.subtitleDot, { backgroundColor: theme.primary }]} />
+                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>Tu información y citas del día.</Text>
+                </View>
             </View>
         </View>
-    </View>
-);
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -43,7 +46,6 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: HC.primary,
     },
     subtitle: {
         fontSize: 14,

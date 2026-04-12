@@ -12,10 +12,12 @@ import { getUser } from '@/utils/session';
 import { useBookings } from '@/features/calendar/hooks/useBookings';
 import { fetchGetTreballadors, fetchGetServeis } from '@/features/calendar/services/calendarApi';
 import type { ApiTreballador, ApiServei } from '@/features/calendar/types';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 import { addWeeks, subWeeks, format, startOfWeek, endOfWeek } from 'date-fns';
 
 export default function Bookings() {
+    const theme = useTheme();
     const [isAdmin, setIsAdmin] = useState(false);
     const [userRole, setUserRole] = useState<string | undefined>(undefined);
     const [userId, setUserId] = useState<string | undefined>(undefined);
@@ -82,7 +84,7 @@ export default function Bookings() {
     const { events, loading, error, refetch } = useBookings(start, end, userRole, userId, selectedWorkerId, selectedServiceId);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <CalendarHeader
                 viewMode={viewMode}
                 onViewChange={setViewMode}
@@ -125,8 +127,8 @@ export default function Bookings() {
                 )}
 
                 {/* Floating Action Button */}
-                <TouchableOpacity style={styles.fab} onPress={handleQuickCreate}>
-                    <Feather name="plus" size={24} color="#ffffff" />
+                <TouchableOpacity style={[styles.fab, { backgroundColor: theme.primary }]} onPress={handleQuickCreate}>
+                    <Feather name="plus" size={24} color={theme.textOnPrimary} />
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

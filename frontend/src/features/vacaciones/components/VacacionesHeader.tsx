@@ -19,10 +19,6 @@ export function VacacionesHeader() {
                     </Text>
                 </View>
             </View>
-            <TouchableOpacity style={[styles.btnPrimary, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
-                <Ionicons name="add" size={18} color={theme.textOnPrimary} />
-                <Text style={[styles.btnPrimaryText, { color: theme.textOnPrimary }]}>Solicitar Días</Text>
-            </TouchableOpacity>
         </View>
     );
 }

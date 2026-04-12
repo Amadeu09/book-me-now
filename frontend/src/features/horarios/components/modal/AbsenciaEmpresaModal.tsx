@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../../constants/horarios.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import { DatePickerField } from '../DatePickerField';
 import type { AbsenciaEmpresa, CreateAbsenciaEmpresaDto, TipusAbsenciaEmpresa } from '../../types/absencies-empresa.types';
 
@@ -26,6 +27,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const isEdit = !!initialData;
+    const theme = useTheme();
 
     const [titol, setTitol] = useState('');
     const [inici, setInici] = useState('');
@@ -136,7 +138,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                             {TIPUS_OPTIONS.map(opt => (
                                 <TouchableOpacity
                                     key={opt.key}
-                                    style={[styles.chip, tipus === opt.key && styles.chipActive]}
+                                    style={[styles.chip, tipus === opt.key && { borderColor: theme.primary, backgroundColor: theme.primary }]}
                                     onPress={() => !isSubmitting && setTipus(opt.key)}
                                     activeOpacity={0.7}
                                 >
@@ -159,7 +161,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                             <Text style={styles.btnCancelText}>Cancel·lar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.btnSave, isSubmitting && styles.btnSaveDisabled]}
+                            style={[styles.btnSave, { backgroundColor: theme.primary }, isSubmitting && styles.btnSaveDisabled]}
                             onPress={handleSubmit}
                             disabled={isSubmitting}
                             activeOpacity={0.8}

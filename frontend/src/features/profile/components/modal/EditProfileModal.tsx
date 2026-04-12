@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import { changePassword } from '../../services/profile.service';
 
 interface EditProfileModalProps {
@@ -23,6 +24,7 @@ interface EditProfileModalProps {
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onClose }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -180,7 +182,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.btnSave, loading && styles.btnDisabled]}
+                            style={[styles.btnSave, { backgroundColor: theme.primary }, loading && styles.btnDisabled]}
                             onPress={handleSave}
                             disabled={loading}
                             activeOpacity={0.8}

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Servei } from "@/types/servei.types";
-import { palette, radius, shadow, spacing } from "@/constants/theme";
+import { radius, spacing } from "@/constants/theme";
+import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { Button } from '@/ui/components/common';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 type Props = {
     service: Servei;
@@ -12,11 +15,18 @@ type Props = {
 };
 
 export default function ServiceCard({ service, onEdit, onDelete, style }: Props) {
-    const imageUri = `https://picsum.photos/seed/servei-${service.id}/600/400`;
-
+    const theme = useTheme();
     return (
         <View style={[styles.card, style]}>
-            <Image source={{ uri: imageUri }} style={styles.cardImage} resizeMode="cover" />
+            {service.fotoUrl ? (
+                <Image source={{ uri: service.fotoUrl }} style={styles.cardImage} resizeMode="cover" />
+            ) : (
+                <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
+                    <View style={[styles.placeholderIcon, { backgroundColor: theme.primaryMid }]}>
+                        <Ionicons name="cut-outline" size={32} color={theme.primary} />
+                    </View>
+                </View>
+            )}
             <View style={styles.cardBody}>
                 <Text style={styles.cardTitle}>{service.nom}</Text>
                 <Text style={styles.cardMeta}>{service.duradaMin} min · {Number(service.preu).toFixed(2)} €</Text>
@@ -31,24 +41,35 @@ export default function ServiceCard({ service, onEdit, onDelete, style }: Props)
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: palette.background,
+        backgroundColor: HC.card,
         borderRadius: radius.lg,
-        borderWidth: 1,
-        borderColor: palette.border,
         overflow: 'hidden',
-        ...shadow.card,
+        ...cardShadow,
     },
     cardImage: {
         width: '100%',
         aspectRatio: 16 / 9,
-        backgroundColor: palette.borderSoft,
+        minHeight: 140,
+        backgroundColor: HC.borderSoft,
+    },
+    cardImagePlaceholder: {
+        backgroundColor: HC.borderSoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    placeholderIcon: {
+        width: 60,
+        height: 60,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     cardBody: {
         padding: spacing.sm,
         gap: spacing.xs,
     },
-    cardTitle: { fontSize: 14, fontWeight: '700', color: palette.textPrimary },
-    cardMeta: { fontSize: 12, color: palette.textMuted },
+    cardTitle: { fontSize: 14, fontWeight: '700', color: HC.textPrimary },
+    cardMeta: { fontSize: 12, color: HC.textMuted },
     cardActions: {
         flexDirection: 'row',
         gap: spacing.xs,

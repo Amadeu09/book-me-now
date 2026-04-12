@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { ApiOperation, ApiResponse, ApiTags, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto } from './dto/reserves.dto';
 
@@ -13,6 +14,17 @@ import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto } from './d
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReservesController {
   constructor(private readonly reservesService: ReservesService) { }
+
+  @Post('public')
+  @Public()
+  @ApiOperation({ summary: 'Crear una reserva pública sense autenticació' })
+  @ApiBody({ type: CreateReservaDto })
+  @ApiResponse({ status: 201, description: 'Reserva creada correctament' })
+  @ApiResponse({ status: 409, description: 'Horari ja ocupat (conflicte de disponibilitat)' })
+  @ApiResponse({ status: 404, description: 'Servei o treballador no trobat' })
+  createPublic(@Body() dto: CreateReservaDto) {
+    return this.reservesService.createPublic(dto);
+  }
 
   @Post()
   @Roles('ADMIN_GENERAL', 'EMPLEAT')

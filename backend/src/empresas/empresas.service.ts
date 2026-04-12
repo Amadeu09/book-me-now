@@ -29,6 +29,51 @@ export class EmpresasService {
     return empresa;
   }
 
+  async searchPublic(query: string) {
+    const sanitized = query.trim().slice(0, 100);
+    return this.prisma.empresa.findMany({
+      where: {
+        activa: true,
+        nom: {
+          contains: sanitized,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+        nom: true,
+        ubicacio: true,
+        fotoPerfil: true,
+        bannerUrl: true,
+        descripcio: true,
+        colorPrimari: true,
+      },
+      take: 10,
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOnePublic(id: number) {
+    const empresa = await this.prisma.empresa.findUnique({
+      where: { id, activa: true },
+      select: {
+        id: true,
+        nom: true,
+        ubicacio: true,
+        fotoPerfil: true,
+        bannerUrl: true,
+        descripcio: true,
+        colorPrimari: true,
+      },
+    });
+
+    if (!empresa) {
+      throw new NotFoundException('Empresa no trobada');
+    }
+
+    return empresa;
+  }
+
   async findAll(userEmpresaId: number) {
     return this.prisma.empresa.findMany({
       where: { id: userEmpresaId },

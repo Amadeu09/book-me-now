@@ -6,10 +6,12 @@ import {
     TouchableOpacity,
     FlatList,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { ProfileServei } from '../services/profile.service';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const MAX_VISIBLE = 3;
 
@@ -17,11 +19,17 @@ interface ServiceItemProps {
     item: ProfileServei;
 }
 
-const ServiceItem: React.FC<ServiceItemProps> = ({ item }) => (
+const ServiceItem: React.FC<ServiceItemProps> = ({ item }) => {
+    const theme = useTheme();
+    return (
     <View style={styles.serviceCard}>
-        <View style={styles.serviceIcon}>
-            <Ionicons name="cut-outline" size={20} color={HC.primary} />
-        </View>
+        {item.fotoUrl ? (
+            <Image source={{ uri: item.fotoUrl }} style={styles.serviceImage} resizeMode="cover" />
+        ) : (
+            <View style={[styles.serviceIcon, { backgroundColor: theme.primaryMid }]}>
+                <Ionicons name="cut-outline" size={20} color={theme.primary} />
+            </View>
+        )}
 
         <View style={styles.serviceInfo}>
             <Text style={styles.serviceName}>{item.nom}</Text>
@@ -36,7 +44,8 @@ const ServiceItem: React.FC<ServiceItemProps> = ({ item }) => (
 
         <Ionicons name="chevron-forward" size={18} color={HC.textLight} />
     </View>
-);
+    );
+};
 
 interface AssignedServicesProps {
     services: ProfileServei[];
@@ -45,23 +54,24 @@ interface AssignedServicesProps {
 
 export const AssignedServices: React.FC<AssignedServicesProps> = ({ services, isLoading }) => {
     const [expanded, setExpanded] = useState(false);
+    const theme = useTheme();
 
     const hasMore = services.length > MAX_VISIBLE;
     const visible = expanded ? services : services.slice(0, MAX_VISIBLE);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.header}>
                 <Text style={styles.title}>Servicios Asignados</Text>
                 {hasMore && (
                     <TouchableOpacity onPress={() => setExpanded((v) => !v)}>
-                        <Text style={styles.link}>{expanded ? 'Ver menos' : 'Ver todos →'}</Text>
+                        <Text style={[styles.link, { color: theme.primary }]}>{expanded ? 'Ver menos' : 'Ver todos →'}</Text>
                     </TouchableOpacity>
                 )}
             </View>
 
             {isLoading ? (
-                <ActivityIndicator color={HC.primary} style={styles.spinner} />
+                <ActivityIndicator color={theme.primary} style={styles.spinner} />
             ) : services.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Ionicons name="briefcase-outline" size={32} color={HC.textLight} />
@@ -132,6 +142,11 @@ const styles = StyleSheet.create({
         backgroundColor: HC.primaryLight,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    serviceImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
     },
     serviceInfo: {
         flex: 1,

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../../constants/horarios.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import {
     createDefaultRotation,
     type JornadaFormState,
@@ -51,6 +52,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
 }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
+    const theme = useTheme();
 
     const [form, setForm] = useState<JornadaFormState>(buildInitialState);
     const [activeRotation, setActiveRotation] = useState(0);
@@ -224,7 +226,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                                 disabled={loading}
                                 activeOpacity={0.7}
                             >
-                                <View style={[styles.checkbox, form.activa && styles.checkboxActive]}>
+                                <View style={[styles.checkbox, form.activa && { backgroundColor: theme.primary, borderColor: theme.primary }]}>
                                     {form.activa && (
                                         <Ionicons name="checkmark" size={14} color={HC.white} />
                                     )}
@@ -275,7 +277,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.btnSave, loading && styles.btnDisabled]}
+                            style={[styles.btnSave, { backgroundColor: theme.primary }, loading && styles.btnDisabled]}
                             onPress={handleSave}
                             disabled={loading}
                             activeOpacity={0.8}

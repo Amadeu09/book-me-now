@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservaDto } from './dto/reserves.dto';
 import { ReservaEstat } from '@prisma/client';
@@ -30,6 +30,9 @@ export class ReservesService {
 
 
     const dataHoraInici = new Date(`${dto.data}T${dto.hora}`);
+    if (isNaN(dataHoraInici.getTime())) {
+      throw new BadRequestException(`Data o hora invàlida: "${dto.data}T${dto.hora}"`);
+    }
     //calcular data hora final
     const dataHoraFinal = new Date(dataHoraInici.getTime() + servei.duradaMin * 60 * 1000);
 
@@ -93,6 +96,55 @@ export class ReservesService {
       },
     });
 
+  }
+
+  async createPublic(dto: CreateReservaDto) {
+    const servei = await this.prisma.servei.findUnique({ where: { id: dto.idServei } });
+    if (!servei || !servei.actiu) throw new NotFoundException('Servei no trobat');
+
+    const treballador = await this.prisma.treballador.findUnique({ where: { id: dto.idTreballador } });
+    if (!treballador || !treballador.actiu) throw new NotFoundException('Treballador no trobat');
+
+    const dataHoraInici = new Date(`${dto.data}T${dto.hora}`);
+    if (isNaN(dataHoraInici.getTime())) throw new BadRequestException(`Data o hora invàlida`);
+
+    const dataHoraFinal = new Date(dataHoraInici.getTime() + servei.duradaMin * 60 * 1000);
+
+    const dayStart = new Date(dataHoraInici); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dataHoraInici); dayEnd.setHours(23, 59, 59, 999);
+
+    const reserves = await this.prisma.reserva.findMany({
+      where: { treballadorId: dto.idTreballador, dataHora: { gte: dayStart, lte: dayEnd }, estat: { not: 'CANCELLADA' } },
+      include: { servei: { select: { duradaMin: true } } },
+    });
+
+    const hasOverlap = reserves.some((r) => {
+      const rFi = new Date(r.dataHora.getTime() + r.servei.duradaMin * 60 * 1000);
+      return r.dataHora < dataHoraFinal && rFi > dataHoraInici;
+    });
+
+    if (hasOverlap) throw new ConflictException('Aquest horari ja no està disponible');
+
+    let client = await this.prisma.client.findFirst({ where: { email: dto.email } });
+    if (!client) {
+      client = await this.prisma.client.create({
+        data: { nom: dto.nom, email: dto.email, telefon: dto.telefon, empresaId: treballador.empresaId },
+      });
+    }
+
+    return this.prisma.reserva.create({
+      data: {
+        treballadorId: dto.idTreballador,
+        dataHora: dataHoraInici,
+        empresaId: treballador.empresaId,
+        serveiId: dto.idServei,
+        clientId: client.id,
+        clientEmail: dto.email,
+        clientNom: dto.nom,
+        observacions: dto.observacions,
+        estat: 'PENDENT',
+      },
+    });
   }
 
   async delete(idReserva: number) {

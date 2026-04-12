@@ -8,14 +8,7 @@ import { HC, cardShadow } from '../constants/horarios.constants';
 import { useAbsenciesEmpresa } from '../hooks/useAbsenciesEmpresa';
 import { AbsenciaEmpresaModal } from './modal/AbsenciaEmpresaModal';
 import type { AbsenciaEmpresa, TipusAbsenciaEmpresa } from '../types/absencies-empresa.types';
-
-/* ── Tipus config ──────────────────────────── */
-const TIPUS_CONFIG: Record<TipusAbsenciaEmpresa, { label: string; color: string; bg: string }> = {
-    FESTA_LOCAL:   { label: 'Festa Local',   color: HC.primary,    bg: HC.primaryLight },
-    FESTA_ESTATAL: { label: 'Festa Estatal', color: '#3B82F6',     bg: '#EFF6FF' },
-    PONT:          { label: 'Pont',          color: HC.yellow,     bg: HC.yellowLight },
-    ALTRE:         { label: 'Altre',         color: HC.textMuted,  bg: HC.borderSoft },
-};
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 function formatDateRange(inici: string, fi: string): string {
     const s = new Date(inici);
@@ -26,9 +19,9 @@ function formatDateRange(inici: string, fi: string): string {
 
 /* ── Absence row item ───────────────────────── */
 function AbsenciaItem({
-    item, onEdit, onDelete,
-}: { item: AbsenciaEmpresa; onEdit: () => void; onDelete: () => void }) {
-    const cfg = TIPUS_CONFIG[item.tipus];
+    item, onEdit, onDelete, tipusConfig,
+}: { item: AbsenciaEmpresa; onEdit: () => void; onDelete: () => void; tipusConfig: Record<TipusAbsenciaEmpresa, { label: string; color: string; bg: string }> }) {
+    const cfg = tipusConfig[item.tipus];
     return (
         <View style={styles.item}>
             <View style={[styles.tipusBadge, { backgroundColor: cfg.bg }]}>
@@ -52,12 +45,19 @@ function AbsenciaItem({
 
 /* ── Shared panel content ───────────────────── */
 function FestiosPanel() {
+    const theme = useTheme();
+    const TIPUS_CONFIG: Record<TipusAbsenciaEmpresa, { label: string; color: string; bg: string }> = {
+        FESTA_LOCAL: { label: 'Festa Local', color: theme.primary, bg: theme.primaryLight },
+        FESTA_ESTATAL: { label: 'Festa Estatal', color: '#3B82F6', bg: '#EFF6FF' },
+        PONT: { label: 'Pont', color: HC.yellow, bg: HC.yellowLight },
+        ALTRE: { label: 'Altre', color: HC.textMuted, bg: HC.borderSoft },
+    };
+
     const {
         data, total, page, totalPages,
         isLoading, setPage, create, update, remove,
     } = useAbsenciesEmpresa();
 
-    const [expanded, setExpanded] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<AbsenciaEmpresa | null>(null);
 
@@ -83,33 +83,22 @@ function FestiosPanel() {
 
     return (
         <>
-            {/* ── Header (always visible) ── */}
-            <TouchableOpacity
-                style={styles.panelHeader}
-                onPress={() => setExpanded(v => !v)}
-                activeOpacity={0.7}
-            >
+            {/* ── Header ── */}
+            <View style={styles.panelHeader}>
                 <View style={styles.panelHeaderLeft}>
-                    <Ionicons name="calendar" size={17} color={HC.red} />
                     <Text style={styles.panelTitle}>Excepcions & Festius</Text>
                     {total > 0 && (
-                        <View style={styles.countBadge}>
-                            <Text style={styles.countBadgeText}>{total}</Text>
+                        <View style={[styles.countBadge, { backgroundColor: theme.primaryLight }]}>
+                            <Text style={[styles.countBadgeText, { color: theme.primary }]}>{total}</Text>
                         </View>
                     )}
                 </View>
-                <Ionicons
-                    name={expanded ? 'chevron-up' : 'chevron-down'}
-                    size={18}
-                    color={HC.textMuted}
-                />
-            </TouchableOpacity>
+            </View>
 
-            {/* ── Expanded content ── */}
-            {expanded && (
-                <View style={styles.panelBody}>
+            {/* ── Content (always visible) ── */}
+            <View style={styles.panelBody}>
                     {isLoading ? (
-                        <ActivityIndicator color={HC.primary} style={{ marginVertical: 16 }} />
+                        <ActivityIndicator color={theme.primary} style={{ marginVertical: 16 }} />
                     ) : data.length === 0 ? (
                         <Text style={styles.emptyText}>No hi ha festius propers registrats.</Text>
                     ) : (
@@ -118,6 +107,7 @@ function FestiosPanel() {
                                 <AbsenciaItem
                                     key={item.id}
                                     item={item}
+                                    tipusConfig={TIPUS_CONFIG}
                                     onEdit={() => { setItemToEdit(item); setModalVisible(true); }}
                                     onDelete={() => handleDelete(item)}
                                 />
@@ -148,15 +138,14 @@ function FestiosPanel() {
 
                     {/* Add button */}
                     <TouchableOpacity
-                        style={styles.addBtn}
+                        style={[styles.addBtn, { borderColor: theme.primary }]}
                         onPress={() => { setItemToEdit(null); setModalVisible(true); }}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="add" size={16} color={HC.primary} />
-                        <Text style={styles.addBtnText}>Afegir absència</Text>
+                        <Ionicons name="add" size={16} color={theme.primary} />
+                        <Text style={[styles.addBtnText, { color: theme.primary }]}>Afegir absència</Text>
                     </TouchableOpacity>
                 </View>
-            )}
 
             <AbsenciaEmpresaModal
                 visible={modalVisible}
@@ -175,17 +164,23 @@ function FestiosPanel() {
 }
 
 /* ── Public exports (same names as before) ─── */
-export const ExceptionSectionDesktop: React.FC = () => (
-    <View style={styles.desktopContainer}>
-        <FestiosPanel />
-    </View>
-);
+export const ExceptionSectionDesktop: React.FC = () => {
+    const theme = useTheme();
+    return (
+        <View style={[styles.desktopContainer, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
+            <FestiosPanel />
+        </View>
+    );
+};
 
-export const ExceptionCardMobile: React.FC = () => (
-    <View style={styles.mobileContainer}>
-        <FestiosPanel />
-    </View>
-);
+export const ExceptionCardMobile: React.FC = () => {
+    const theme = useTheme();
+    return (
+        <View style={[styles.mobileContainer, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
+            <FestiosPanel />
+        </View>
+    );
+};
 
 /* ── Styles ─────────────────────────────────── */
 const styles = StyleSheet.create({

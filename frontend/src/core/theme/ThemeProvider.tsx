@@ -2,10 +2,14 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getUser } from '@/utils/session';
 
 export type AppTheme = {
-  primary: string;           
-  primaryLight: string;      
-  background: string;        
-  textOnPrimary: string;     
+  primary: string;
+  primaryMid: string;
+  primaryLight: string;
+  background: string;
+  textOnPrimary: string;
+
+  /** True when no custom company color has been set. Soft and dark cards render as neutral/white. */
+  isDefault: boolean;
 
   sidebarBg: string;
   sidebarText: string;
@@ -17,17 +21,24 @@ export type AppTheme = {
   headerText: string;
   headerSubtitle: string;
 
+  /** Border for soft cards (primaryLight bg). 0 when company color is white or default. */
+  softBorderWidth: number;
+  softBorderColor: string;
+
   setPrimaryColor: (hex: string) => void;
 };
 
 const DEFAULT_PRIMARY = '#FF6A00';
 
-// Default mock values to avoid null checks
+// Default theme — used when the company has NOT set a custom color.
+// Cards are neutral/white; primary is still orange for buttons/navbar.
 const defaultTheme: AppTheme = {
   primary: DEFAULT_PRIMARY,
+  primaryMid: '#e2e8f0',
   primaryLight: '#ffffff',
   background: '#f8f9fa',
   textOnPrimary: '#ffffff',
+  isDefault: true,
   sidebarBg: '#ffffff',
   sidebarText: '#0f172a',
   sidebarTextInactive: '#6b7280',
@@ -36,7 +47,9 @@ const defaultTheme: AppTheme = {
   headerBg: '#ffffff',
   headerText: '#0f172a',
   headerSubtitle: '#6b7280',
-  setPrimaryColor: () => {},
+  softBorderWidth: 0,
+  softBorderColor: 'transparent',
+  setPrimaryColor: () => { },
 };
 
 const ThemeContext = createContext<AppTheme>(defaultTheme);
@@ -69,7 +82,7 @@ function computeTheme(primaryHex: string, setPrimaryColor: (hex: string) => void
   const validHex = hexPattern.test(primaryHex) ? primaryHex : DEFAULT_PRIMARY;
 
   const isWhite = validHex.toLowerCase() === '#ffffff';
-  
+
   // If the user selects white, we revert the general accent color to classic orange
   // so that buttons don't become invisible white.
   const accentColor = isWhite ? DEFAULT_PRIMARY : validHex;
@@ -77,10 +90,12 @@ function computeTheme(primaryHex: string, setPrimaryColor: (hex: string) => void
 
   return {
     primary: accentColor,
-    primaryLight: isWhite ? '#ffffff' : lightenColor(accentColor, 0.95),
-    background: isWhite ? '#f8f9fa' : lightenColor(accentColor, 0.98),
+    primaryMid: isWhite ? '#e2e8f0' : lightenColor(accentColor, 0.60),
+    primaryLight: isWhite ? '#ffffff' : lightenColor(accentColor, 0.85),
+    background: isWhite ? '#f8f9fa' : lightenColor(accentColor, 0.93),
     textOnPrimary: contrastText,
-    
+    isDefault: false,
+
     // UI Elements
     sidebarBg: isWhite ? '#ffffff' : accentColor,
     sidebarText: isWhite ? '#0f172a' : contrastText,
@@ -91,6 +106,9 @@ function computeTheme(primaryHex: string, setPrimaryColor: (hex: string) => void
     headerBg: isWhite ? '#ffffff' : accentColor,
     headerText: isWhite ? '#0f172a' : contrastText,
     headerSubtitle: isWhite ? '#6b7280' : contrastText + 'cc',
+
+    softBorderWidth: 0,
+    softBorderColor: 'transparent',
 
     setPrimaryColor
   };
@@ -111,7 +129,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (companyColor) {
         setTheme(computeTheme(companyColor, updateThemeColor));
       } else {
-        setTheme(computeTheme(DEFAULT_PRIMARY, updateThemeColor));
+        // No custom color — use neutral default (white cards, no tints)
+        setTheme({ ...defaultTheme, setPrimaryColor: updateThemeColor });
       }
     });
   }, []);

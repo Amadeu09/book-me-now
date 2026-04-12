@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/inicio.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 const MOCK_SCHEDULE = [
     { day: 'Lunes', hours: '09:00 - 18:00', status: 'open' },
@@ -14,11 +15,12 @@ const MOCK_SCHEDULE = [
 ];
 
 export const ScheduleCard: React.FC = () => {
+    const theme = useTheme();
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.headerRow}>
-                <View style={styles.iconCirclePrimary}>
-                    <Ionicons name="time" size={22} color={HC.primary} />
+                <View style={[styles.iconCirclePrimary, { backgroundColor: theme.primaryMid }]}>
+                    <Ionicons name="time" size={22} color={theme.primary} />
                 </View>
                 <View style={styles.headerTitleBlock}>
                     <Text style={styles.title}>Horario de Apertura</Text>

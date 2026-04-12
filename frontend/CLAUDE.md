@@ -70,6 +70,55 @@ The Axios instance at `src/core/api/api.ts` auto-attaches the Bearer token (read
 - Use `StyleSheet.create` — no inline style objects in lists or render functions
 - Responsive breakpoint: `width >= 768` (via `useWindowDimensions()`)
 
+#### Company Color System (`src/core/theme/ThemeProvider.tsx`)
+
+The app adapts its UI to each company's `colorPrimari`. Access via `const theme = useTheme()`.
+
+| Token | Value | Usage |
+|---|---|---|
+| `theme.primary` | Company color (full) | NavBar bg, buttons, selected badges, progress bars |
+| `theme.primaryMid` | Company color lightened 60% | VACANCES calendar badges (background) |
+| `theme.primaryLight` | Company color lightened 85% | Card backgrounds, range-selection highlight |
+| `theme.background` | Company color lightened 93% | Screen background |
+| `theme.textOnPrimary` | `#fff` or `#000` (contrast) | Text/icons on `theme.primary` backgrounds |
+
+#### Card visual hierarchy
+
+There are three card variants used consistently across screens. Always apply them this way:
+
+**1. Strong card** — full company color background (high-contrast, used for featured info)
+```tsx
+<View style={[styles.card, { backgroundColor: theme.primary }]}>
+  <Text style={{ color: theme.textOnPrimary }}>...</Text>
+</View>
+```
+
+**2. Soft card with border** — light company color background with a subtle 0.5pt border (default for most content cards)
+```tsx
+<View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: 0.5, borderColor: theme.primary }]}>
+  <Text style={{ color: HC.textPrimary }}>...</Text>
+</View>
+```
+
+**3. Neutral card** — plain white (`HC.card`) background, no company color (used for non-themed content)
+```tsx
+<View style={[styles.card, { backgroundColor: HC.card }]}>
+  <Text style={{ color: HC.textPrimary }}>...</Text>
+</View>
+```
+
+#### Screen header
+
+Headers use `theme.headerBg` as background and `theme.headerText` / `theme.headerSubtitle` for text, so they automatically match the company color:
+```tsx
+<View style={{ backgroundColor: theme.headerBg }}>
+  <Text style={{ color: theme.headerText }}>Títol</Text>
+  <Text style={{ color: theme.headerSubtitle }}>Subtítol</Text>
+</View>
+```
+
+`theme.headerBg` equals `theme.primary` (company color) unless the company color is white, in which case it falls back to white with dark text.
+
 ### Path Aliases
 
 `@/` resolves to `./src/` and `./` (configured in both `tsconfig.json` and `babel.config.js`).
@@ -86,3 +135,7 @@ API base URL is set via `EXPO_PUBLIC_API_URL` (see `.env.example`). Defaults to 
 - **FAB buttons**: 56×56, `borderRadius: 28`, absolute bottom-right positioning.
 - **No hardcoded colors** — always use the `HC` palette or `theme.ts`.
 - Functional components only; no anonymous components exported.
+
+## Pending tasks
+
+- (ninguna)

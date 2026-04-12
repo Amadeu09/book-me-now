@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow, STATUS_CONFIG, type Employee } from '../constants/horarios.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 /* ──────────────────────────────────────────
    EmployeeShiftCard
@@ -35,8 +36,9 @@ const MobileCard: React.FC<{ employee: Employee; sts: typeof STATUS_CONFIG.avail
     employee, sts, onEdit, onDelete
 }) => {
     const [showMenu, setShowMenu] = useState(false);
+    const theme = useTheme();
     return (
-        <View style={[styles.mCard, { zIndex: showMenu ? 100 : 1 }]}>
+        <View style={[styles.mCard, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor, zIndex: showMenu ? 100 : 1 }]}>
             <View style={styles.avatarWrap}>
                 {employee.photoUri ? (
                     <Image source={{ uri: employee.photoUri }} style={styles.avatar} />
@@ -81,6 +83,7 @@ const DesktopRow: React.FC<{
     onDelete?: (e: Employee) => void;
 }> = ({ employee, sts, onAction, onEdit, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
+    const theme = useTheme();
     return (
         <View style={[styles.dRow, { zIndex: showMenu ? 100 : 1 }]}>
             {/* Empleado */}
@@ -102,8 +105,8 @@ const DesktopRow: React.FC<{
             </View>
             {/* Plantilla */}
             <View style={styles.dCellTemplate}>
-                <View style={styles.templateBadge}>
-                    <Text style={styles.templateBadgeText}>{employee.templateName}</Text>
+                <View style={[styles.templateBadge, { backgroundColor: theme.primaryLight }]}>
+                    <Text style={[styles.templateBadgeText, { color: theme.primary }]}>{employee.templateName}</Text>
                 </View>
             </View>
             {/* Estado */}

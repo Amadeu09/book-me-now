@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { palette, spacing, typography, radius } from "@/constants/theme";
 import { ViewMode } from './types';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 interface CalendarHeaderProps {
     viewMode: ViewMode;
@@ -15,11 +16,12 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     onViewChange,
     onQuickCreate
 }) => {
+    const theme = useTheme();
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
             <View>
-                <Text style={styles.title}>Calendar</Text>
-                <Text style={styles.subtitle}>Manage bookings and check availability.</Text>
+                <Text style={[styles.title, { color: theme.headerText }]}>Reserves</Text>
+                <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>Gestiona les reserves i la disponibilitat.</Text>
             </View>
 
             <View style={styles.actions}>
@@ -43,9 +45,9 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                     ))}
                 </View>
 
-                <TouchableOpacity style={styles.createButton} onPress={onQuickCreate}>
-                    <Ionicons name="add" size={20} color="#fff" />
-                    <Text style={styles.createButtonText}>Quick Create</Text>
+                <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={onQuickCreate}>
+                    <Ionicons name="add" size={20} color={theme.textOnPrimary} />
+                    <Text style={[styles.createButtonText, { color: theme.textOnPrimary }]}>Nova reserva</Text>
                 </TouchableOpacity>
             </View>
         </View>
