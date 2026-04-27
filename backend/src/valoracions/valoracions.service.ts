@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateValoracioDto, UpdateValoracioDto } from './dto/valoracions.dto';
+import { CreateValoracioDto, CreateValoracioByTokenDto, UpdateValoracioDto } from './dto/valoracions.dto';
 import { ValoracioTipus } from '@prisma/client';
 
 @Injectable()
@@ -8,18 +8,8 @@ export class ValoracionsService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(dto: CreateValoracioDto) {
-        // Logic to distinguish between Sala (Empresa) and Treballador
-        // Assuming 'id' in DTO refers to:
-        // - treballadorId if tipusValoracio is TREBALLADOR
-        // - empresaId if tipusValoracio is SALA
-
-        // Also need to get empresaId for the valuation itself.
-        // If valuing a worker, the valuation belongs to the worker's company.
-        // If valuing a Sala (Company), it belongs to that company.
-
         let empresaId: number;
         let treballadorId: number | null = null;
-        let clientId: number | null = null; // Assuming anonymous or string-based for now as per schema update
 
         if (dto.tipusValoracio === ValoracioTipus.TREBALLADOR) {
             const treballador = await this.prisma.treballador.findUnique({
@@ -29,7 +19,6 @@ export class ValoracionsService {
             empresaId = treballador.empresaId;
             treballadorId = treballador.id;
         } else {
-            // SALA case - assumes dto.id is EmpresaId
             const empresa = await this.prisma.empresa.findUnique({
                 where: { id: dto.id },
             });
@@ -40,23 +29,100 @@ export class ValoracionsService {
         return this.prisma.valoracio.create({
             data: {
                 empresaId,
-                treballadorId, // null if SALA
+                treballadorId,
                 tipus: dto.tipusValoracio,
                 puntuacio: dto.valoracio,
                 comentari: dto.comentari,
                 nomClient: dto.nomClient,
                 serveiId: dto.idServeis,
-                // clientId: null, // intentionally left null or managed if needed
             },
         });
+    }
+
+    async getInfoByToken(token: string) {
+        const reserva = await this.prisma.reserva.findUnique({
+            where: { tokenValoracio: token },
+            include: {
+                empresa: { select: { id: true, nom: true, fotoPerfil: true } },
+                treballador: { include: { Usuari: { select: { fotoPerfil: true } } } },
+                servei: { select: { nom: true } },
+            },
+        });
+
+        if (!reserva) throw new NotFoundException('Enllaç de valoració no vàlid');
+
+        const jaValorada = reserva.tokenValoracioUsat;
+
+        return {
+            empresa: reserva.empresa,
+            treballador: reserva.treballador
+                ? { id: reserva.treballador.id, nom: reserva.treballador.nom, fotoPerfil: reserva.treballador.Usuari.fotoPerfil }
+                : null,
+            servei: reserva.servei,
+            dataHora: reserva.dataHora,
+            jaValorada,
+        };
+    }
+
+    async createByToken(token: string, dto: CreateValoracioByTokenDto) {
+        const reserva = await this.prisma.reserva.findUnique({
+            where: { tokenValoracio: token },
+            include: { treballador: true },
+        });
+
+        if (!reserva) throw new NotFoundException('Enllaç de valoració no vàlid');
+        if (reserva.tokenValoracioUsat) throw new ConflictException('Aquesta cita ja ha estat valorada');
+        if (reserva.dataHora > new Date()) throw new BadRequestException('Encara no pots valorar una cita que no ha passat');
+
+        if (reserva.treballadorId && (dto.puntuacioTreballador === undefined || !dto.comentariTreballador)) {
+            throw new BadRequestException('Cal valorar també el treballador');
+        }
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.valoracio.create({
+                data: {
+                    empresaId: reserva.empresaId,
+                    tipus: ValoracioTipus.SALA,
+                    puntuacio: dto.puntuacioEmpresa,
+                    comentari: dto.comentariEmpresa,
+                    clientId: reserva.clientId,
+                    nomClient: reserva.clientNom,
+                    serveiId: reserva.serveiId,
+                    reservaId: reserva.id,
+                },
+            });
+
+            if (reserva.treballadorId && dto.puntuacioTreballador !== undefined && dto.comentariTreballador) {
+                await tx.valoracio.create({
+                    data: {
+                        empresaId: reserva.empresaId,
+                        treballadorId: reserva.treballadorId,
+                        tipus: ValoracioTipus.TREBALLADOR,
+                        puntuacio: dto.puntuacioTreballador,
+                        comentari: dto.comentariTreballador,
+                        clientId: reserva.clientId,
+                        nomClient: reserva.clientNom,
+                        serveiId: reserva.serveiId,
+                        reservaId: reserva.id,
+                    },
+                });
+            }
+
+            await tx.reserva.update({
+                where: { id: reserva.id },
+                data: { tokenValoracioUsat: true },
+            });
+        });
+
+        return { ok: true };
     }
 
     findAll() {
         return this.prisma.valoracio.findMany({
             include: {
-                empresa: true, // Optional: include details
+                empresa: true,
                 treballador: true,
-                servei: true
+                servei: true,
             }
         });
     }
@@ -67,7 +133,7 @@ export class ValoracionsService {
             include: {
                 empresa: true,
                 treballador: true,
-                servei: true
+                servei: true,
             }
         });
         if (!valoracio) throw new NotFoundException('Valoración no encontrada');
@@ -84,7 +150,6 @@ export class ValoracionsService {
                 puntuacio: dto.valoracio,
                 comentari: dto.comentari,
                 nomClient: dto.nomClient,
-                // tipus cannot easily be changed without re-validating entities, assuming static
             },
         });
     }

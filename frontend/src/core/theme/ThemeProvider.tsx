@@ -11,6 +11,9 @@ export type AppTheme = {
   /** True when no custom company color has been set. Soft and dark cards render as neutral/white. */
   isDefault: boolean;
 
+  /** True when the user explicitly chose #ffffff as company color. Use to avoid showing orange instead of white. */
+  isUserWhite: boolean;
+
   sidebarBg: string;
   sidebarText: string;
   sidebarTextInactive: string;
@@ -25,7 +28,7 @@ export type AppTheme = {
   softBorderWidth: number;
   softBorderColor: string;
 
-  setPrimaryColor: (hex: string) => void;
+  setPrimaryColor: (hex: string | null) => void;
 };
 
 const DEFAULT_PRIMARY = '#FF6A00';
@@ -39,6 +42,7 @@ const defaultTheme: AppTheme = {
   background: '#f8f9fa',
   textOnPrimary: '#ffffff',
   isDefault: true,
+  isUserWhite: false,
   sidebarBg: '#ffffff',
   sidebarText: '#0f172a',
   sidebarTextInactive: '#6b7280',
@@ -49,7 +53,7 @@ const defaultTheme: AppTheme = {
   headerSubtitle: '#6b7280',
   softBorderWidth: 0,
   softBorderColor: 'transparent',
-  setPrimaryColor: () => { },
+  setPrimaryColor: () => {},
 };
 
 const ThemeContext = createContext<AppTheme>(defaultTheme);
@@ -77,7 +81,7 @@ function getContrastText(hex: string) {
   return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 
-function computeTheme(primaryHex: string, setPrimaryColor: (hex: string) => void): AppTheme {
+function computeTheme(primaryHex: string, setPrimaryColor: (hex: string | null) => void): AppTheme {
   const hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/i;
   const validHex = hexPattern.test(primaryHex) ? primaryHex : DEFAULT_PRIMARY;
 
@@ -95,6 +99,7 @@ function computeTheme(primaryHex: string, setPrimaryColor: (hex: string) => void
     background: isWhite ? '#f8f9fa' : lightenColor(accentColor, 0.93),
     textOnPrimary: contrastText,
     isDefault: false,
+    isUserWhite: isWhite,
 
     // UI Elements
     sidebarBg: isWhite ? '#ffffff' : accentColor,
@@ -117,19 +122,20 @@ function computeTheme(primaryHex: string, setPrimaryColor: (hex: string) => void
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<AppTheme>(defaultTheme);
 
-  // Expose this so any component can dynamically change the color
-  const updateThemeColor = (hex: string) => {
-    setTheme(computeTheme(hex, updateThemeColor));
+  const updateThemeColor = (hex: string | null) => {
+    if (!hex || hex === 'default') {
+      setTheme({ ...defaultTheme, setPrimaryColor: updateThemeColor });
+    } else {
+      setTheme(computeTheme(hex, updateThemeColor));
+    }
   };
 
   useEffect(() => {
-    // Determine the user's company primary color on mount
     getUser().then(user => {
-      const companyColor = user?.empresa?.colorPrimari;
-      if (companyColor) {
-        setTheme(computeTheme(companyColor, updateThemeColor));
+      const userColor = user?.colorPrimari;
+      if (userColor && userColor !== 'default') {
+        setTheme(computeTheme(userColor, updateThemeColor));
       } else {
-        // No custom color — use neutral default (white cards, no tints)
         setTheme({ ...defaultTheme, setPrimaryColor: updateThemeColor });
       }
     });

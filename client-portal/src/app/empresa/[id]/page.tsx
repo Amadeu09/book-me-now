@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
-import { getEmpresaPublic, getServeisPublic } from '@/lib/api';
+import { getEmpresaPublic, getServeisPublic, getAgendaPublic } from '@/lib/api';
 import { ServicesSection } from '@/components/empresa/ServicesSection';
-import type { TreballadorPublic } from '@/types/empresa';
+import { AgendaSection } from '@/components/empresa/AgendaSection';
+import type { TreballadorPublic, AgendaPublica } from '@/types/empresa';
 
 const CARD = 'bg-white rounded-lg border border-gray-200/60 p-5';
 const LABEL = 'text-[11px] font-medium uppercase tracking-[0.06em] text-gray-400 mb-3';
@@ -17,6 +18,7 @@ export default async function EmpresaPage({
 
   let empresa;
   let serveis;
+  let agenda: AgendaPublica = { horaris: [], absencies: [] };
   try {
     [empresa, serveis] = await Promise.all([
       getEmpresaPublic(empresaId),
@@ -24,6 +26,11 @@ export default async function EmpresaPage({
     ]);
   } catch {
     notFound();
+  }
+  try {
+    agenda = await getAgendaPublic(empresaId);
+  } catch {
+    // agenda stays empty — non-critical, page still renders
   }
 
   const initial = empresa.nom.charAt(0).toUpperCase();
@@ -204,14 +211,14 @@ export default async function EmpresaPage({
                     {empresa.ubicacio || '—'}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-3">
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <span className="material-symbols-outlined text-base">schedule</span>
-                    <span className="text-sm">Disponibilitat</span>
+                <div className="pt-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <span className="material-symbols-outlined text-base">schedule</span>
+                      <span className="text-sm">Disponibilitat</span>
+                    </div>
+                    <AgendaSection agenda={agenda} />
                   </div>
-                  <span className="text-sm font-medium" style={{ color: '#7C3AED' }}>
-                    Consultar agenda
-                  </span>
                 </div>
               </div>
             </div>

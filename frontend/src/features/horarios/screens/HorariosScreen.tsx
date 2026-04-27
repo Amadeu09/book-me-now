@@ -195,7 +195,7 @@ export default function HorariosScreen() {
                             <View style={[styles.sectionBox, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
                                 <View style={styles.sectionHeaderRow}>
                                     <View style={styles.sectionTitleRow}>
-                                        <Text style={styles.sectionTitle}>Plantillas</Text>
+                                        <Text style={styles.sectionTitle}>Plantillas de Jornadas</Text>
                                     </View>
                                     <TouchableOpacity activeOpacity={0.7} onPress={() => setTemplateModalVisible(true)}>
                                         <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nova</Text>
@@ -243,7 +243,7 @@ export default function HorariosScreen() {
                                 {/* Header + search */}
                                 <View style={styles.sectionHeaderRow}>
                                     <View style={styles.sectionTitleRow}>
-                                        <Text style={styles.sectionTitle}>Horaris del Personal</Text>
+                                        <Text style={styles.sectionTitle}>Horarios del Personal</Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                                         <View style={styles.searchBox}>

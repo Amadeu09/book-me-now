@@ -13,8 +13,6 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { radius, spacing } from "@/constants/theme";
-import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { Input, Button } from '@/ui/components/common';
 
 export type ServiceFormValues = {
@@ -176,9 +174,9 @@ export default function ServiceFormModal({
                             <View style={styles.textareaWrapper}>
                                 <Text style={styles.textareaLabel}>Descripción</Text>
                                 <TextInput
-                                    style={[styles.textarea, !loading && styles.textareaActive]}
+                                    style={styles.textarea}
                                     placeholder="Describe el servicio..."
-                                    placeholderTextColor={HC.textLight}
+                                    placeholderTextColor="#CCCCCC"
                                     value={form.descripcio ?? ''}
                                     onChangeText={(descripcio) => setForm({ ...form, descripcio })}
                                     multiline
@@ -212,15 +210,21 @@ export default function ServiceFormModal({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: HC.modalOverlay,
+        backgroundColor: 'rgba(0,0,0,0.25)',
         padding: 20,
+        justifyContent: 'center',
     },
     card: {
-        flex: 1,
-        backgroundColor: HC.card,
-        borderRadius: radius.modal,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#EBEBEB',
         overflow: 'hidden',
-        ...cardShadow,
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 6,
     },
     cardWeb: {
         maxWidth: 560,
@@ -231,21 +235,22 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cardContent: {
-        padding: spacing.gutter,
-        gap: spacing.lg,
+        padding: 28,
+        gap: 20,
         flexGrow: 1,
     },
     title: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: HC.textPrimary,
+        fontSize: 17,
+        fontWeight: '400',
+        color: '#111111',
+        letterSpacing: -0.2,
     },
     imagePicker: {
         width: '100%',
         aspectRatio: 16 / 9,
-        borderRadius: radius.lg,
+        borderRadius: 10,
         overflow: 'hidden',
-        backgroundColor: HC.borderSoft,
+        backgroundColor: '#F5F5F5',
     },
     imagePreview: {
         width: '100%',
@@ -256,58 +261,56 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: HC.borderInput,
+        borderColor: '#E0E0E0',
         borderStyle: 'dashed',
-        borderRadius: radius.lg,
+        borderRadius: 10,
+        backgroundColor: '#FAFAFA',
     },
     imagePlaceholderText: {
-        fontSize: 14,
-        color: HC.textMuted,
-        fontWeight: '600',
+        fontSize: 13,
+        color: '#CCCCCC',
+        fontWeight: '400',
     },
     imageOverlay: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'rgba(0,0,0,0.45)',
-        paddingVertical: spacing.xs,
+        backgroundColor: 'rgba(0,0,0,0.35)',
+        paddingVertical: 8,
         alignItems: 'center',
     },
     imageOverlayText: {
-        color: HC.white,
+        color: '#FFFFFF',
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '500',
     },
     form: {
-        gap: spacing.md,
+        gap: 16,
     },
     actions: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        gap: spacing.sm,
-        marginTop: spacing.md,
+        gap: 10,
+        marginTop: 8,
     },
     textareaWrapper: {
         gap: 6,
     },
     textareaLabel: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500',
-        color: HC.textSecondary,
+        color: '#555555',
     },
     textarea: {
-        backgroundColor: HC.inputBg,
+        backgroundColor: '#FAFAFA',
         borderWidth: 1,
-        borderColor: HC.borderInput,
-        borderRadius: radius.sm,
-        padding: spacing.md,
+        borderColor: '#E0E0E0',
+        borderRadius: 8,
+        padding: 14,
         fontSize: 14,
-        color: HC.textPrimary,
-        minHeight: 90,
-        lineHeight: 20,
-    },
-    textareaActive: {
-        borderColor: HC.borderInput,
+        color: '#111111',
+        minHeight: 96,
+        lineHeight: 22,
     },
 });

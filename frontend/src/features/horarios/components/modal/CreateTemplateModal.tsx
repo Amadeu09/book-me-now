@@ -18,12 +18,13 @@ import {
     createDefaultRotation,
     type JornadaFormState,
     type DiaRotacio,
-    type PlantillaSummary,
-    type JornadaPlantillaResponse
+    type JornadaPlantillaResponse,
+    type Tram,
 } from '../../types/jornades.types';
 import { createJornada, updateJornada } from '../../services/jornades.service';
 import { RotationTabs } from './RotationTabs';
 import { WeeklyEditor } from './WeeklyEditor';
+import { MultiDayModal } from './MultiDayModal';
 
 /* ──────────────────────────────────────────
    CreateTemplateModal
@@ -58,6 +59,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     const [activeRotation, setActiveRotation] = useState(0);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [multiDayVisible, setMultiDayVisible] = useState(false);
 
     /* Reset cuando se abre */
     useEffect(() => {
@@ -112,6 +114,23 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 return {
                     ...r,
                     dies: r.dies.map((d) => (d.dow === dow ? updated : d)),
+                };
+            }),
+        }));
+    }, [activeRotation]);
+
+    const handleApplyMultiDay = useCallback((dows: number[], trams: Tram[]) => {
+        setForm((prev) => ({
+            ...prev,
+            rotacions: prev.rotacions.map((r) => {
+                if (r.index !== activeRotation) return r;
+                return {
+                    ...r,
+                    dies: r.dies.map((d) =>
+                        dows.includes(d.dow)
+                            ? { ...d, trams, esDescans: trams.length === 0 }
+                            : d
+                    ),
                 };
             }),
         }));
@@ -254,6 +273,19 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                                 onAdd={handleAddRotation}
                             />
 
+                            {/* Multi-day apply button */}
+                            <TouchableOpacity
+                                style={styles.multiDayBtn}
+                                onPress={() => setMultiDayVisible(true)}
+                                disabled={loading}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="copy-outline" size={16} color={theme.primary} />
+                                <Text style={[styles.multiDayBtnText, { color: theme.primary }]}>
+                                    Aplicar a varis dies
+                                </Text>
+                            </TouchableOpacity>
+
                             {/* Editor semanal */}
                             {currentRotation && (
                                 <WeeklyEditor
@@ -262,6 +294,12 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                                     disabled={loading}
                                 />
                             )}
+
+                            <MultiDayModal
+                                visible={multiDayVisible}
+                                onClose={() => setMultiDayVisible(false)}
+                                onApply={handleApplyMultiDay}
+                            />
                         </View>
                     </ScrollView>
 
@@ -429,6 +467,23 @@ const styles = StyleSheet.create({
 
     /* ── Rotations section ─────────── */
     rotationsSection: {},
+    multiDayBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        alignSelf: 'flex-end',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: HC.border,
+        marginTop: 12,
+        marginBottom: 4,
+    },
+    multiDayBtnText: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: '700',

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginDto, SignupDto, LoginResponseDto, JwtPayload, ChangePasswordDto } from './dto/auth.dto';
+import { LoginDto, SignupDto, LoginResponseDto, JwtPayload, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto } from './dto/auth.dto';
 import { TokenBlacklistService } from './token-blacklist.service';
 import * as bcrypt from 'bcrypt';
 
@@ -30,7 +30,7 @@ export class AuthService {
     // Find user by email
     const user = await this.prisma.usuari.findUnique({
       where: { email: loginDto.email },
-      include: { empresa: { select: { id: true, nom: true, ubicacio: true, capacitat: true, fotoPerfil: true, bannerUrl: true, descripcio: true, colorPrimari: true } } },
+      include: { empresa: { select: { id: true, nom: true, ubicacio: true, capacitat: true, fotoPerfil: true, bannerUrl: true, descripcio: true } }, treballador: { select: { nom: true } } },
     });
 
     if (!user) {
@@ -65,6 +65,10 @@ export class AuthService {
         email: user.email,
         rol: user.rol,
         empresaId: user.empresaId,
+        fotoPerfil: user.fotoPerfil ?? undefined,
+        nom: user.treballador?.nom ?? undefined,
+        colorPrimari: user.colorPrimari ?? undefined,
+        idioma: user.idioma ?? 'ca',
         empresa: user.empresa ?? undefined,
       },
     };
@@ -121,7 +125,6 @@ export class AuthService {
           capacitat: signupDto.empresa.capacitat ?? null,
           activa: true,
           descripcio: signupDto.empresa.descripcio ?? null,
-          colorPrimari: signupDto.empresa.colorPrimari ?? null,
         },
       });
 
@@ -134,6 +137,7 @@ export class AuthService {
           hash,
           rol: 'ADMIN_GENERAL',
           empresaId: empresa.id,
+          colorPrimari: signupDto.usuari.colorPrimari ?? null,
         },
       });
 
@@ -161,6 +165,10 @@ export class AuthService {
         email: result.usuari.email,
         rol: result.usuari.rol,
         empresaId: result.usuari.empresaId,
+        fotoPerfil: undefined,
+        nom: undefined,
+        colorPrimari: result.usuari.colorPrimari ?? undefined,
+        idioma: result.usuari.idioma ?? 'ca',
         empresa: {
           id: result.empresa.id,
           nom: result.empresa.nom,
@@ -169,7 +177,6 @@ export class AuthService {
           fotoPerfil: result.empresa.fotoPerfil ?? undefined,
           bannerUrl: result.empresa.bannerUrl ?? undefined,
           descripcio: result.empresa.descripcio ?? undefined,
-          colorPrimari: result.empresa.colorPrimari ?? undefined,
         },
       },
     };
@@ -191,6 +198,25 @@ export class AuthService {
 
     this.logger.log(`Password changed for user: ${userId}`);
     return { message: 'Contrasenya actualitzada correctament' };
+  }
+
+  async updateColor(userId: number, dto: UpdateColorDto): Promise<{ colorPrimari: string | null }> {
+    const colorPrimari = dto.colorPrimari ?? null;
+    await this.prisma.usuari.update({
+      where: { id: userId },
+      data: { colorPrimari },
+    });
+    this.logger.log(`Color updated for user: ${userId}`);
+    return { colorPrimari };
+  }
+
+  async updateIdioma(userId: number, dto: UpdateIdiomaDto): Promise<{ idioma: string }> {
+    await this.prisma.usuari.update({
+      where: { id: userId },
+      data: { idioma: dto.idioma },
+    });
+    this.logger.log(`Idioma updated for user: ${userId}`);
+    return { idioma: dto.idioma };
   }
 
   /**

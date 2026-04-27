@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { getDisponibilitatPublic, createReservaPublic } from '@/lib/api';
-import type { Disponibilitat } from '@/types/empresa';
+import type { Disponibilitat, TreballadorPublic } from '@/types/empresa';
+import { QUALSEVOL_ID } from './BookingWidget';
 
 const DIES_SETMANA = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
 const MESOS = [
@@ -45,19 +46,22 @@ interface FormData {
 
 interface Props {
   treballadorId: number;
+  allTreballadors?: TreballadorPublic[];
   serveiId: number;
   treballadorNom: string;
   serveiNom: string;
   onClose: () => void;
 }
 
-export function AvailabilityModal({ treballadorId, serveiId, treballadorNom, serveiNom, onClose }: Props) {
+export function AvailabilityModal({ treballadorId, allTreballadors, serveiId, treballadorNom, serveiNom, onClose }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [disponibilitat, setDisponibilitat] = useState<Disponibilitat | null>(null);
+  const [slotWorkerMap, setSlotWorkerMap] = useState<Record<string, Record<string, number[]>>>({});
+  const [resolvedTreballadorNom, setResolvedTreballadorNom] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -70,10 +74,41 @@ export function AvailabilityModal({ treballadorId, serveiId, treballadorNom, ser
   useEffect(() => {
     setLoading(true);
     setError(false);
-    getDisponibilitatPublic(treballadorId, serveiId)
-      .then(setDisponibilitat)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+
+    if (treballadorId === QUALSEVOL_ID && allTreballadors && allTreballadors.length > 0) {
+      Promise.all(
+        allTreballadors.map((t) =>
+          getDisponibilitatPublic(t.id, serveiId).then((disp) => ({ id: t.id, disp })),
+        ),
+      )
+        .then((results) => {
+          const merged: Disponibilitat = {};
+          const workerMap: Record<string, Record<string, number[]>> = {};
+
+          for (const { id, disp } of results) {
+            for (const [date, slots] of Object.entries(disp)) {
+              if (!merged[date]) merged[date] = [];
+              if (!workerMap[date]) workerMap[date] = {};
+              for (const slot of slots) {
+                if (!merged[date].includes(slot)) merged[date].push(slot);
+                if (!workerMap[date][slot]) workerMap[date][slot] = [];
+                workerMap[date][slot].push(id);
+              }
+            }
+          }
+          for (const date of Object.keys(merged)) merged[date].sort();
+
+          setDisponibilitat(merged);
+          setSlotWorkerMap(workerMap);
+        })
+        .catch(() => setError(true))
+        .finally(() => setLoading(false));
+    } else {
+      getDisponibilitatPublic(treballadorId, serveiId)
+        .then(setDisponibilitat)
+        .catch(() => setError(true))
+        .finally(() => setLoading(false));
+    }
   }, [treballadorId, serveiId]);
 
   const availableDates = new Set(
@@ -105,12 +140,7 @@ export function AvailabilityModal({ treballadorId, serveiId, treballadorNom, ser
     setSelectedSlot(null);
   }
 
-  const allSelectedSlots = selectedDate && disponibilitat ? disponibilitat[selectedDate] ?? [] : [];
-  const selectedSlots = allSelectedSlots.reduce<string[]>((acc, slot) => {
-    const hour = slot.split(':')[0];
-    if (!acc.some(s => s.split(':')[0] === hour)) acc.push(slot);
-    return acc;
-  }, []);
+  const selectedSlots = selectedDate && disponibilitat ? disponibilitat[selectedDate] ?? [] : [];
 
   function validateForm(): boolean {
     const errors: Partial<FormData> = {};
@@ -126,6 +156,17 @@ export function AvailabilityModal({ treballadorId, serveiId, treballadorNom, ser
     e.preventDefault();
     if (!validateForm() || !selectedDate || !selectedSlot) return;
 
+    let finalTreballadorId = treballadorId;
+
+    if (treballadorId === QUALSEVOL_ID) {
+      const available = slotWorkerMap[selectedDate]?.[selectedSlot] ?? [];
+      if (available.length === 0) { setStep('error'); return; }
+      finalTreballadorId = available[Math.floor(Math.random() * available.length)];
+      setResolvedTreballadorNom(
+        allTreballadors?.find((t) => t.id === finalTreballadorId)?.nom ?? 'Professional',
+      );
+    }
+
     setSubmitting(true);
     try {
       await createReservaPublic({
@@ -137,7 +178,7 @@ export function AvailabilityModal({ treballadorId, serveiId, treballadorNom, ser
         data: selectedDate,
         hora: selectedSlot.split(' - ')[0],
         idServei: serveiId,
-        idTreballador: treballadorId,
+        idTreballador: finalTreballadorId,
       });
       setStep('success');
     } catch (err: any) {
@@ -365,7 +406,9 @@ export function AvailabilityModal({ treballadorId, serveiId, treballadorNom, ser
               <p className="text-sm text-on-surface-variant">
                 {serveiNom} · {formatDateDisplay(selectedDate!)} a les {selectedSlot!.split(' - ')[0]}
               </p>
-              <p className="text-sm text-on-surface-variant mt-1">amb {treballadorNom}</p>
+              <p className="text-sm text-on-surface-variant mt-1">
+                amb {resolvedTreballadorNom || treballadorNom}
+              </p>
             </div>
             <p className="text-xs text-on-surface-variant/70 mt-2">
               Ens posarem en contacte amb tu per confirmar la cita.

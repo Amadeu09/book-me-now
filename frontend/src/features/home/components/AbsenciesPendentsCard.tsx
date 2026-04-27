@@ -9,21 +9,21 @@ import type { AbsenciaPendent, TipusAbsencia } from '../services/absencies-pende
 import { useTheme } from '@/core/theme/ThemeProvider';
 
 const TIPUS_LABEL: Record<TipusAbsencia, string> = {
-    VACANCES: 'Vacances',
-    MALALTIA: 'Malaltia',
-    PERMIS: 'Permís',
-    ALTRE: 'Altre',
+    VACANCES: 'Vacaciones',
+    MALALTIA: 'Enfermedad',
+    PERMIS: 'Permiso',
+    ALTRE: 'Otro',
 };
 
 const ROWS = 4;
 
 function formatRange(inici: string, fi: string): string {
-    const fmt = (s: string) => new Date(s).toLocaleDateString('ca-ES', { day: '2-digit', month: 'short' });
+    const fmt = (s: string) => new Date(s).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
     const days = Math.round((new Date(fi).getTime() - new Date(inici).getTime()) / 86_400_000) + 1;
     const start = inici.substring(0, 10);
     const end = fi.substring(0, 10);
     return start === end
-        ? `${fmt(inici)} · 1 dia`
+        ? `${fmt(inici)} · 1 día`
         : `${fmt(inici)} – ${fmt(fi)} · ${days}d`;
 }
 
@@ -99,7 +99,7 @@ export function AbsenciesPendentsCard() {
         <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             {/* Header */}
             <View style={styles.headerRow}>
-                <Text style={styles.title}>Absències pendents</Text>
+                <Text style={styles.title}>Ausencias pendientes</Text>
                 {totalPages > 1 && (
                     <View style={styles.pagination}>
                         <TouchableOpacity
@@ -129,7 +129,7 @@ export function AbsenciesPendentsCard() {
             ) : items.length === 0 ? (
                 <View style={styles.center}>
                     <Ionicons name="checkmark-circle-outline" size={32} color={theme.primary} />
-                    <Text style={styles.emptyText}>Cap absència per aprovar</Text>
+                    <Text style={styles.emptyText}>Sin ausencias por aprobar</Text>
                 </View>
             ) : (
                 items.map((item, i) => (

@@ -19,6 +19,13 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: bookmenow-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
   backend:
     build:
       context: ./backend
@@ -28,9 +35,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
 
     env_file:
-      - ./backend/.env   # 👈 IMPORTANTE
+      - ./backend/.env   
 
     environment:
       DATABASE_URL: postgresql://dev:dev123@postgres:5432/bookmenow_dev?schema=public
@@ -39,6 +48,9 @@ services:
       NODE_ENV: development
       PORT: 3000
       ALLOWED_ORIGINS: http://localhost:3001,http://127.0.0.1:3001,http://localhost:8081,http://localhost:19000,http://localhost:19002,http://localhost:3002
+      TZ: Europe/Madrid
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
     ports:
       - "3000:3000"

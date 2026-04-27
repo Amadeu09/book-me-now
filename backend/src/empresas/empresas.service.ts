@@ -7,6 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
+import { BusinessType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmpresaDto, UpdateEmpresaDto } from './dto/empresa.dto';
 
@@ -46,7 +47,7 @@ export class EmpresasService {
         fotoPerfil: true,
         bannerUrl: true,
         descripcio: true,
-        colorPrimari: true,
+        tipo: true,
       },
       take: 10,
       orderBy: { nom: 'asc' },
@@ -63,7 +64,7 @@ export class EmpresasService {
         fotoPerfil: true,
         bannerUrl: true,
         descripcio: true,
-        colorPrimari: true,
+        tipo: true,
       },
     });
 
@@ -79,6 +80,39 @@ export class EmpresasService {
       where: { id: userEmpresaId },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findAllPublic(tipo: string | null, page: number, limit: number) {
+    const where: Prisma.EmpresaWhereInput = {
+      activa: true,
+      ...(tipo ? { tipo: tipo as BusinessType } : {}),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.empresa.findMany({
+        where,
+        select: {
+          id: true,
+          nom: true,
+          ubicacio: true,
+          fotoPerfil: true,
+          bannerUrl: true,
+          descripcio: true,
+            tipo: true,
+        },
+        take: limit,
+        skip: (page - 1) * limit,
+        orderBy: { nom: 'asc' },
+      }),
+      this.prisma.empresa.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
   }
 
   async findOne(id: number, userEmpresaId: number) {

@@ -291,7 +291,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 </View>
             )}
 
-            <Text style={styles.label}>Nombre complete *</Text>
+            <Text style={styles.label}>Nombre completo *</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Ej. Juan Pérez"
@@ -325,7 +325,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 </>
             )}
 
-            <Text style={styles.label}>Dies de vacances anuals</Text>
+            <Text style={styles.label}>Días de vacaciones anuales</Text>
             <TextInput
                 style={styles.input}
                 placeholder="25"
@@ -407,7 +407,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     <DatePickerField
                         value={dataInici}
                         onChange={setDataInici}
-                        placeholder="Seleccionar inici"
+                        placeholder="Seleccionar inicio"
                         disabled={isSubmitting}
                     />
                 </View>
@@ -416,7 +416,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     <DatePickerField
                         value={dataFi}
                         onChange={setDataFi}
-                        placeholder="Seleccionar fi"
+                        placeholder="Seleccionar fin"
                         disabled={isSubmitting}
                     />
                 </View>

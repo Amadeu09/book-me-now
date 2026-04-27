@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, IsOptional, IsInt, IsEnum, Matches } from "class-validator";
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsInt, IsEnum, Matches, IsEmail } from "class-validator";
 import { ReservaEstat } from "@prisma/client";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
@@ -8,20 +8,20 @@ export class CreateReservaDto {
     @IsString()
     nom: string;
 
-    @ApiProperty({ example: 'Garcia', description: 'Apellidos del cliente' })
-    @IsNotEmpty()
+    @ApiPropertyOptional({ example: 'Garcia', description: 'Apellidos del cliente (opcional, no s\'emmagatzema)' })
+    @IsOptional()
     @IsString()
-    cognoms: string;
+    cognoms?: string;
 
-    @ApiProperty({ example: 'marti@email.com', description: 'Email del cliente' })
-    @IsNotEmpty()
-    @IsString()
-    email: string;
+    @ApiPropertyOptional({ example: 'marti@email.com', description: 'Email del cliente' })
+    @IsOptional()
+    @IsEmail()
+    email?: string;
 
-    @ApiProperty({ example: '666777888', description: 'Teléfono de contacto' })
-    @IsNotEmpty()
+    @ApiPropertyOptional({ example: '666777888', description: 'Teléfono de contacto' })
+    @IsOptional()
     @IsString()
-    telefon: string;
+    telefon?: string;
 
     @ApiProperty({ example: '2026-02-20', description: 'Fecha de la reserva (YYYY-MM-DD)' })
     @IsNotEmpty()
@@ -49,6 +49,20 @@ export class CreateReservaDto {
     @IsNotEmpty()
     @IsNumber()
     idTreballador: number;
+}
+
+export class ModificarReservaGestioDto {
+    @ApiProperty({ example: '2026-02-20', description: 'Nova data (YYYY-MM-DD)' })
+    @IsNotEmpty()
+    @IsString()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'data must be in YYYY-MM-DD format' })
+    data: string;
+
+    @ApiProperty({ example: '10:00', description: 'Nova hora (HH:MM)' })
+    @IsNotEmpty()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: 'hora must be in HH:MM format' })
+    hora: string;
 }
 
 export class UpdateReservaEstatDto {

@@ -18,20 +18,20 @@ import type { AuthUser } from '@/features/auth/services/auth.service';
 import { updateEmpresa } from '../../services/empresas.service';
 import { patchStoredEmpresa } from '@/utils/session';
 
-const PALETAS = [
-    { label: 'Blanco', value: '#FFFFFF' },
-    { label: 'Pizarra', value: '#5B7A96' },
-    { label: 'Índigo', value: '#6264A0' },
-    { label: 'Lavanda', value: '#7B5E9A' },
-    { label: 'Rosa', value: '#9E5A72' },
-    { label: 'Coral', value: '#B55E54' },
-    { label: 'Terracota', value: '#A86040' },
-    { label: 'Ocre', value: '#9B7030' },
-    { label: 'Oliva', value: '#6C7E4A' },
-    { label: 'Salvia', value: '#4A7E68' },
-    { label: 'Teal', value: '#3E7C7E' },
-    { label: 'Marino', value: '#3E587A' },
-    { label: 'Negro', value: '#000000ff' },
+const BUSINESS_TYPES = [
+    { label: 'Perruqueria', value: 'PERRUQUERIA' },
+    { label: 'Barberia', value: 'BARBERIA' },
+    { label: 'Estètica', value: 'ESTETICA' },
+    { label: 'Spa', value: 'SPA' },
+    { label: 'Massatges', value: 'MASSATGES' },
+    { label: 'Fitness', value: 'FITNESS' },
+    { label: 'Pilates', value: 'PILATES' },
+    { label: 'Ioga', value: 'IOGA' },
+    { label: 'Nutricionista', value: 'NUTRICIONISTA' },
+    { label: 'Fisioteràpia', value: 'FISIOTERAPIA' },
+    { label: 'Dental', value: 'DENTAL' },
+    { label: 'Veterinària', value: 'VETERINARIA' },
+    { label: 'Altres', value: 'ALTRES' },
 ];
 
 interface EditEmpresaModalProps {
@@ -45,7 +45,7 @@ interface EmpresaFormState {
     ubicacio: string;
     capacitat: string;
     descripcio: string;
-    colorPrimari: string;
+    tipo: string;
 }
 
 import { useTheme } from '@/core/theme/ThemeProvider';
@@ -65,7 +65,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
         ubicacio: '',
         capacitat: '',
         descripcio: '',
-        colorPrimari: PALETAS[0].value,
+        tipo: '',
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -77,7 +77,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                 ubicacio: initialData.ubicacio || '',
                 capacitat: initialData.capacitat ? String(initialData.capacitat) : '',
                 descripcio: initialData.descripcio || '',
-                colorPrimari: initialData.colorPrimari || PALETAS[0].value,
+                tipo: initialData.tipo || '',
             });
             setErrors({});
         }
@@ -107,14 +107,13 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
             ubicacio: form.ubicacio.trim(),
             capacitat: form.capacitat.trim() ? Number(form.capacitat) : null,
             descripcio: form.descripcio.trim() || undefined,
-            colorPrimari: form.colorPrimari,
+            tipo: form.tipo || undefined,
         };
 
         try {
             setLoading(true);
             await updateEmpresa(initialData.id, payload);
             await patchStoredEmpresa(payload);
-            theme.setPrimaryColor(payload.colorPrimari);
             queryClient.invalidateQueries({ queryKey: ['empresa', initialData.id] });
             onClose();
         } catch (err: any) {
@@ -204,35 +203,32 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                             />
                         </View>
 
-                        {/* Color corporativo */}
+                        {/* Tipo de negoci */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Color corporativo</Text>
-                            <View style={styles.paletaGrid}>
-                                {PALETAS.map((p) => (
+                            <Text style={styles.fieldLabel}>Tipus de negoci</Text>
+                            <View style={styles.tipoGrid}>
+                                {BUSINESS_TYPES.map((bt) => (
                                     <TouchableOpacity
-                                        key={p.value}
+                                        key={bt.value}
                                         style={[
-                                            styles.swatch,
-                                            { backgroundColor: p.value },
-                                            form.colorPrimari === p.value && styles.swatchSelected,
+                                            styles.tipoChip,
+                                            form.tipo === bt.value && { backgroundColor: theme.primary, borderColor: theme.primary },
                                         ]}
-                                        onPress={() => setForm((prev) => ({ ...prev, colorPrimari: p.value }))}
+                                        onPress={() => setForm((prev) => ({ ...prev, tipo: prev.tipo === bt.value ? '' : bt.value }))}
                                         disabled={loading}
-                                        activeOpacity={0.8}
+                                        activeOpacity={0.7}
                                     >
-                                        {form.colorPrimari === p.value && (
-                                            <Ionicons name="checkmark" size={16} color={p.value === '#FFFFFF' ? '#000' : '#fff'} />
-                                        )}
+                                        <Text style={[
+                                            styles.tipoChipText,
+                                            form.tipo === bt.value && { color: '#fff' },
+                                        ]}>
+                                            {bt.label}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
-                            <View style={styles.colorPreviewRow}>
-                                <View style={[styles.colorPreviewDot, { backgroundColor: form.colorPrimari }]} />
-                                <Text style={styles.colorPreviewText}>
-                                    {PALETAS.find(p => p.value === form.colorPrimari)?.label} · {form.colorPrimari}
-                                </Text>
-                            </View>
                         </View>
+
                     </ScrollView>
 
                     {/* Footer */}
@@ -332,37 +328,23 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
 
-    paletaGrid: {
+    tipoGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
-    },
-    swatch: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#e2e8f0',
-    },
-    swatchSelected: {
-        borderColor: HC.textPrimary,
-    },
-    colorPreviewRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
         gap: 8,
-        marginTop: 12,
     },
-    colorPreviewDot: {
-        width: 14,
-        height: 14,
-        borderRadius: 7,
+    tipoChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: HC.borderInput,
+        backgroundColor: HC.inputBg,
     },
-    colorPreviewText: {
+    tipoChipText: {
         fontSize: 13,
-        color: HC.textMuted,
+        fontWeight: '500',
+        color: HC.textSecondary,
     },
 
     footer: {

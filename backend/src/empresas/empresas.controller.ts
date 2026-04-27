@@ -45,6 +45,21 @@ import {
 export class EmpresasController {
   constructor(private readonly empresasService: EmpresasService) { }
 
+  @Get('directori')
+  @Public()
+  @ApiOperation({ summary: 'Llistar empreses públicament (paginat, filtrat per tipus)' })
+  findAllPublic(
+    @Query('tipo') tipo?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.empresasService.findAllPublic(
+      tipo ?? null,
+      parseInt(page ?? '1', 10) || 1,
+      parseInt(limit ?? '9', 10) || 9,
+    );
+  }
+
   @Get('public/:id')
   @Public()
   @ApiOperation({ summary: 'Obtenir perfil públic d\'una empresa per ID' })

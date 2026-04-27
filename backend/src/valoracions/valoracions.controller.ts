@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, ParseIntPipe, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, ParseIntPipe } from '@nestjs/common';
 import { ValoracionsService } from './valoracions.service';
-import { CreateValoracioDto, UpdateValoracioDto } from './dto/valoracions.dto';
+import { CreateValoracioDto, CreateValoracioByTokenDto, UpdateValoracioDto } from './dto/valoracions.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('valoracions')
@@ -12,18 +12,34 @@ export class ValoracionsController {
     @ApiOperation({ summary: 'Crear una nueva valoración' })
     @ApiBody({ type: CreateValoracioDto })
     @ApiResponse({ status: 201, description: 'Valoración creada correctamente' })
-    @ApiResponse({ status: 400, description: 'Datos inválidos o petición incorrecta' })
     @ApiResponse({ status: 404, description: 'Entidad (Trabajador/Empresa) no encontrada' })
-    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     create(@Body() createValoracioDto: CreateValoracioDto) {
         return this.valoracionsService.create(createValoracioDto);
     }
 
+    @Get('reserva/:token')
+    @ApiOperation({ summary: 'Obtenir informació de la reserva per valorar (via token)' })
+    @ApiParam({ name: 'token', type: String })
+    @ApiResponse({ status: 200, description: 'Informació de la reserva' })
+    @ApiResponse({ status: 404, description: 'Token no vàlid' })
+    getInfoByToken(@Param('token') token: string) {
+        return this.valoracionsService.getInfoByToken(token);
+    }
+
+    @Post('reserva/:token')
+    @ApiOperation({ summary: 'Enviar valoració d\'empresa i treballador via token de cita' })
+    @ApiParam({ name: 'token', type: String })
+    @ApiBody({ type: CreateValoracioByTokenDto })
+    @ApiResponse({ status: 201, description: 'Valoració creada' })
+    @ApiResponse({ status: 400, description: 'La cita encara no ha passat o falten dades' })
+    @ApiResponse({ status: 409, description: 'Ja valorada' })
+    @ApiResponse({ status: 404, description: 'Token no vàlid' })
+    createByToken(@Param('token') token: string, @Body() dto: CreateValoracioByTokenDto) {
+        return this.valoracionsService.createByToken(token, dto);
+    }
+
     @Get()
     @ApiOperation({ summary: 'Listar todas las valoraciones' })
-    @ApiResponse({ status: 200, description: 'Lista de valoraciones recuperada' })
-    @ApiResponse({ status: 400, description: 'Petición incorrecta' })
-    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     findAll() {
         return this.valoracionsService.findAll();
     }
@@ -31,10 +47,6 @@ export class ValoracionsController {
     @Get(':id')
     @ApiOperation({ summary: 'Obtener una valoración por ID' })
     @ApiParam({ name: 'id', type: Number })
-    @ApiResponse({ status: 200, description: 'Valoración encontrada' })
-    @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
-    @ApiResponse({ status: 404, description: 'Valoración no encontrada' })
-    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.valoracionsService.findOne(id);
     }
@@ -42,11 +54,6 @@ export class ValoracionsController {
     @Put(':id')
     @ApiOperation({ summary: 'Actualizar una valoración' })
     @ApiParam({ name: 'id', type: Number })
-    @ApiBody({ type: UpdateValoracioDto })
-    @ApiResponse({ status: 200, description: 'Valoración actualizada correctamente' })
-    @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
-    @ApiResponse({ status: 404, description: 'Valoración no encontrada' })
-    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     update(@Param('id', ParseIntPipe) id: number, @Body() updateValoracioDto: UpdateValoracioDto) {
         return this.valoracionsService.update(id, updateValoracioDto);
     }
@@ -54,10 +61,6 @@ export class ValoracionsController {
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar una valoración' })
     @ApiParam({ name: 'id', type: Number })
-    @ApiResponse({ status: 200, description: 'Valoración eliminada correctamente' })
-    @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
-    @ApiResponse({ status: 404, description: 'Valoración no encontrada' })
-    @ApiResponse({ status: 500, description: 'Error interno del servidor' })
     remove(@Param('id', ParseIntPipe) id: number) {
         return this.valoracionsService.remove(id);
     }

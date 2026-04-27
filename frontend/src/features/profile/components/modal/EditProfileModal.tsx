@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Modal,
     View,
@@ -14,7 +14,26 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
-import { changePassword } from '../../services/profile.service';
+import { useLanguage } from '@/core/i18n';
+import { changePassword, updateMyColor, updateMyIdioma } from '../../services/profile.service';
+import { getUser, patchStoredUser } from '@/utils/session';
+
+const PALETAS = [
+    { label: 'Blanco', value: '#FFFFFF' },
+    { label: 'Pizarra', value: '#5B7A96' },
+    { label: 'Índigo', value: '#6264A0' },
+    { label: 'Lavanda', value: '#7B5E9A' },
+    { label: 'Rosa', value: '#9E5A72' },
+    { label: 'Coral', value: '#B55E54' },
+    { label: 'Terracota', value: '#A86040' },
+    { label: 'Ocre', value: '#9B7030' },
+    { label: 'Oliva', value: '#6C7E4A' },
+    { label: 'Salvia', value: '#4A7E68' },
+    { label: 'Teal', value: '#3E7C7E' },
+    { label: 'Marino', value: '#3E587A' },
+    { label: 'Negro', value: '#000000ff' },
+    { label: 'Defecto', value: 'default' },
+];
 
 interface EditProfileModalProps {
     visible: boolean;
@@ -25,6 +44,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { lang, setLang } = useLanguage();
 
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -34,6 +54,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
     const [showConfirm, setShowConfirm] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [colorPrimari, setColorPrimari] = useState('default');
+    const [selectedLang, setSelectedLang] = useState<'ca' | 'es'>(lang);
+
+    useEffect(() => {
+        if (visible) {
+            setSelectedLang(lang);
+            getUser().then(user => {
+                setColorPrimari(user?.colorPrimari || 'default');
+                if (user?.idioma === 'ca' || user?.idioma === 'es') {
+                    setSelectedLang(user.idioma);
+                }
+            });
+        }
+    }, [visible]);
 
     const resetForm = () => {
         setCurrentPassword('');
@@ -54,34 +88,49 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
     const handleSave = async () => {
         setError('');
 
-        if (!currentPassword.trim()) {
-            setError('La contraseña actual es obligatoria.');
-            return;
-        }
-        if (!newPassword.trim()) {
-            setError('La nueva contraseña es obligatoria.');
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setError('Las contraseñas nuevas no coinciden.');
-            return;
-        }
-        if (newPassword.length < 8) {
-            setError('La nueva contraseña debe tener al menos 8 caracteres.');
-            return;
+        const hasPasswordChange = currentPassword.trim() || newPassword.trim() || confirmPassword.trim();
+
+        if (hasPasswordChange) {
+            if (!currentPassword.trim()) {
+                setError('La contraseña actual es obligatoria.');
+                return;
+            }
+            if (!newPassword.trim()) {
+                setError('La nueva contraseña es obligatoria.');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                setError('Las contraseñas nuevas no coinciden.');
+                return;
+            }
+            if (newPassword.length < 8) {
+                setError('La nueva contraseña debe tener al menos 8 caracteres.');
+                return;
+            }
         }
 
         try {
             setLoading(true);
-            await changePassword(currentPassword.trim(), newPassword.trim());
-            Alert.alert('Éxito', 'Contraseña actualizada correctamente.');
+            const newColor = colorPrimari === 'default' ? null : colorPrimari;
+
+            await Promise.all([
+                hasPasswordChange ? changePassword(currentPassword.trim(), newPassword.trim()) : Promise.resolve(),
+                updateMyColor(newColor),
+                updateMyIdioma(selectedLang),
+            ]);
+
+            await patchStoredUser({ colorPrimari: newColor ?? undefined, idioma: selectedLang });
+            theme.setPrimaryColor(newColor);
+            setLang(selectedLang);
+
+            Alert.alert('Èxit', 'Perfil actualitzat correctament.');
             resetForm();
             onClose();
         } catch (err: any) {
             const msg =
                 err?.response?.data?.message ||
                 err?.message ||
-                'No se pudo actualizar la contraseña.';
+                'No se pudo actualizar el perfil.';
             setError(Array.isArray(msg) ? msg.join(', ') : msg);
         } finally {
             setLoading(false);
@@ -95,7 +144,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Cambiar contraseña</Text>
+                        <Text style={styles.headerTitle}>Editar perfil</Text>
                         <TouchableOpacity onPress={handleClose} disabled={loading}>
                             <Ionicons name="close" size={24} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -114,9 +163,74 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                             </View>
                         )}
 
+                        {/* Color */}
+                        <View style={styles.fieldBlock}>
+                            <Text style={styles.fieldLabel}>Color de l'aplicació</Text>
+                            <View style={styles.paletaGrid}>
+                                {PALETAS.map((p) => {
+                                    const isDefault = p.value === 'default';
+                                    const isSelected = colorPrimari === p.value;
+                                    return (
+                                        <TouchableOpacity
+                                            key={p.value}
+                                            style={[
+                                                styles.swatch,
+                                                isDefault ? styles.swatchDefault : { backgroundColor: p.value },
+                                                isSelected && styles.swatchSelected,
+                                            ]}
+                                            onPress={() => setColorPrimari(p.value)}
+                                            disabled={loading}
+                                            activeOpacity={0.8}
+                                        >
+                                            {isDefault
+                                                ? <Ionicons name="ban-outline" size={18} color={isSelected ? HC.textPrimary : HC.textMuted} />
+                                                : isSelected && (
+                                                    <Ionicons name="checkmark" size={16} color={p.value === '#FFFFFF' ? '#000' : '#fff'} />
+                                                )
+                                            }
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                            <View style={styles.colorPreviewRow}>
+                                {colorPrimari !== 'default' && (
+                                    <View style={[styles.colorPreviewDot, { backgroundColor: colorPrimari }]} />
+                                )}
+                                <Text style={styles.colorPreviewText}>
+                                    {colorPrimari === 'default'
+                                        ? 'Por defecto (sin color personalizado)'
+                                        : `${PALETAS.find(p => p.value === colorPrimari)?.label} · ${colorPrimari}`
+                                    }
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Idioma */}
+                        <View style={styles.fieldBlock}>
+                            <Text style={styles.fieldLabel}>Idioma</Text>
+                            <View style={styles.langRow}>
+                                {(['ca', 'es'] as const).map((l) => (
+                                    <TouchableOpacity
+                                        key={l}
+                                        style={[
+                                            styles.langBtn,
+                                            selectedLang === l && { backgroundColor: theme.primary, borderColor: theme.primary },
+                                        ]}
+                                        onPress={() => setSelectedLang(l)}
+                                        disabled={loading}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={[styles.langBtnText, selectedLang === l && { color: theme.textOnPrimary }]}>
+                                            {l === 'ca' ? 'Català' : 'Castellano'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
                         {/* Contraseña actual */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Contraseña actual</Text>
+                            <Text style={styles.fieldLabel}>Contrasenya actual</Text>
                             <View style={styles.inputRow}>
                                 <TextInput
                                     style={styles.inputFlex}
@@ -136,11 +250,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                         {/* Nueva contraseña */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Nueva contraseña</Text>
+                            <Text style={styles.fieldLabel}>Nova contrasenya</Text>
                             <View style={styles.inputRow}>
                                 <TextInput
                                     style={styles.inputFlex}
-                                    placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número y 1 especial"
+                                    placeholder="Mín. 8 caràcters, 1 majúscula, 1 número i 1 especial"
                                     placeholderTextColor={HC.textLight}
                                     value={newPassword}
                                     onChangeText={setNewPassword}
@@ -156,11 +270,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                         {/* Confirmar nueva contraseña */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Confirmar nueva contraseña</Text>
+                            <Text style={styles.fieldLabel}>Confirmar nova contrasenya</Text>
                             <View style={styles.inputRow}>
                                 <TextInput
                                     style={styles.inputFlex}
-                                    placeholder="Repite la nueva contraseña"
+                                    placeholder="Repeteix la nova contrasenya"
                                     placeholderTextColor={HC.textLight}
                                     value={confirmPassword}
                                     onChangeText={setConfirmPassword}
@@ -278,6 +392,60 @@ const styles = StyleSheet.create({
     eyeBtn: {
         paddingLeft: 8,
         paddingVertical: 12,
+    },
+
+    paletaGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    swatch: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#e2e8f0',
+    },
+    swatchDefault: {
+        backgroundColor: '#f1f5f9',
+    },
+    swatchSelected: {
+        borderColor: HC.textPrimary,
+    },
+    langRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    langBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: HC.borderInput,
+        alignItems: 'center',
+        backgroundColor: HC.inputBg,
+    },
+    langBtnText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: HC.textSecondary,
+    },
+    colorPreviewRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 12,
+    },
+    colorPreviewDot: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+    },
+    colorPreviewText: {
+        fontSize: 13,
+        color: HC.textMuted,
     },
 
     footer: {

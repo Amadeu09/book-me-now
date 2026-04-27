@@ -14,22 +14,6 @@ import { useTheme } from '@/core/theme/ThemeProvider';
 const BANNER_HEIGHT = 260;
 const AVATAR_SIZE = 130;
 
-const PALETAS = [
-    { label: 'Blanco', value: '#FFFFFF' },
-    { label: 'Pizarra', value: '#5B7A96' },
-    { label: 'Índigo', value: '#6264A0' },
-    { label: 'Lavanda', value: '#7B5E9A' },
-    { label: 'Rosa', value: '#9E5A72' },
-    { label: 'Coral', value: '#B55E54' },
-    { label: 'Terracota', value: '#A86040' },
-    { label: 'Ocre', value: '#9B7030' },
-    { label: 'Oliva', value: '#6C7E4A' },
-    { label: 'Salvia', value: '#4A7E68' },
-    { label: 'Teal', value: '#3E7C7E' },
-    { label: 'Marino', value: '#3E587A' },
-    { label: 'Negro', value: '#000000ff' },
-];
-
 interface LocalDataCardProps {
     empresa?: AuthUser['empresa'];
 }
@@ -88,13 +72,14 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
         }
     };
 
-    const op = theme.isDefault ? '#0f172a' : theme.textOnPrimary;
-    const opFaint = theme.isDefault ? '#e2e8f0' : op + '22';
-    const opMuted = theme.isDefault ? '#6b7280' : op + 'aa';
-    const cardBg = theme.isDefault ? '#ffffff' : theme.primary;
+    const isWhiteCard = theme.isDefault || theme.isUserWhite;
+    const op = isWhiteCard ? '#0f172a' : theme.textOnPrimary;
+    const opFaint = isWhiteCard ? '#e2e8f0' : op + '22';
+    const opMuted = isWhiteCard ? '#6b7280' : op + 'aa';
+    const cardBg = isWhiteCard ? '#ffffff' : theme.primary;
 
     return (
-        <View style={[styles.container, { backgroundColor: cardBg, borderWidth: theme.isDefault ? 1 : 0, borderColor: '#e2e8f0' }]}>
+        <View style={[styles.container, { backgroundColor: cardBg, borderWidth: isWhiteCard ? 1 : 0, borderColor: '#e2e8f0' }]}>
             {/* Banner — avatar lives inside here */}
             <View style={styles.bannerWrapper}>
                 {empresa?.bannerUrl ? (
@@ -105,7 +90,7 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                     />
                 ) : (
                     <LinearGradient
-                        colors={theme.isDefault ? ['#e2e8f0', '#f1f5f9'] : [theme.primary, theme.primaryMid]}
+                        colors={isWhiteCard ? ['#e2e8f0', '#f1f5f9'] : [theme.primary, theme.primaryMid]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.banner}
@@ -170,20 +155,6 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                     </View>
                 </View>
 
-                <View style={[styles.divider, { backgroundColor: opFaint }]} />
-
-                <View style={styles.row}>
-                    <Ionicons name="color-palette-outline" size={20} color={opMuted} />
-                    <View style={styles.infoBlock}>
-                        <Text style={[styles.label, { color: opMuted }]}>Color Principal</Text>
-                        <View style={styles.colorRow}>
-                            <View style={[styles.colorDot, { backgroundColor: empresa?.colorPrimari || HC.primary, borderWidth: 1, borderColor: opFaint }]} />
-                            <Text style={[styles.value, { color: op }]}>
-                                {PALETAS.find(p => p.value === empresa?.colorPrimari)?.label || 'Naranja'}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
             </View>
 
             <EditEmpresaModal
@@ -299,15 +270,5 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: HC.borderSoft,
         marginLeft: 36,
-    },
-    colorRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    colorDot: {
-        width: 14,
-        height: 14,
-        borderRadius: 7,
     },
 });

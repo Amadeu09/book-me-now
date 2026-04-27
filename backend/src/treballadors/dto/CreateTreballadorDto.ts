@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray, IsDateString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray, IsDateString, Min } from 'class-validator';
 import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
 
 /** `dataFi`, if present, must be strictly after `dataInici` */
@@ -59,6 +59,13 @@ export class CreateTreballadorDto {
     @IsInt()
     @IsNotEmpty()
     idUsuari: number;
+
+    @ApiProperty({ example: 30, required: false, description: 'Dies de vacances anuals (per defecte 25)' })
+    @Type(() => Number)
+    @IsInt()
+    @Min(0)
+    @IsOptional()
+    diesVacancesAnuals?: number;
 
     @ApiProperty({ type: () => JornadaTreballadorDto, required: false, description: 'Datos de la jornada inicial (opcional)' })
     @ValidateNested()

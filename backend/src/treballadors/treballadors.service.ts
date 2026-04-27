@@ -42,6 +42,7 @@ export class TreballadorsService {
         empresaId: empresaId,
         idUsuari: dto.idUsuari,
         nom: dto.nom,
+        ...(dto.diesVacancesAnuals !== undefined ? { diesVacancesAnuals: dto.diesVacancesAnuals } : {}),
       },
     });
 
@@ -264,11 +265,8 @@ export class TreballadorsService {
     endDate.setDate(endDate.getDate() + 14);
 
     const assignments = await this.prisma.treballadorJornadaPlantilla.findMany({
-      where: {
-        treballadorId,
-        OR: [{ dataFi: null }, { dataFi: { gte: today } }],
-        dataInici: { lte: endDate },
-      },
+      where: { treballadorId },
+      orderBy: { dataInici: 'desc' },
       include: {
         plantilla: {
           include: {
@@ -307,6 +305,8 @@ export class TreballadorsService {
     const disponibilitat: Record<string, string[]> = {};
     const MS_PER_MIN = 60000;
 
+    const assignment = assignments[0] ?? null;
+
     const getMonday = (d: Date) => {
       const date = new Date(d);
       const day = date.getDay();
@@ -327,9 +327,6 @@ export class TreballadorsService {
       const isEmpresaAbsence = absenciesEmpresa.some(a => a.inici <= dayEnd && a.fi >= dayStart);
       if (isEmpresaAbsence) { disponibilitat[dateString] = []; continue; }
 
-      const assignment = assignments.find(a =>
-        new Date(a.dataInici) <= currentDate && (!a.dataFi || new Date(a.dataFi) >= currentDate)
-      );
       if (!assignment) { disponibilitat[dateString] = []; continue; }
 
       const plantilla = assignment.plantilla;
@@ -341,9 +338,7 @@ export class TreballadorsService {
       const oneDay = 24 * 60 * 60 * 1000;
       const assignmentStartMonday = getMonday(new Date(assignment.dataInici));
       const currentMonday = getMonday(currentDate);
-      const diffWeeks = Math.floor((currentMonday.getTime() - assignmentStartMonday.getTime()) / (7 * oneDay));
-
-      if (diffWeeks < 0) { disponibilitat[dateString] = []; continue; }
+      const diffWeeks = Math.max(0, Math.floor((currentMonday.getTime() - assignmentStartMonday.getTime()) / (7 * oneDay)));
 
       const rotationIndex = (assignment.anchorRotacioIndex + diffWeeks) % plantilla.rotacions.length;
       const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
@@ -385,10 +380,11 @@ export class TreballadorsService {
 
           if (!isBlocked) {
             for (const abs of dayAbsencies) {
-              if (slotStartDate < abs.fi && slotEndDate > abs.inici) {
+              const absEnd = new Date(abs.fi);
+              absEnd.setHours(23, 59, 59, 999);
+              if (slotStartDate < absEnd && slotEndDate > abs.inici) {
                 isBlocked = true;
-                const absEndMin = abs.fi.getHours() * 60 + abs.fi.getMinutes();
-                jumpToMin = absEndMin > currentMin ? absEndMin : currentMin + servei.duradaMin;
+                jumpToMin = tramEnd;
                 break;
               }
             }
@@ -451,16 +447,9 @@ export class TreballadorsService {
     const endDate = new Date(today);
     endDate.setDate(endDate.getDate() + 14);
 
-    // Fetch assignments covering the range
     const assignments = await this.prisma.treballadorJornadaPlantilla.findMany({
-      where: {
-        treballadorId: id,
-        OR: [
-          { dataFi: null },
-          { dataFi: { gte: today } },
-        ],
-        dataInici: { lte: endDate },
-      },
+      where: { treballadorId: id },
+      orderBy: { dataInici: 'desc' },
       include: {
         plantilla: {
           include: {
@@ -512,17 +501,13 @@ export class TreballadorsService {
     const disponibilitat = {};
     const MS_PER_MIN = 60000;
 
+    const assignment = assignments[0] ?? null;
+
     for (let i = 0; i < 14; i++) {
       const currentDate = new Date(today);
       currentDate.setDate(currentDate.getDate() + i);
       const dateString = currentDate.toISOString().split('T')[0];
 
-      // Find relevant assignment
-      const assignment = assignments.find(a =>
-        new Date(a.dataInici) <= currentDate && (!a.dataFi || new Date(a.dataFi) >= currentDate)
-      );
-
-      // Check if the day is blocked by a company-wide absence (holiday, etc.)
       const dayStart = new Date(currentDate);
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(currentDate);
@@ -537,8 +522,7 @@ export class TreballadorsService {
       }
 
       if (!assignment) {
-        console.log(`No assignment for ${dateString}`);
-        disponibilitat[dateString] = []; // No schedule assigned
+        disponibilitat[dateString] = [];
         continue;
       }
 
@@ -578,18 +562,9 @@ export class TreballadorsService {
       const assignmentStartMonday = getMonday(new Date(assignment.dataInici));
       const currentMonday = getMonday(currentDate);
 
-      const diffTime = currentMonday.getTime() - assignmentStartMonday.getTime();
-      const diffWeeks = Math.floor(diffTime / (7 * oneDay));
-
-      if (diffWeeks < 0) {
-        // Should not happen given the assignment query, but safety check
-        disponibilitat[dateString] = [];
-        continue;
-      }
+      const diffWeeks = Math.max(0, Math.floor((currentMonday.getTime() - assignmentStartMonday.getTime()) / (7 * oneDay)));
 
       const rotationIndex = (assignment.anchorRotacioIndex + diffWeeks) % plantilla.rotacions.length;
-
-      console.log(`Date: ${dateString}, AssignmentStart: ${assignment.dataInici.toISOString()}, MondayStart: ${assignmentStartMonday.toISOString()}, CurrentMonday: ${currentMonday.toISOString()}, WeeksDiff: ${diffWeeks}, RotationIndex: ${rotationIndex}`);
 
       // Sort rotations by their index field and access by position,
       // so it works even when index values are not 0-based or have gaps.
@@ -657,12 +632,13 @@ export class TreballadorsService {
             continue;
           }
 
-          // Check absences — jump to end of blocker
+          // Check absences — treat fi as end-of-day to include the last day
           for (const abs of dayAbsencies) {
-            if (slotStartDate < abs.fi && slotEndDate > abs.inici) {
+            const absEnd = new Date(abs.fi);
+            absEnd.setHours(23, 59, 59, 999);
+            if (slotStartDate < absEnd && slotEndDate > abs.inici) {
               isBlocked = true;
-              const absEndMin = abs.fi.getHours() * 60 + abs.fi.getMinutes();
-              jumpToMin = absEndMin > currentMin ? absEndMin : currentMin + servei.duradaMin;
+              jumpToMin = tramEnd;
               break;
             }
           }

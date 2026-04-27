@@ -47,6 +47,17 @@ export async function patchStoredEmpresa(patch: Partial<NonNullable<AuthUser['em
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(updated));
 }
 
+/**
+ * Patches top-level fields on the stored user (e.g. colorPrimari).
+ * Call this after any successful self-service user update.
+ */
+export async function patchStoredUser(patch: Partial<AuthUser>): Promise<void> {
+    const user = await getUser();
+    if (!user) return;
+    const updated: AuthUser = { ...user, ...patch };
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(updated));
+}
+
 /** Limpia la sesión (logout) */
 export async function clearSession(): Promise<void> {
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);

@@ -13,8 +13,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { palette, spacing, radius, shadow } from "@/constants/theme";
 import { useTheme } from '@/core/theme/ThemeProvider';
-import type { ApiTreballador, ApiServei } from '../types';
-import { createReserva } from '../services/calendarApi';
+import type { ApiTreballador, ApiServei, ApiClient } from '../types';
+import { createReserva, fetchClientsByEmpresa } from '../services/calendarApi';
+import { DatePickerField } from '@/features/horarios/components/DatePickerField';
+import { TimePickerField } from './TimePickerField';
+import { getEmpresaId } from '@/utils/session';
 
 interface CreateBookingModalProps {
     visible: boolean;
@@ -37,7 +40,6 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 
     // Form State
     const [nom, setNom] = useState('');
-    const [cognoms, setCognoms] = useState('');
     const [email, setEmail] = useState('');
     const [telefon, setTelefon] = useState('');
     const [data, setData] = useState('');
@@ -49,6 +51,12 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Client picker
+    const [showPicker, setShowPicker] = useState(false);
+    const [clients, setClients] = useState<ApiClient[]>([]);
+    const [clientSearch, setClientSearch] = useState('');
+    const [loadingClients, setLoadingClients] = useState(false);
+
     const handleClose = () => {
         if (isSubmitting) return;
         resetForm();
@@ -57,7 +65,6 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 
     const resetForm = () => {
         setNom('');
-        setCognoms('');
         setEmail('');
         setTelefon('');
         setData('');
@@ -66,13 +73,46 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         setIdServei(null);
         setIdTreballador(null);
         setError('');
+        setShowPicker(false);
+        setClients([]);
+        setClientSearch('');
     };
+
+    const handleOpenPicker = async () => {
+        if (showPicker) { setShowPicker(false); return; }
+        setLoadingClients(true);
+        setShowPicker(true);
+        try {
+            const empresaId = await getEmpresaId();
+            if (!empresaId) return;
+            const data = await fetchClientsByEmpresa(empresaId);
+            setClients(data);
+        } catch {
+            setClients([]);
+        } finally {
+            setLoadingClients(false);
+        }
+    };
+
+    const handleSelectClient = (client: ApiClient) => {
+        setNom(client.nom);
+        setEmail(client.email ?? '');
+        setTelefon(client.telefon ?? '');
+        setShowPicker(false);
+        setClientSearch('');
+    };
+
+    const filteredClients = clients.filter(c =>
+        c.nom.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        (c.email ?? '').toLowerCase().includes(clientSearch.toLowerCase()) ||
+        (c.telefon ?? '').includes(clientSearch),
+    );
 
     const handleSave = async () => {
         setError('');
         
-        if (!nom.trim() || !cognoms.trim() || !email.trim() || !telefon.trim() || !data.trim() || !hora.trim() || !idServei || !idTreballador) {
-            setError('Todos los campos son obligatorios excepto observaciones.');
+        if (!nom.trim() || !data.trim() || !hora.trim() || !idServei || !idTreballador) {
+            setError('Nom, data, hora, treballador i servei són obligatoris.');
             return;
         }
 
@@ -80,9 +120,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             setIsSubmitting(true);
             const payload = {
                 nom: nom.trim(),
-                cognoms: cognoms.trim(),
-                email: email.trim(),
-                telefon: telefon.trim(),
+                ...(email.trim() && { email: email.trim() }),
+                ...(telefon.trim() && { telefon: telefon.trim() }),
                 data: data.trim(),
                 hora: hora.trim(),
                 observacions: observacions.trim(),
@@ -97,9 +136,13 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             onClose();
         } catch (err: unknown) {
             console.error('Error creating booking:', err);
-            const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
-            const msg = axiosErr?.response?.data?.message || axiosErr?.message || 'Error al crear la reserva.';
-            setError(Array.isArray(msg) ? msg.join(', ') : msg);
+            const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+            const status = axiosErr?.response?.status;
+            const rawMsg = axiosErr?.response?.data?.message || axiosErr?.message || '';
+            const msg = status === 409
+                ? 'No hay disponibilidad para este horario. Revisa que el trabajador tenga horario asignado y no tenga ausencias ese día.'
+                : Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg || 'Error al crear la reserva.';
+            setError(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -132,32 +175,72 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                     >
                         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-                        <Text style={styles.sectionTitle}>Datos del Cliente</Text>
-                        
-                        <View style={styles.row}>
-                            <View style={[styles.col, { paddingRight: 8 }]}>
-                                <Text style={styles.label}>Nombre *</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. Martí"
-                                    value={nom}
-                                    onChangeText={setNom}
-                                    editable={!isSubmitting}
-                                />
-                            </View>
-                            <View style={[styles.col, { paddingLeft: 8 }]}>
-                                <Text style={styles.label}>Apellidos *</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. Garcia"
-                                    value={cognoms}
-                                    onChangeText={setCognoms}
-                                    editable={!isSubmitting}
-                                />
-                            </View>
+                        <View style={styles.sectionRow}>
+                            <Text style={styles.sectionTitle}>Datos del Cliente</Text>
+                            <TouchableOpacity
+                                style={[styles.pickerBtn, showPicker && { backgroundColor: theme.primary }]}
+                                onPress={handleOpenPicker}
+                                disabled={isSubmitting}
+                            >
+                                <Ionicons name="search" size={13} color={showPicker ? '#fff' : theme.primary} />
+                                <Text style={[styles.pickerBtnText, showPicker && { color: '#fff' }]}>
+                                    Buscar existent
+                                </Text>
+                            </TouchableOpacity>
                         </View>
 
-                        <Text style={styles.label}>Email *</Text>
+                        {showPicker && (
+                            <View style={styles.pickerPanel}>
+                                <TextInput
+                                    style={styles.pickerSearch}
+                                    placeholder="Cercar per nom, email o telèfon..."
+                                    value={clientSearch}
+                                    onChangeText={setClientSearch}
+                                    autoFocus
+                                />
+                                {loadingClients ? (
+                                    <ActivityIndicator size="small" color={theme.primary} style={{ marginVertical: 12 }} />
+                                ) : filteredClients.length === 0 ? (
+                                    <Text style={styles.pickerEmpty}>Cap client trobat</Text>
+                                ) : (
+                                    <ScrollView style={styles.pickerList} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                                        {filteredClients.map(c => (
+                                            <TouchableOpacity
+                                                key={c.id}
+                                                style={styles.pickerItem}
+                                                onPress={() => handleSelectClient(c)}
+                                            >
+                                                <View style={styles.pickerItemAvatar}>
+                                                    <Text style={[styles.pickerItemInitial, { color: theme.primary }]}>
+                                                        {c.nom.charAt(0).toUpperCase()}
+                                                    </Text>
+                                                </View>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={styles.pickerItemNom}>{c.nom}</Text>
+                                                    {(c.email || c.telefon) && (
+                                                        <Text style={styles.pickerItemSub}>
+                                                            {[c.email, c.telefon].filter(Boolean).join(' · ')}
+                                                        </Text>
+                                                    )}
+                                                </View>
+                                                <Ionicons name="chevron-forward" size={14} color={palette.textMuted} />
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                )}
+                            </View>
+                        )}
+
+                        <Text style={styles.label}>Nom complet *</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ej. Martí Garcia"
+                            value={nom}
+                            onChangeText={setNom}
+                            editable={!isSubmitting}
+                        />
+
+                        <Text style={styles.label}>Email</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Ej. marti@email.com"
@@ -168,7 +251,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             editable={!isSubmitting}
                         />
 
-                        <Text style={styles.label}>Teléfono *</Text>
+                        <Text style={styles.label}>Teléfono</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Ej. 666777888"
@@ -183,22 +266,20 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                         <View style={styles.row}>
                             <View style={[styles.col, { paddingRight: 8 }]}>
                                 <Text style={styles.label}>Fecha *</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="YYYY-MM-DD"
+                                <DatePickerField
                                     value={data}
-                                    onChangeText={setData}
-                                    editable={!isSubmitting}
+                                    onChange={setData}
+                                    placeholder="Seleccionar fecha"
+                                    disabled={isSubmitting}
                                 />
                             </View>
                             <View style={[styles.col, { paddingLeft: 8 }]}>
                                 <Text style={styles.label}>Hora *</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="HH:MM"
+                                <TimePickerField
                                     value={hora}
-                                    onChangeText={setHora}
-                                    editable={!isSubmitting}
+                                    onChange={setHora}
+                                    placeholder="Seleccionar hora"
+                                    disabled={isSubmitting}
                                 />
                             </View>
                         </View>
@@ -324,11 +405,87 @@ const styles = StyleSheet.create({
         padding: spacing.xl,
         paddingBottom: 40,
     },
+    sectionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
     sectionTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: palette.textPrimary,
+    },
+    pickerBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: palette.border,
+        backgroundColor: '#f8fafc',
+    },
+    pickerBtnText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    pickerPanel: {
+        borderWidth: 1,
+        borderColor: palette.border,
+        borderRadius: radius.md,
+        backgroundColor: '#fff',
         marginBottom: spacing.md,
+        overflow: 'hidden',
+    },
+    pickerSearch: {
+        borderBottomWidth: 1,
+        borderBottomColor: palette.borderSoft,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 10,
+        fontSize: 13,
+        color: palette.textPrimary,
+    },
+    pickerList: {
+        maxHeight: 200,
+    },
+    pickerEmpty: {
+        fontSize: 13,
+        color: palette.textMuted,
+        textAlign: 'center',
+        paddingVertical: 16,
+    },
+    pickerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: palette.borderSoft,
+    },
+    pickerItemAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#f1f5f9',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pickerItemInitial: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    pickerItemNom: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: palette.textPrimary,
+    },
+    pickerItemSub: {
+        fontSize: 11,
+        color: palette.textMuted,
+        marginTop: 1,
     },
     label: {
         fontSize: 14,

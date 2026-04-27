@@ -11,11 +11,12 @@ export type SignupInput = {
     ubicacio: string;
     capacitat?: number;
     descripcio?: string;
-    colorPrimari?: string;
+    tipo?: string;
   };
   usuari: {
     email: string;
     password: string;
+    colorPrimari?: string | null;
   };
 };
 
@@ -24,6 +25,10 @@ export type AuthUser = {
   email: string;
   rol: string;
   empresaId: number;
+  fotoPerfil?: string | null;
+  nom?: string | null;
+  colorPrimari?: string | null;
+  idioma?: string;
   empresa?: {
     id: number;
     nom: string;
@@ -32,7 +37,7 @@ export type AuthUser = {
     fotoPerfil?: string;
     bannerUrl?: string;
     descripcio?: string;
-    colorPrimari?: string;
+    tipo?: string;
   };
 };
 

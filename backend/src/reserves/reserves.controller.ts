@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, UseGuards, Query } from '@nestjs/common';
 import { ReservesService } from './reserves.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -6,7 +6,7 @@ import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.
 import { Roles } from '../common/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { ApiOperation, ApiResponse, ApiTags, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
-import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto } from './dto/reserves.dto';
+import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto, ModificarReservaGestioDto } from './dto/reserves.dto';
 
 @ApiTags('reserves')
 @ApiBearerAuth('JWT-auth')
@@ -14,6 +14,36 @@ import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto } from './d
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReservesController {
   constructor(private readonly reservesService: ReservesService) { }
+
+  @Get('gestio/:token')
+  @Public()
+  @ApiOperation({ summary: 'Obtenir detalls de la reserva pel token de gestió' })
+  @ApiResponse({ status: 200, description: 'Detalls de la reserva' })
+  @ApiResponse({ status: 404, description: 'Token invàlid' })
+  getByToken(@Param('token') token: string) {
+    return this.reservesService.getReservaByToken(token);
+  }
+
+  @Patch('gestio/:token/cancellar')
+  @Public()
+  @ApiOperation({ summary: 'Cancel·lar una reserva pel token de gestió' })
+  @ApiResponse({ status: 200, description: 'Reserva cancel·lada' })
+  @ApiResponse({ status: 400, description: 'Reserva ja cancel·lada o ja passada' })
+  @ApiResponse({ status: 404, description: 'Token invàlid' })
+  cancellarByToken(@Param('token') token: string) {
+    return this.reservesService.cancellarReservaByToken(token);
+  }
+
+  @Patch('gestio/:token/modificar')
+  @Public()
+  @ApiOperation({ summary: 'Modificar data/hora d\'una reserva pel token de gestió' })
+  @ApiBody({ type: ModificarReservaGestioDto })
+  @ApiResponse({ status: 200, description: 'Reserva modificada' })
+  @ApiResponse({ status: 409, description: 'Horari no disponible' })
+  @ApiResponse({ status: 404, description: 'Token invàlid' })
+  modificarByToken(@Param('token') token: string, @Body() dto: ModificarReservaGestioDto) {
+    return this.reservesService.modificarReservaByToken(token, dto);
+  }
 
   @Post('public')
   @Public()

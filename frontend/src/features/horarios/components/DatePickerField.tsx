@@ -6,10 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/horarios.constants';
 
 const MONTH_NAMES = [
-    'Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny',
-    'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre',
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
-const DAY_LABELS = ['Dl', 'Dm', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
+const DAY_LABELS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
 function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate();
@@ -28,7 +28,7 @@ interface Props {
     disabled?: boolean;
 }
 
-export function DatePickerField({ value, onChange, placeholder = 'Seleccionar data', disabled }: Props) {
+export function DatePickerField({ value, onChange, placeholder = 'Seleccionar fecha', disabled }: Props) {
     const today = new Date();
 
     const parsed = value
@@ -43,7 +43,7 @@ export function DatePickerField({ value, onChange, placeholder = 'Seleccionar da
     const [viewMonth, setViewMonth] = useState(parsed?.month ?? today.getMonth());
 
     const displayText = value
-        ? new Date(value + 'T12:00:00').toLocaleDateString('ca-ES', {
+        ? new Date(value + 'T12:00:00').toLocaleDateString('es-ES', {
             day: '2-digit', month: 'short', year: 'numeric',
           })
         : placeholder;

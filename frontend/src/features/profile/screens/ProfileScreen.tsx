@@ -17,6 +17,8 @@ import { ProfileCard } from '../components/ProfileCard';
 import { TodayAppointments } from '../components/TodayAppointments';
 import { AssignedServices } from '../components/AssignedServices';
 import { useMiTreballador, useTreballadorServeis, useTodayBookings } from '../hooks/useProfile';
+import { LocalDataCard } from '@/features/home/components/LocalDataCard';
+import { AbsenciesPendentsCard } from '@/features/home/components/AbsenciesPendentsCard';
 
 export default function ProfileScreen() {
     const [user, setUser] = useState<AuthUser | null>(null);
@@ -75,7 +77,7 @@ export default function ProfileScreen() {
                     isLoading={loadingTreballador}
                 />
 
-                {/* Appointments + Services — shown for any role if user has an associated worker */}
+                {/* Appointments + Services — shown for employees with an associated worker */}
                 {treballadorId && (
                     <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
                         <TodayAppointments
@@ -86,6 +88,18 @@ export default function ProfileScreen() {
                             services={serveis}
                             isLoading={loadingServeis}
                         />
+                    </View>
+                )}
+
+                {/* Admin-only: company card + pending absences */}
+                {rol === 'ADMIN_GENERAL' && (
+                    <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
+                        <View style={styles.blockFlex}>
+                            <LocalDataCard empresa={user?.empresa} />
+                        </View>
+                        <View style={styles.blockFlex}>
+                            <AbsenciesPendentsCard />
+                        </View>
                     </View>
                 )}
             </ScrollView>
@@ -120,5 +134,8 @@ const styles = StyleSheet.create({
     },
     blocksColumn: {
         flexDirection: 'column',
+    },
+    blockFlex: {
+        flex: 1,
     },
 });

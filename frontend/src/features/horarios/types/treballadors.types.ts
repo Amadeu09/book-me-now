@@ -24,6 +24,7 @@ export interface JornadaTreballadorPayload {
 export interface CreateTreballadorPayload {
     nom: string;
     idUsuari: number;
+    diesVacancesAnuals?: number;
     jornadaTreballador?: JornadaTreballadorPayload;
     serveisIds?: number[];
 }

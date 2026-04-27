@@ -4,13 +4,13 @@ import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { AbsenciaEmpresa } from '../types/vacaciones.types';
 import { useTheme } from '@/core/theme/ThemeProvider';
 
-const MONTH_SHORT = ['GEN','FEB','MAR','ABR','MAI','JUN','JUL','AGO','SET','OCT','NOV','DES'];
+const MONTH_SHORT = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
 function daysUntil(inici: string): string {
     const diff = Math.ceil((new Date(inici).getTime() - Date.now()) / 86_400_000);
-    if (diff <= 0) return 'Avui';
-    if (diff === 1) return 'Demà';
-    return `En ${diff} dies`;
+    if (diff <= 0) return 'Hoy';
+    if (diff === 1) return 'Mañana';
+    return `En ${diff} días`;
 }
 
 type Props = { items: AbsenciaEmpresa[] };
@@ -24,23 +24,33 @@ export function ProximosFestivos({ items }: Props) {
         .filter(a => new Date(a.fi) >= today)
         .slice(0, 5);
 
+    const isWhiteCard = theme.isDefault || theme.isUserWhite;
+    const cardBg = isWhiteCard ? '#ffffff' : theme.primary;
+    const titleColor = isWhiteCard ? HC.textPrimary : theme.textOnPrimary;
+    const emptyColor = isWhiteCard ? HC.textMuted : (theme.textOnPrimary + 'aa');
+    const nameColor = isWhiteCard ? HC.textPrimary : theme.textOnPrimary;
+    const relColor = isWhiteCard ? HC.textMuted : (theme.textOnPrimary + 'aa');
+    const borderItemColor = isWhiteCard ? HC.borderSoft : (theme.textOnPrimary + '22');
+    const dateBg = isWhiteCard ? (theme.primary + '22') : (theme.textOnPrimary + '22');
+    const dateColor = isWhiteCard ? theme.primary : theme.textOnPrimary;
+
     return (
-        <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
-            <Text style={styles.sectionTitle}>Pròxims Festius</Text>
+        <View style={[styles.card, { backgroundColor: cardBg, borderWidth: isWhiteCard ? 1 : 0, borderColor: '#e2e8f0' }]}>
+            <Text style={[styles.sectionTitle, { color: titleColor }]}>Próximos Festivos</Text>
             {upcoming.length === 0 ? (
-                <Text style={styles.empty}>No hi ha festius propers.</Text>
+                <Text style={[styles.empty, { color: emptyColor }]}>No hay festivos próximos.</Text>
             ) : (
                 upcoming.map((h, i) => {
                     const d = new Date(h.inici);
                     return (
-                        <View key={h.id} style={[styles.item, i < upcoming.length - 1 && styles.itemBorder]}>
-                            <View style={[styles.dateBox, { backgroundColor: theme.primary + '22' }]}>
-                                <Text style={[styles.dateDay, { color: theme.primary }]}>{String(d.getDate()).padStart(2, '0')}</Text>
-                                <Text style={[styles.dateMonth, { color: theme.primary }]}>{MONTH_SHORT[d.getMonth()]}</Text>
+                        <View key={h.id} style={[styles.item, i < upcoming.length - 1 && { borderBottomWidth: 1, borderBottomColor: borderItemColor }]}>
+                            <View style={[styles.dateBox, { backgroundColor: dateBg }]}>
+                                <Text style={[styles.dateDay, { color: dateColor }]}>{String(d.getDate()).padStart(2, '0')}</Text>
+                                <Text style={[styles.dateMonth, { color: dateColor }]}>{MONTH_SHORT[d.getMonth()]}</Text>
                             </View>
                             <View style={styles.itemBody}>
-                                <Text style={styles.itemName} numberOfLines={1}>{h.titol}</Text>
-                                <Text style={styles.itemRelative}>{daysUntil(h.inici)}</Text>
+                                <Text style={[styles.itemName, { color: nameColor }]} numberOfLines={1}>{h.titol}</Text>
+                                <Text style={[styles.itemRelative, { color: relColor }]}>{daysUntil(h.inici)}</Text>
                             </View>
                         </View>
                     );
@@ -73,10 +83,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 14,
         paddingVertical: 10,
-    },
-    itemBorder: {
-        borderBottomWidth: 1,
-        borderBottomColor: HC.borderSoft,
     },
     dateBox: {
         width: 38,

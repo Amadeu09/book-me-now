@@ -49,7 +49,7 @@ function BalanceCard({ vacancesUsed, diesVacancesAnuals, missatgeDies }: { vacan
 
     return (
         <View style={[styles.card, styles.balanceCard, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
-            <Text style={styles.cardLabel}>VACANCES USADES</Text>
+            <Text style={styles.cardLabel}>VACACIONES USADAS</Text>
             <View style={styles.balanceRow}>
                 <Text style={[styles.balanceBig, { color: theme.primary }]}>{vacancesUsed}</Text>
                 <Text style={styles.balanceFraction}> / {diesVacancesAnuals} dies</Text>
@@ -72,7 +72,7 @@ function AccumulatedCard({ vacancesUsed }: { vacancesUsed: number }) {
             <View style={styles.miniRow}>
                 <Ionicons name="airplane-outline" size={18} color={theme.primary} />
                 <View style={styles.miniText}>
-                    <Text style={styles.cardLabel}>DIES ACUMULATS</Text>
+                    <Text style={styles.cardLabel}>DIAS ACOMULADOS</Text>
                     <Text style={styles.miniValue}>{vacancesUsed} dies</Text>
                 </View>
             </View>
@@ -87,7 +87,7 @@ function HolidayCountCard({ count }: { count: number }) {
             <View style={styles.miniRow}>
                 <Ionicons name="calendar-outline" size={18} color={HC.textMuted} />
                 <View style={styles.miniText}>
-                    <Text style={styles.cardLabel}>PRÒXIMS FESTIUS</Text>
+                    <Text style={styles.cardLabel}>PROXIMOS FESTIVOS</Text>
                     <Text style={styles.miniValue}>{count} dies</Text>
                 </View>
             </View>

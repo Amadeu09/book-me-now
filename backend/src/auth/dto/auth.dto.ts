@@ -30,6 +30,11 @@ export class SignupUsuariDto {
     message: 'La contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
   })
   password: string;
+
+  @ApiProperty({ example: '#FF6A00', required: false, description: 'Color primario del usuario (hex)' })
+  @IsOptional()
+  @IsString()
+  colorPrimari?: string;
 }
 
 export class SignupEmpresaDto {
@@ -54,10 +59,6 @@ export class SignupEmpresaDto {
   @IsString()
   descripcio?: string;
 
-  @ApiProperty({ example: '#FF6A00', required: false, description: 'Color primario corporativo (hex)' })
-  @IsOptional()
-  @IsString()
-  colorPrimari?: string;
 }
 
 export class SignupDto {
@@ -83,6 +84,10 @@ export class LoginResponseDto {
     email: string;
     rol: Rol;
     empresaId: number;
+    fotoPerfil?: string;
+    nom?: string;
+    colorPrimari?: string;
+    idioma?: string;
     empresa?: {
       id: number;
       nom: string;
@@ -91,7 +96,6 @@ export class LoginResponseDto {
       fotoPerfil?: string;
       bannerUrl?: string;
       descripcio?: string;
-      colorPrimari?: string;
     };
   };
 }
@@ -109,6 +113,20 @@ export class ChangePasswordDto {
     message: 'La nova contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
   })
   newPassword: string;
+}
+
+export class UpdateIdiomaDto {
+  @ApiProperty({ example: 'ca', enum: ['ca', 'es'], description: 'Idioma de la interfície' })
+  @IsString()
+  @IsNotEmpty()
+  idioma: 'ca' | 'es';
+}
+
+export class UpdateColorDto {
+  @ApiProperty({ example: '#FF6A00', required: false, nullable: true, description: 'Color primario del usuario (hex) o null per eliminar' })
+  @IsOptional()
+  @IsString()
+  colorPrimari?: string | null;
 }
 
 export interface JwtPayload {

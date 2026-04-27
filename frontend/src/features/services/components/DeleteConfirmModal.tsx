@@ -1,8 +1,6 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Servei } from "@/types/servei.types";
-import { radius, spacing } from "@/constants/theme";
-import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { Button } from '@/ui/components/common';
 
 type Props = {
@@ -19,7 +17,7 @@ export default function DeleteConfirmModal({ visible, service, onConfirm, onCanc
             <View style={styles.overlay}>
                 <View style={styles.card}>
                     <Text style={styles.title}>Eliminar servicio</Text>
-                    <Text style={styles.body}>¿Eliminar &quot;{service?.nom}&quot;?</Text>
+                    <Text style={styles.body}>¿Eliminar &quot;{service?.nom}&quot;? Esta acción no se puede deshacer.</Text>
                     <View style={styles.actions}>
                         <Button variant="ghost" label="Cancelar" onPress={onCancel} disabled={loading} />
                         <Button variant="danger" label={loading ? 'Eliminando...' : 'Eliminar'} onPress={onConfirm} loading={loading} />
@@ -33,26 +31,40 @@ export default function DeleteConfirmModal({ visible, service, onConfirm, onCanc
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: HC.modalOverlay,
+        backgroundColor: 'rgba(0,0,0,0.25)',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: spacing.gutter,
+        padding: 28,
     },
     card: {
         width: '100%',
         maxWidth: 420,
-        backgroundColor: HC.card,
-        borderRadius: radius.modal,
-        padding: spacing.gutter,
-        gap: spacing.md,
-        ...cardShadow,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 14,
+        padding: 28,
+        borderWidth: 1,
+        borderColor: '#EBEBEB',
+        gap: 12,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 5,
     },
-    title: { fontSize: 18, fontWeight: '800', color: HC.textPrimary },
-    body: { fontSize: 15, color: HC.textSecondary },
+    title: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#111111',
+    },
+    body: {
+        fontSize: 14,
+        color: '#888888',
+        lineHeight: 22,
+    },
     actions: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        gap: spacing.sm,
-        marginTop: spacing.xs,
+        gap: 8,
+        marginTop: 4,
     },
 });

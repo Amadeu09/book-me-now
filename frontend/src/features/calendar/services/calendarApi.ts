@@ -2,12 +2,12 @@ import api from '@/core/api/api';
 
 export interface CreateReservaPayload {
     nom: string;
-    cognoms: string;
-    email: string;
-    telefon: string;
+    cognoms?: string;
+    email?: string;
+    telefon?: string;
     data: string;
     hora: string;
-    observacions: string;
+    observacions?: string;
     idServei: number;
     idTreballador: number;
 }
@@ -48,5 +48,20 @@ export const fetchGetServeis = async () => {
 
 export const createReserva = async (data: CreateReservaPayload) => {
   const response = await api.post(`/reserves`, data);
+  return response.data;
+};
+
+export const updateReservaEstat = async (id: number, nouEstat: string) => {
+  const response = await api.put(`/reserves/update/${id}`, { idReserva: id, nouEstat });
+  return response.data;
+};
+
+export const deleteReserva = async (id: number) => {
+  const response = await api.delete(`/reserves/${id}`);
+  return response.data;
+};
+
+export const fetchClientsByEmpresa = async (empresaId: number) => {
+  const response = await api.get(`/clients/empresa/${empresaId}`);
   return response.data;
 };

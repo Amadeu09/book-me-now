@@ -81,6 +81,8 @@ export const useBookings = (startDate: Date, endDate: Date, userRole: string | u
                         clientInitials: initials,
                         icon: iconName,
                         badges: res.estat !== 'PENDENT' ? [res.estat] : undefined,
+                        estat: res.estat,
+                        rawReserva: res,
                     };
                 });
 

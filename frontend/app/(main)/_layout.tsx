@@ -7,7 +7,7 @@ import { useTheme } from '@/core/theme/ThemeProvider';
 import { StripedBackground } from '@/components/StripedBackground';
 
 const EMPLEAT_ROUTES = ['/bookings', '/profile', '/vacaciones'];
-const ADMIN_RESTRICTED = ['/home', '/services', '/horarios'];
+const ADMIN_RESTRICTED = ['/services', '/horarios'];
 
 export default function MainLayout() {
     const { width } = useWindowDimensions();
@@ -48,10 +48,9 @@ export default function MainLayout() {
 
             <View style={{ flex: 1, paddingBottom: isDesktopWeb ? 0 : 72 }}>
                 <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
-                    <Tabs.Screen name="home" />
+                    <Tabs.Screen name="profile" />
                     <Tabs.Screen name="bookings" />
                     <Tabs.Screen name="services" />
-                    <Tabs.Screen name="profile" />
                     <Tabs.Screen name="horarios" />
                     <Tabs.Screen name="vacaciones" />
                 </Tabs>

@@ -58,6 +58,8 @@ function ServeiCard({
   );
 }
 
+export const QUALSEVOL_ID = -1;
+
 function TreballadorCard({
   treballador,
   selected,
@@ -78,7 +80,6 @@ function TreballadorCard({
           : 'border-outline-variant/20 bg-surface-container-low hover:border-primary/30 hover:bg-primary/[0.03]'
       }`}
     >
-      {/* Avatar */}
       <div className="shrink-0 w-11 h-11 rounded-full overflow-hidden">
         {treballador.Usuari.fotoPerfil ? (
           <img src={treballador.Usuari.fotoPerfil} alt={treballador.nom} className="w-full h-full object-cover" />
@@ -88,13 +89,38 @@ function TreballadorCard({
           </div>
         )}
       </div>
-
-      {/* Nom */}
       <p className={`flex-1 font-semibold text-sm truncate ${selected ? 'text-primary' : 'text-on-surface'}`}>
         {treballador.nom}
       </p>
+      <div className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+        selected ? 'border-primary bg-primary' : 'border-outline-variant/50'
+      }`}>
+        {selected && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+      </div>
+    </button>
+  );
+}
 
-      {/* Radio indicator — bigger and more visible */}
+function QualsevolCard({ selected, onSelect }: { selected: boolean; onSelect: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${
+        selected
+          ? 'border-primary bg-primary/5 shadow-sm'
+          : 'border-outline-variant/20 bg-surface-container-low hover:border-primary/30 hover:bg-primary/[0.03]'
+      }`}
+    >
+      <div className="shrink-0 w-11 h-11 rounded-full bg-secondary-fixed flex items-center justify-center">
+        <span className="material-symbols-outlined text-on-secondary-fixed" style={{ fontSize: '22px' }}>shuffle</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={`font-semibold text-sm ${selected ? 'text-primary' : 'text-on-surface'}`}>
+          Qualsevol professional
+        </p>
+        <p className="text-xs text-on-surface-variant mt-0.5">Assignació aleatòria disponible</p>
+      </div>
       <div className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
         selected ? 'border-primary bg-primary' : 'border-outline-variant/50'
       }`}>
@@ -236,6 +262,10 @@ export function BookingWidget({
             </p>
           ) : (
             <div className="space-y-2">
+              <QualsevolCard
+                selected={selectedTreballadorId === QUALSEVOL_ID}
+                onSelect={() => setSelectedTreballadorId(selectedTreballadorId === QUALSEVOL_ID ? null : QUALSEVOL_ID)}
+              />
               {treballadors.map((t) => (
                 <TreballadorCard
                   key={t.id}
@@ -266,11 +296,16 @@ export function BookingWidget({
         </button>
       </div>
 
-      {modalOpen && selectedServeiId && selectedTreballadorId && (
+      {modalOpen && selectedServeiId && selectedTreballadorId !== null && (
         <AvailabilityModal
           treballadorId={selectedTreballadorId}
+          allTreballadors={selectedTreballadorId === QUALSEVOL_ID ? treballadors : undefined}
           serveiId={selectedServeiId}
-          treballadorNom={treballadors.find((t) => t.id === selectedTreballadorId)?.nom ?? ''}
+          treballadorNom={
+            selectedTreballadorId === QUALSEVOL_ID
+              ? 'Qualsevol professional'
+              : treballadors.find((t) => t.id === selectedTreballadorId)?.nom ?? ''
+          }
           serveiNom={selectedServei?.nom ?? ''}
           onClose={() => setModalOpen(false)}
         />

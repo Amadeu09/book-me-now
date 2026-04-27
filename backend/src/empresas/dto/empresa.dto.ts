@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsBoolean, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { BusinessType } from '@prisma/client';
 
 export class CreateEmpresaDto {
   @ApiProperty({ example: 'Spa Wellness Center', description: 'Nombre de la empresa' })
@@ -28,10 +29,10 @@ export class CreateEmpresaDto {
   @IsString()
   descripcio?: string;
 
-  @ApiProperty({ example: '#FF6A00', description: 'Color primario corporativo (hex)', required: false })
+  @ApiProperty({ enum: BusinessType, example: BusinessType.PERRUQUERIA, description: 'Tipus de negoci', required: false })
   @IsOptional()
-  @IsString()
-  colorPrimari?: string;
+  @IsEnum(BusinessType)
+  tipo?: BusinessType;
 }
 
 export class UpdateEmpresaDto {
@@ -61,8 +62,8 @@ export class UpdateEmpresaDto {
   @IsString()
   descripcio?: string;
 
-  @ApiProperty({ example: '#FF6A00', required: false, description: 'Color primario corporativo (hex)' })
+  @ApiProperty({ enum: BusinessType, example: BusinessType.PERRUQUERIA, description: 'Tipus de negoci', required: false })
   @IsOptional()
-  @IsString()
-  colorPrimari?: string;
+  @IsEnum(BusinessType)
+  tipo?: BusinessType;
 }

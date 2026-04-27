@@ -16,6 +16,7 @@ import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { uploadMyFoto } from '../services/profile.service';
 import { EditProfileModal } from './modal/EditProfileModal';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { patchStoredUser } from '@/utils/session';
 
 const AVATAR_SIZE_MOBILE = 90;
 const AVATAR_SIZE_DESKTOP = 110;
@@ -163,8 +164,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
             const uri = result.assets[0].uri;
             setUploading(true);
-            await uploadMyFoto(uri);
-            setLocalPhoto(uri);
+            const cloudUrl = await uploadMyFoto(uri);
+            setLocalPhoto(cloudUrl ?? uri);
+            if (cloudUrl) await patchStoredUser({ fotoPerfil: cloudUrl });
             queryClient.invalidateQueries({ queryKey: ['mi-treballador'] });
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message || 'No se pudo subir la foto.');
@@ -227,7 +229,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                                 activeOpacity={0.8}
                             >
                                 <Ionicons name="key-outline" size={15} color={theme.textOnPrimary} />
-                                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Cambiar contraseña</Text>
+                                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Editar perfil</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -293,7 +295,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 activeOpacity={0.8}
             >
                 <Ionicons name="key-outline" size={16} color={theme.textOnPrimary} />
-                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Cambiar contraseña</Text>
+                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Editar perfil</Text>
             </TouchableOpacity>
 
             <EditProfileModal visible={editVisible} onClose={() => setEditVisible(false)} />

@@ -46,10 +46,26 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 /**
+ * Self-service color update for the current user
+ * PATCH /auth/me/color
+ */
+export async function updateMyColor(colorPrimari: string | null): Promise<void> {
+    await api.patch('/auth/me/color', { colorPrimari });
+}
+
+/**
+ * Self-service language update for the current user
+ * PATCH /auth/me/idioma
+ */
+export async function updateMyIdioma(idioma: 'ca' | 'es'): Promise<void> {
+    await api.patch('/auth/me/idioma', { idioma });
+}
+
+/**
  * Self-service profile photo upload for the current user
  * PATCH /auth/me/foto
  */
-export async function uploadMyFoto(fileUri: string): Promise<void> {
+export async function uploadMyFoto(fileUri: string): Promise<string | undefined> {
     const formData = new FormData();
     const filename = fileUri.split('/').pop() || 'photo.jpg';
     const match = /\.(\w+)$/.exec(filename);
@@ -63,5 +79,6 @@ export async function uploadMyFoto(fileUri: string): Promise<void> {
         formData.append('foto', { uri: fileUri, name: filename, type } as any);
     }
 
-    await api.patch('/auth/me/foto', formData);
+    const res = await api.patch('/auth/me/foto', formData);
+    return res.data?.fotoPerfil as string | undefined;
 }

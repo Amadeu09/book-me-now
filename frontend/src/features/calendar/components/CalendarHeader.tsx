@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { palette, spacing, typography, radius } from "@/constants/theme";
 import { ViewMode } from './types';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,22 +11,35 @@ interface CalendarHeaderProps {
     onQuickCreate: () => void;
 }
 
+const MODE_LABELS: Record<ViewMode, string> = {
+    day: 'Dia',
+    week: 'Setmana',
+    month: 'Mes',
+};
+
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     viewMode,
     onViewChange,
     onQuickCreate
 }) => {
     const theme = useTheme();
+    const { width } = useWindowDimensions();
+    const isDesktop = Platform.OS === 'web' && width >= 1024;
+
+    const availableModes: ViewMode[] = isDesktop ? ['week', 'month'] : ['day', 'week'];
+
     return (
         <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
             <View>
                 <Text style={[styles.title, { color: theme.headerText }]}>Reserves</Text>
-                <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>Gestiona les reserves i la disponibilitat.</Text>
+                {isDesktop && (
+                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>Gestiona les reserves i la disponibilitat.</Text>
+                )}
             </View>
 
             <View style={styles.actions}>
                 <View style={styles.segmentControl}>
-                    {(['week', 'month', 'day'] as ViewMode[]).map((mode) => (
+                    {availableModes.map((mode) => (
                         <TouchableOpacity
                             key={mode}
                             style={[
@@ -39,7 +52,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                                 styles.segmentText,
                                 viewMode === mode && styles.segmentTextActive
                             ]}>
-                                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                {MODE_LABELS[mode]}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -47,7 +60,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
                 <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={onQuickCreate}>
                     <Ionicons name="add" size={20} color={theme.textOnPrimary} />
-                    <Text style={[styles.createButtonText, { color: theme.textOnPrimary }]}>Nova reserva</Text>
+                    {isDesktop && <Text style={[styles.createButtonText, { color: theme.textOnPrimary }]}>Nova reserva</Text>}
                 </TouchableOpacity>
             </View>
         </View>

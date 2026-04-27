@@ -4,16 +4,16 @@ export function BentoGrid() {
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
         <div className="max-w-xl">
           <p className="text-primary font-bold tracking-widest uppercase text-sm mb-4">
-            The Selection
+            La Selección
           </p>
           <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-none">
-            Bespoke <span className="italic font-light">Destinations</span> for the
-            Discerning.
+            Destinos a <span className="italic font-light">Medida</span> para los
+            Exigentes.
           </h2>
         </div>
         <p className="text-on-surface-variant font-medium max-w-sm mb-2">
-          A hand-picked collection of local masters, aesthetic sanctuaries, and
-          high-performance spaces.
+          Una colección seleccionada de maestros locales, santuarios estéticos y
+          espacios de alto rendimiento.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 h-auto">
@@ -28,7 +28,7 @@ export function BentoGrid() {
             />
             <div className="absolute top-8 right-8">
               <div className="bg-secondary-fixed text-on-secondary-fixed px-6 py-2 rounded-full font-bold text-sm">
-                Top Rated
+                Mejor Valorado
               </div>
             </div>
           </div>
@@ -38,7 +38,7 @@ export function BentoGrid() {
                 The Iron Sanctuary
               </h3>
               <p className="text-on-surface-variant font-medium">
-                Bespoke Wellness &amp; Performance • London, UK
+                Bienestar &amp; Rendimiento • Londres, UK
               </p>
             </div>
             <span className="material-symbols-outlined text-4xl text-primary p-2 bg-primary-fixed rounded-full group-hover:rotate-45 transition-transform duration-300">
@@ -76,8 +76,8 @@ export function BentoGrid() {
                   />
                 </div>
                 <div>
-                  <p className="font-bold">Journal Feature</p>
-                  <p className="text-xs text-on-surface-variant">The 2024 Wellness Guide</p>
+                  <p className="font-bold">Reportaje</p>
+                  <p className="text-xs text-on-surface-variant">Guía de Bienestar 2024</p>
                 </div>
               </div>
             </div>
@@ -93,7 +93,7 @@ export function BentoGrid() {
             <div className="absolute inset-0 bg-gradient-to-t from-on-surface/80 to-transparent flex items-end p-8">
               <div className="text-white">
                 <p className="text-xs font-bold tracking-widest uppercase mb-1 opacity-70">
-                  New Opening
+                  Nueva Apertura
                 </p>
                 <h4 className="text-2xl font-bold">Azure Thalasso</h4>
               </div>

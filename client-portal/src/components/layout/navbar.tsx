@@ -11,6 +11,7 @@ export function Navbar() {
         <Link href="/" className="text-violet-600 dark:text-violet-400 font-semibold transition-opacity duration-300 hover:opacity-80">
           Home
         </Link>
+        {/*
         <Link href="#" className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-opacity duration-300">
           Experiences
         </Link>
@@ -20,10 +21,11 @@ export function Navbar() {
         <Link href="#" className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-opacity duration-300">
           About
         </Link>
+        */}
       </div>
-      <button className="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-3 rounded-full font-bold tracking-tight scale-95 active:scale-90 transition-transform hover:opacity-90 shadow-lg shadow-primary/20">
-        Inquire
-      </button>
+      <div>
+
+      </div>
     </nav>
   );
 }

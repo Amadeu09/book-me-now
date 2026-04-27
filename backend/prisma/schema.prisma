@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
 model Empresa {
@@ -25,22 +25,36 @@ model Empresa {
   fotoPerfil   String?
   bannerUrl    String?
   descripcio   String?
-  colorPrimari String?
+  tipo         BusinessType @default(OTROS)
 
   // --- AFEGIT (additiu, no canvia res existent) ---
   jornadesPlantilla JornadaPlantilla[]
   absenciesEmpresa  AbsenciaEmpresa[]
+  horarisEmpresa    HorariEmpresa[]
+}
+
+model HorariEmpresa {
+  id        Int     @id @default(autoincrement())
+  empresaId Int
+  dow       Int     // 0=Dilluns … 6=Diumenge
+  iniciMin  Int     // minuts des de 00:00  (ex: 540 = 09:00)
+  fiMin     Int     // minuts des de 00:00  (ex: 840 = 14:00)
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, dow])
 }
 
 model Usuari {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  hash       String
-  rol        Rol
-  empresaId  Int
-  fotoPerfil String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  hash         String
+  rol          Rol
+  empresaId    Int
+  fotoPerfil   String?
+  colorPrimari String?
+  idioma       String   @default("ca")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   empresa    Empresa  @relation(fields: [empresaId], references: [id])
   treballador Treballador?
 
@@ -96,7 +110,7 @@ model Servei {
 model Client {
   id          Int         @id @default(autoincrement())
   nom         String
-  email       String?     @unique
+  email       String?
   telefon     String?
   empresaId   Int
   createdAt   DateTime    @default(now())
@@ -106,6 +120,7 @@ model Client {
   valoracions Valoracio[]
 
   @@index([empresaId])
+  @@unique([email, empresaId])
 }
 
 model TreballadorServei {
@@ -120,23 +135,27 @@ model TreballadorServei {
 }
 
 model Reserva {
-  id            Int             @id @default(autoincrement())
-  dataHora      DateTime
-  estat         ReservaEstat    @default(PENDENT)
-  empresaId     Int
-  treballadorId Int?
-  clientId      Int?
-  clientNom     String?
-  clientEmail   String?
-  observacions  String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  factura       Factura?
-  client        Client?         @relation(fields: [clientId], references: [id])
-  empresa       Empresa         @relation(fields: [empresaId], references: [id])
-  treballador   Treballador?    @relation("ReservaTreballador", fields: [treballadorId], references: [id])
-  serveiId      Int
-  servei        Servei          @relation(fields: [serveiId], references: [id])
+  id                 Int             @id @default(autoincrement())
+  dataHora           DateTime
+  estat              ReservaEstat    @default(PENDENT)
+  empresaId          Int
+  treballadorId      Int?
+  clientId           Int?
+  clientNom          String?
+  clientEmail        String?
+  observacions       String?
+  tokenGestio        String?         @unique
+  tokenValoracio     String?         @unique
+  tokenValoracioUsat Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  factura            Factura?
+  valoracions        Valoracio[]
+  client             Client?         @relation(fields: [clientId], references: [id])
+  empresa            Empresa         @relation(fields: [empresaId], references: [id])
+  treballador        Treballador?    @relation("ReservaTreballador", fields: [treballadorId], references: [id])
+  serveiId           Int
+  servei             Servei          @relation(fields: [serveiId], references: [id])
 
   @@index([empresaId, dataHora])
   @@index([treballadorId, dataHora])
@@ -153,15 +172,18 @@ model Valoracio {
   tipus         ValoracioTipus
   treballadorId Int?
   serveiId      Int?
-  puntuacio     Int
+  puntuacio     Float
   comentari     String?
+  reservaId     Int?
   dataValoracio DateTime       @default(now())
 
   client        Client?        @relation(fields: [clientId], references: [id])
   empresa       Empresa        @relation(fields: [empresaId], references: [id])
   treballador   Treballador?   @relation(fields: [treballadorId], references: [id])
   servei        Servei?        @relation(fields: [serveiId], references: [id])
+  reserva       Reserva?       @relation(fields: [reservaId], references: [id])
 
+  @@unique([reservaId, tipus])
   @@index([empresaId])
   @@index([tipus, treballadorId])
 }
@@ -369,5 +391,22 @@ enum TipusAbsenciaEmpresa {
   FESTA_ESTATAL
   PONT
   ALTRE
+}
+
+enum BusinessType {
+  PERRUQUERIA
+  BARBERIA
+  ESTETICA
+  SPA
+  MASSATGES
+  FITNESS
+  PILATES
+  IOGA
+  NUTRICIONISTA
+  FISIOTERAPIA
+  DENTAL
+  VETERINARIA
+  ALTRES
+  OTROS
 }
 

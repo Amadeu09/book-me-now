@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 import {
     View,
     Text,
-    TouchableOpacity,
     StyleSheet,
 } from 'react-native';
 import { HC } from '../../constants/horarios.constants';
@@ -16,8 +15,9 @@ import { TimeRangeItem } from './TimeRangeItem';
 
 /* ──────────────────────────────────────────
    DayRow – Renders a single day inside a
-   rotation: toggle descanso, interactive
-   timeline painter, time range chips
+   rotation: interactive timeline painter +
+   time range chips. When no range is set,
+   shows "Dia de descans" as static text.
    ────────────────────────────────────────── */
 
 interface DayRowProps {
@@ -27,73 +27,52 @@ interface DayRowProps {
 }
 
 export const DayRow: React.FC<DayRowProps> = ({ day, onUpdate, disabled }) => {
-    const isDescanso = day.esDescans;
-
-    /* ── Toggle Descanso ────────────── */
-    const handleToggleDescanso = useCallback(() => {
-        onUpdate({
-            ...day,
-            esDescans: !day.esDescans,
-            trams: !day.esDescans ? [] : day.trams,
-        });
-    }, [day, onUpdate]);
+    const hasRange = day.trams.length > 0;
 
     /* ── Timeline painter callback ── */
     const handleTramsChange = useCallback((newTrams: Tram[]) => {
-        onUpdate({ ...day, trams: newTrams });
+        onUpdate({ ...day, trams: newTrams, esDescans: newTrams.length === 0 });
     }, [day, onUpdate]);
 
     /* ── Remove single tram ────────── */
     const handleRemoveTram = useCallback((idx: number) => {
-        onUpdate({ ...day, trams: day.trams.filter((_, i) => i !== idx) });
+        const newTrams = day.trams.filter((_, i) => i !== idx);
+        onUpdate({ ...day, trams: newTrams, esDescans: newTrams.length === 0 });
     }, [day, onUpdate]);
 
     return (
-        <View style={[styles.row, isDescanso && styles.rowDescanso]}>
-            {/* Day label + toggle */}
+        <View style={styles.row}>
+            {/* Day label + rest indicator */}
             <View style={styles.headerSection}>
-                <Text style={[styles.dayLabel, isDescanso && styles.dayLabelDescanso]}>
+                <Text style={styles.dayLabel}>
                     {DOW_LABELS[day.dow]}
                 </Text>
-
-                <TouchableOpacity
-                    style={[styles.toggle, isDescanso && styles.toggleActive]}
-                    onPress={handleToggleDescanso}
-                    disabled={disabled}
-                    activeOpacity={0.7}
-                >
-                    <View style={[styles.toggleThumb, isDescanso && styles.toggleThumbActive]} />
-                </TouchableOpacity>
-                <Text style={styles.toggleText}>
-                    {isDescanso ? 'Día de descanso' : 'Descanso'}
-                </Text>
+                {!hasRange && (
+                    <Text style={styles.restLabel}>Dia de descans</Text>
+                )}
             </View>
 
-            {/* Content: interactive timeline + chips */}
-            {!isDescanso && (
-                <View style={styles.content}>
-                    {/* Interactive timeline painter */}
-                    <TimelinePainter
-                        trams={day.trams}
-                        onTramsChange={handleTramsChange}
-                        disabled={disabled}
-                    />
+            {/* Always-visible content: interactive timeline + chips */}
+            <View style={styles.content}>
+                <TimelinePainter
+                    trams={day.trams}
+                    onTramsChange={handleTramsChange}
+                    disabled={disabled}
+                />
 
-                    {/* Time range chips (removable) */}
-                    {day.trams.length > 0 && (
-                        <View style={styles.chipsRow}>
-                            {day.trams.map((tram, i) => (
-                                <TimeRangeItem
-                                    key={`${tram.iniciMin}-${tram.fiMin}`}
-                                    tram={tram}
-                                    onRemove={() => handleRemoveTram(i)}
-                                    disabled={disabled}
-                                />
-                            ))}
-                        </View>
-                    )}
-                </View>
-            )}
+                {hasRange && (
+                    <View style={styles.chipsRow}>
+                        {day.trams.map((tram, i) => (
+                            <TimeRangeItem
+                                key={`${tram.iniciMin}-${tram.fiMin}`}
+                                tram={tram}
+                                onRemove={() => handleRemoveTram(i)}
+                                disabled={disabled}
+                            />
+                        ))}
+                    </View>
+                )}
+            </View>
         </View>
     );
 };
@@ -106,11 +85,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: HC.borderSoft,
     },
-    rowDescanso: {
-        opacity: 0.8,
-    },
 
-    /* Header: dayLabel + toggle */
+    /* Header: dayLabel + rest text */
     headerSection: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -123,35 +99,10 @@ const styles = StyleSheet.create({
         color: HC.textPrimary,
         minWidth: 90,
     },
-    dayLabelDescanso: {
-        fontStyle: 'italic',
-        color: HC.primary,
-    },
-
-    /* Toggle */
-    toggle: {
-        width: 42,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: HC.border,
-        justifyContent: 'center',
-        paddingHorizontal: 2,
-    },
-    toggleActive: {
-        backgroundColor: HC.primary,
-    },
-    toggleThumb: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: HC.white,
-    },
-    toggleThumbActive: {
-        alignSelf: 'flex-end',
-    },
-    toggleText: {
+    restLabel: {
         fontSize: 13,
         color: HC.textMuted,
+        fontStyle: 'italic',
         fontWeight: '500',
     },
 

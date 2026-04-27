@@ -4,17 +4,17 @@ export function PartnerCta() {
       <div className="relative bg-on-surface text-white rounded-[4rem] overflow-hidden p-12 md:p-24 flex flex-col md:flex-row items-center gap-16">
         <div className="w-full md:w-1/2 z-10">
           <p className="text-primary-fixed font-bold tracking-[0.2em] uppercase text-xs mb-6">
-            Partner Program
+            Programa de Socios
           </p>
           <h2 className="text-5xl md:text-7xl font-black mb-8 leading-[1.1]">
-            Elevate your <br /> Boutique <br /> Presence.
+            Eleva tu <br /> Presencia <br /> Local.
           </h2>
           <p className="text-surface-variant text-lg max-w-md mb-12">
-            Are you a master of your craft? Join the curated circle of world-class
-            businesses featured on BookMeNow.
+            ¿Eres un experto en tu oficio? Únete al círculo selecto de negocios
+            destacados en BookMeNow.
           </p>
           <button className="bg-white text-on-surface px-12 py-5 rounded-full font-bold text-lg hover:bg-primary-fixed transition-colors">
-            Apply to List
+            Solicitar Alta
           </button>
         </div>
         <div className="w-full md:w-1/2 relative h-[500px]">

@@ -1,18 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  ScrollView,
   StatusBar,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -20,16 +20,16 @@ import {
   Alert,
 } from "react-native";
 import { signup } from "@/features/auth/services/auth.service";
-import { uploadFotoUsuari } from "@/features/horarios/services/treballadors.service";
-import { uploadFotoEmpresa, uploadBannerEmpresa } from "@/features/empresas/services/empresas.service";
+import { uploadFotoUsuari, createTreballador } from "@/features/horarios/services/treballadors.service";
+import { uploadFotoEmpresa } from "@/features/empresas/services/empresas.service";
+import { createHorariTram } from "@/features/horarios/services/horari-empresa.service";
+import { TramModal, minsToHHMM } from "@/features/horarios/components/modal/TramModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const { width } = Dimensions.get("window");
 
 export default function RegisterUser() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,6 +37,18 @@ export default function RegisterUser() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Trabajador asociado
+  const [associarTreballador, setAssociarTreballador] = useState(false);
+  const [nomTreballador, setNomTreballador] = useState("");
+  const [diesVacances, setDiesVacances] = useState("30");
+
+  // Horari empresa
+  const [configHorari, setConfigHorari] = useState(false);
+  const [horariTrams, setHorariTrams] = useState<{ dow: number; iniciMin: number; fiMin: number }[]>([]);
+  const [tramModal, setTramModal] = useState<{ visible: boolean; dow: number } | null>(null);
+
+  // Errores
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
@@ -65,7 +77,6 @@ export default function RegisterUser() {
     setConfirmError(null);
     setGeneralError(null);
 
-    // Validación
     const localErrors: string[] = [];
     if (!email.trim()) {
       setEmailError("El email es obligatorio");
@@ -82,51 +93,61 @@ export default function RegisterUser() {
       setConfirmError("Las contraseñas no coinciden");
       localErrors.push("Las contraseñas no coinciden");
     }
+    if (associarTreballador && !nomTreballador.trim()) {
+      localErrors.push("El nombre del trabajador es obligatorio");
+      Alert.alert("Revisa los datos", "El nombre del trabajador es obligatorio");
+      return;
+    }
     if (localErrors.length) {
       Alert.alert("Revisa los datos", localErrors[0]);
       return;
     }
 
-    // Preparar datos
-    const empresaData = {
+    const empresaData: Record<string, any> = {
       nom: params.nom as string,
       ubicacio: params.ubicacio as string,
-      capacitat: params.capacitat ? parseInt(params.capacitat as string, 10) : undefined,
       descripcio: (params.descripcio as string) || undefined,
-      colorPrimari: (params.colorPrimari as string) || undefined,
     };
+    if (params.tipo) empresaData.tipo = params.tipo as string;
 
     const userData = {
       email: email.trim().toLowerCase(),
       password,
+      colorPrimari: (params.colorPrimari as string) || undefined,
     };
 
     try {
       setLoading(true);
-      const response = await signup(empresaData, userData);
-      console.log('✅ Signup exitoso:', { token: response.token.slice(0, 20), user: response.user });
+      const response = await signup(empresaData as any, userData);
 
-      // Persistir credenciales ANTES de subir imágenes — el interceptor de Axios necesita el token
       await AsyncStorage.setItem("token", response.token);
       await AsyncStorage.setItem("user", JSON.stringify(response.user));
 
-      // Upload images non-blocking — failure doesn't abort signup
       const empresaId = response.user.empresaId;
+      const usuariId = parseInt(response.user.id, 10);
       const fotoEmpresaUri = params.fotoUri as string;
-      const bannerEmpresaUri = params.bannerUri as string;
 
       await Promise.allSettled([
-        photoUri ? uploadFotoUsuari(parseInt(response.user.id, 10), photoUri) : Promise.resolve(),
+        photoUri ? uploadFotoUsuari(usuariId, photoUri) : Promise.resolve(),
         fotoEmpresaUri ? uploadFotoEmpresa(empresaId, fotoEmpresaUri) : Promise.resolve(),
-        bannerEmpresaUri ? uploadBannerEmpresa(empresaId, bannerEmpresaUri) : Promise.resolve(),
       ]);
-      console.log('✅ Token y user guardados en AsyncStorage');
 
-      // Navegar directamente a home
+      if (associarTreballador && nomTreballador.trim()) {
+        await createTreballador({
+          nom: nomTreballador.trim(),
+          idUsuari: usuariId,
+          diesVacancesAnuals: parseInt(diesVacances, 10) || 30,
+        });
+      }
+
+      if (horariTrams.length > 0) {
+        await Promise.allSettled(
+          horariTrams.map(t => createHorariTram(empresaId, t))
+        );
+      }
+
       router.replace({ pathname: "/home" } as any);
-      console.log('✅ Navegación ejecutada hacia /home');
     } catch (error: unknown) {
-      console.error("Error en signup:", error);
       const apiMessage =
         (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
         (error as { message?: string })?.message ||
@@ -140,35 +161,26 @@ export default function RegisterUser() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={["#0b0b10", "#1b1220", "#10202a", "#0b0b10"]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <View style={styles.conicGlow} />
-      </View>
+      <StatusBar barStyle="dark-content" />
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <View style={styles.container}>
-          {/* Header */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={24} color="#111827" />
           </TouchableOpacity>
 
           <View style={styles.brandRow}>
             <View style={styles.brandDot} />
-            <Text style={styles.brandText}>BOOK ME NOW</Text>
+            <Text style={styles.brandText}>BookMeNow</Text>
           </View>
 
           <View style={{ height: 18 }} />
-
           <Text style={styles.title}>Crea tu cuenta</Text>
           <Text style={styles.subtitle}>Paso 2 de 2</Text>
-
           <View style={{ height: 20 }} />
 
           {/* Avatar Picker */}
@@ -178,7 +190,7 @@ export default function RegisterUser() {
                 <Image source={{ uri: photoUri }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person-outline" size={40} color="rgba(255,255,255,0.4)" />
+                  <Ionicons name="person-outline" size={40} color="#9ca3af" />
                 </View>
               )}
               <View style={styles.avatarBadge}>
@@ -190,140 +202,306 @@ export default function RegisterUser() {
 
           <View style={{ height: 16 }} />
 
-          <BlurView intensity={35} tint="dark" style={styles.card}>
-            <View style={styles.cardInner}>
-              {/* Email */}
-              <View style={styles.inputRow}>
-                <Ionicons name="mail-outline" size={18} color="rgba(255,255,255,0.8)" style={{ marginRight: 8 }} />
-                <TextInput
-                  placeholder="Email"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="email"
-                  style={styles.input}
-                />
-              </View>
-
-              {/* Password */}
-              <View style={[styles.inputRow, { marginTop: 12 }]}>
-                <Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.8)" style={{ marginRight: 8 }} />
-                <TextInput
-                  placeholder="Contraseña"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  style={styles.input}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="rgba(255,255,255,0.6)" />
-                </TouchableOpacity>
-              </View>
-              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-
-              {/* Confirm Password */}
-              <View style={[styles.inputRow, { marginTop: 12 }]}>
-                <Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.8)" style={{ marginRight: 8 }} />
-                <TextInput
-                  placeholder="Confirmar contraseña"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  style={styles.input}
-                />
-                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={18} color="rgba(255,255,255,0.6)" />
-                </TouchableOpacity>
-              </View>
-              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-
-              <View style={{ height: 20 }} />
-
-              {/* CTA */}
-              <TouchableOpacity activeOpacity={0.9} style={styles.cta} onPress={handleSignup} disabled={loading}>
-                <LinearGradient colors={["#ffffff", "#ffe3aa"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaGradient}>
-                  {loading ? (
-                    <ActivityIndicator color="#000" />
-                  ) : (
-                    <Text style={styles.ctaText}>Crear cuenta</Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {/* Login link */}
-              <View style={{ alignItems: "center", marginTop: 14 }}>
-                <Text style={styles.metaText}>
-                  ¿Ya tienes cuenta?{" "}
-                  <Text onPress={() => router.replace("/login")} style={styles.linkText}>
-                    Iniciar sesión
-                  </Text>
-                </Text>
-              </View>
-              {confirmError ? <Text style={styles.errorText}>{confirmError}</Text> : null}
-
-              {generalError ? (
-                <View style={{ marginTop: 12 }}>
-                  <Text style={styles.errorText}>{generalError}</Text>
-                </View>
-              ) : null}
+          <View style={styles.card}>
+            {/* Email */}
+            <View style={styles.inputRow}>
+              <Ionicons name="mail-outline" size={18} color="#9ca3af" style={{ marginRight: 8 }} />
+              <TextInput
+                placeholder="Email"
+                placeholderTextColor="#9ca3af"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+                style={styles.input}
+              />
             </View>
-          </BlurView>
+            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+
+            {/* Password */}
+            <View style={[styles.inputRow, { marginTop: 12 }]}>
+              <Ionicons name="lock-closed-outline" size={18} color="#9ca3af" style={{ marginRight: 8 }} />
+              <TextInput
+                placeholder="Contraseña"
+                placeholderTextColor="#9ca3af"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoComplete="password"
+                style={styles.input}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
+            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+            {/* Confirm Password */}
+            <View style={[styles.inputRow, { marginTop: 12 }]}>
+              <Ionicons name="lock-closed-outline" size={18} color="#9ca3af" style={{ marginRight: 8 }} />
+              <TextInput
+                placeholder="Confirmar contraseña"
+                placeholderTextColor="#9ca3af"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                autoCapitalize="none"
+                autoComplete="password"
+                style={styles.input}
+              />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
+            {confirmError ? <Text style={styles.errorText}>{confirmError}</Text> : null}
+          </View>
+
+          {/* Toggle trabajador */}
+          <View style={styles.toggleCard}>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>¿Asociar un trabajador a este usuario?</Text>
+                <Text style={styles.toggleSubLabel}>Crea también el perfil de trabajador vinculado</Text>
+              </View>
+              <Switch
+                value={associarTreballador}
+                onValueChange={setAssociarTreballador}
+                trackColor={{ false: "#e5e7eb", true: "#6264A0" }}
+                thumbColor="#fff"
+              />
+            </View>
+
+            {associarTreballador && (
+              <View style={styles.treballadorFields}>
+                <View style={styles.inputRow}>
+                  <Ionicons name="person-outline" size={18} color="#9ca3af" style={{ marginRight: 8 }} />
+                  <TextInput
+                    placeholder="Nombre completo del trabajador"
+                    placeholderTextColor="#9ca3af"
+                    value={nomTreballador}
+                    onChangeText={setNomTreballador}
+                    autoCapitalize="words"
+                    style={styles.input}
+                  />
+                </View>
+
+                <View style={[styles.inputRow, { marginTop: 12 }]}>
+                  <Ionicons name="sunny-outline" size={18} color="#9ca3af" style={{ marginRight: 8 }} />
+                  <TextInput
+                    placeholder="Días de vacaciones anuales"
+                    placeholderTextColor="#9ca3af"
+                    value={diesVacances}
+                    onChangeText={setDiesVacances}
+                    keyboardType="number-pad"
+                    style={styles.input}
+                  />
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Horari empresa */}
+          <View style={[styles.toggleCard, { marginTop: 16 }]}>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Configurar horari d'obertura</Text>
+                <Text style={styles.toggleSubLabel}>Opcional · Pots modificar-ho més tard</Text>
+              </View>
+              <Switch
+                value={configHorari}
+                onValueChange={setConfigHorari}
+                trackColor={{ false: "#e5e7eb", true: "#6264A0" }}
+                thumbColor="#fff"
+              />
+            </View>
+
+            {configHorari && (
+              <View style={{ marginTop: 16, gap: 2 }}>
+                {(['Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte','Diumenge'] as const).map((label, dow) => {
+                  const dayTrams = horariTrams.filter(t => t.dow === dow);
+                  return (
+                    <View key={dow} style={styles.horariDayRow}>
+                      <View style={styles.horariDayLeft}>
+                        <Text style={styles.horariDayLabel}>{label}</Text>
+                        {dayTrams.length === 0 ? (
+                          <Text style={styles.horariTancat}>Tancat</Text>
+                        ) : (
+                          <View style={styles.horariChips}>
+                            {dayTrams.map((t, i) => {
+                              const globalIdx = horariTrams.indexOf(t);
+                              return (
+                                <View key={i} style={styles.horariChip}>
+                                  <Text style={styles.horariChipText}>
+                                    {minsToHHMM(t.iniciMin)} – {minsToHHMM(t.fiMin)}
+                                  </Text>
+                                  <TouchableOpacity
+                                    onPress={() => setHorariTrams(prev => prev.filter((_, idx) => idx !== globalIdx))}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                  >
+                                    <Ionicons name="close-circle" size={14} color="#9ca3af" />
+                                  </TouchableOpacity>
+                                </View>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => setTramModal({ visible: true, dow })}
+                        style={styles.horariAddBtn}
+                      >
+                        <Ionicons name="add" size={18} color="#6264A0" />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+
+          {tramModal && (
+            <TramModal
+              visible={tramModal.visible}
+              dow={tramModal.dow}
+              onSave={async (iniciMin, fiMin) => {
+                setHorariTrams(prev => [...prev, { dow: tramModal.dow, iniciMin, fiMin }]);
+              }}
+              onClose={() => setTramModal(null)}
+            />
+          )}
+
+          <View style={{ height: 8 }} />
+
+          {/* CTA */}
+          <TouchableOpacity activeOpacity={0.9} style={styles.cta} onPress={handleSignup} disabled={loading}>
+            <LinearGradient colors={["#ffffff", "#ffe3aa"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaGradient}>
+              {loading ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text style={styles.ctaText}>Crear cuenta</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <View style={{ alignItems: "center", marginTop: 14 }}>
+            <Text style={styles.metaText}>
+              ¿Ya tienes cuenta?{" "}
+              <Text onPress={() => router.replace("/login")} style={styles.linkText}>
+                Iniciar sesión
+              </Text>
+            </Text>
+          </View>
+
+          {generalError ? (
+            <View style={{ marginTop: 12 }}>
+              <Text style={styles.errorText}>{generalError}</Text>
+            </View>
+          ) : null}
 
           <Text style={styles.footer}>© {new Date().getFullYear()} Book Me Now</Text>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#0b0b10" },
-  container: { flex: 1, paddingHorizontal: 20, justifyContent: "center" },
-  backButton: { position: "absolute", top: 50, left: 20, zIndex: 10 },
+  safe: { flex: 1, backgroundColor: "#fff" },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 40, maxWidth: 1600, width: "100%", alignSelf: "center" },
+  backButton: { position: "absolute", top: 0, left: 0, zIndex: 10, padding: 4 },
+
   brandRow: { flexDirection: "row", alignItems: "center" },
-  brandDot: { width: 10, height: 10, borderRadius: 10, backgroundColor: "#f472b6", marginRight: 8 },
-  brandText: { letterSpacing: 4, color: "#fff", fontWeight: "700", fontSize: 12, opacity: 0.9 },
-  title: { fontSize: 36, fontWeight: "900", color: "#fff", lineHeight: 40 },
-  subtitle: { color: "rgba(255,255,255,0.65)", marginTop: 6 },
+  brandDot: { width: 10, height: 10, borderRadius: 10, backgroundColor: "#6264A0", marginRight: 8 },
+  brandText: { letterSpacing: 4, color: "#6264A0", fontWeight: "700", fontSize: 12 },
+  title: { fontSize: 32, fontWeight: "900", color: "#111827", lineHeight: 38 },
+  subtitle: { color: "#6b7280", marginTop: 6 },
 
   card: {
     borderRadius: 20,
-    overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 2,
   },
-  cardInner: { padding: 16 },
 
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "#e5e7eb",
+    backgroundColor: "#f3f4f6",
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderRadius: 14,
   },
-  input: { color: "#fff", fontSize: 14, flex: 1 },
+  input: { color: "#111827", fontSize: 14, flex: 1 },
 
-  cta: { borderRadius: 14, overflow: "hidden" },
+  toggleCard: {
+    marginTop: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  toggleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  toggleLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  toggleSubLabel: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
+  treballadorFields: { marginTop: 16 },
+
+  cta: { borderRadius: 14, overflow: "hidden", marginTop: 16 },
   ctaGradient: { paddingVertical: 14, alignItems: "center" },
   ctaText: { color: "#000", fontWeight: "900", fontSize: 14 },
 
-  metaText: { color: "rgba(255,255,255,0.7)", fontSize: 12 },
-  linkText: { color: "#fbcfe8", fontWeight: "700" },
-  footer: { textAlign: "center", color: "rgba(255,255,255,0.45)", marginTop: 26, fontSize: 11 },
+  metaText: { color: "#6b7280", fontSize: 12 },
+  linkText: { color: "#6264A0", fontWeight: "700" },
+  footer: { textAlign: "center", color: "#9ca3af", marginTop: 26, fontSize: 11 },
+  errorText: { color: "#ef4444", marginTop: 6, fontSize: 12 },
 
-  errorText: { color: "#fecaca", marginTop: 6, fontSize: 12 },
+  horariDayRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  horariDayLeft: { flex: 1 },
+  horariDayLabel: { fontSize: 13, fontWeight: "700", color: "#111827", marginBottom: 4 },
+  horariTancat: { fontSize: 12, color: "#9ca3af", fontStyle: "italic" },
+  horariChips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  horariChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  horariChipText: { fontSize: 12, fontWeight: "600", color: "#374151" },
+  horariAddBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#ede9fe",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
 
   avatarContainer: { alignItems: "center" },
   avatarTouch: { width: 88, height: 88, borderRadius: 44 },
@@ -332,9 +510,9 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "#f3f4f6",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
+    borderColor: "#e5e7eb",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -349,22 +527,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#0b0b10",
+    borderColor: "#fff",
   },
-  avatarHint: { color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 8 },
-
-  conicGlow: {
-    position: "absolute",
-    width: width * 1.8,
-    height: width * 1.8,
-    top: -width * 0.6,
-    right: -width * 0.7,
-    borderRadius: width * 1.8,
-    opacity: 0.22,
-    backgroundColor: "transparent",
-    shadowColor: "#ff7ae6",
-    shadowOpacity: 0.4,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 100,
-  },
+  avatarHint: { color: "#9ca3af", fontSize: 12, marginTop: 8 },
 });

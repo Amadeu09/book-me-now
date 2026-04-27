@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Text,
+  Image,
   useWindowDimensions,
   Platform,
 } from 'react-native';
@@ -14,10 +15,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/core/theme/ThemeProvider';
 
 const ALL_NAV_ITEMS = [
-  { name: 'Inicio', icon: 'home-outline', activeIcon: 'home', path: '/home', adminOnly: true },
+  { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', path: '/profile', adminOnly: false },
   { name: 'Reservas', icon: 'calendar-outline', activeIcon: 'calendar', path: '/bookings', adminOnly: false },
   { name: 'Servicios', icon: 'grid-outline', activeIcon: 'grid', path: '/services', adminOnly: true },
-  { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', path: '/profile', adminOnly: false },
   { name: 'Horarios y disponibilidad', icon: 'time-outline', activeIcon: 'time', path: '/horarios', adminOnly: true },
   { name: 'Vacaciones', icon: 'sunny-outline', activeIcon: 'sunny', path: '/vacaciones', adminOnly: false },
 ];
@@ -159,7 +159,13 @@ export default function Navbar({ variant }: NavbarProps) {
       {isDesktopWeb && user && (
         <View style={[styles.profileContainerWeb, collapsed && styles.profileContainerCollapsed, { backgroundColor: theme.sidebarBg, borderTopColor: theme.sidebarActiveBorder }]}>
           <View style={[styles.avatarCircle, { backgroundColor: theme.sidebarActiveBg }]}>
-            <Text style={[styles.avatarText, { color: theme.sidebarText }]}>{user?.nom ? user.nom.substring(0, 2).toUpperCase() : 'U'}</Text>
+            {user?.fotoPerfil ? (
+              <Image source={{ uri: user.fotoPerfil }} style={styles.avatarImage} />
+            ) : (
+              <Text style={[styles.avatarText, { color: theme.sidebarText }]}>
+                {user?.email?.[0]?.toUpperCase() ?? 'U'}
+              </Text>
+            )}
           </View>
           
           {!collapsed && (
@@ -337,6 +343,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
   avatarText: {
     fontSize: 15,

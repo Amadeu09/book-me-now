@@ -53,11 +53,26 @@ Each feature module (`auth`, `usuaris`, `empresas`, `treballadors`, `serveis`, `
 
 ### Environment Validation
 
-`src/config/env.validation.ts` uses Zod to validate all env vars at startup. Copy `.env.example` to `.env`. Required: `DATABASE_URL` (PostgreSQL), `JWT_SECRET` (min 32 chars, no weak words), `JWT_EXPIRES_IN`, `NODE_ENV`, `PORT`, `ALLOWED_ORIGINS`.
+`src/config/env.validation.ts` uses Zod to validate all env vars at startup. Copy `.env.example` to `.env`. Required: `DATABASE_URL` (PostgreSQL), `JWT_SECRET` (min 32 chars, no weak words), `JWT_EXPIRES_IN`, `NODE_ENV`, `PORT`, `ALLOWED_ORIGINS`. Variables `RESEND_API_KEY`, `EMAIL_FROM`, `REDIS_HOST`, `REDIS_PORT` no passen per Zod (tenen defaults al `ConfigService`) però han d'existir al `.env`.
 
 ### File Uploads
 
 Cloudinary is configured in `src/cloudinary.config.ts` and used for profile/company photos. Requires `CLOUDINARY_*` env vars.
+
+### Email Transaccional (Resend)
+
+Resend s'utilitza per enviar emails des de `reservas@bookmenow.org` (domini verificat). Requereix `RESEND_API_KEY` i `EMAIL_FROM` al `.env`. **Mai hardcodeïs `onboarding@resend.dev`** — sempre usa `this.config.get('EMAIL_FROM')`.
+
+L'enviament d'emails és **no bloquejant**: es crida sense `await` amb `.catch(err => console.error(...))` per no retardar la resposta HTTP.
+
+### Cues de tasques (BullMQ + Redis)
+
+BullMQ s'utilitza per programar jobs diferits, principalment emails post-cita. La queue `emails` està registrada al `ReservesModule` (`src/reserves/reserves.module.ts`). El processor és `src/reserves/email.processor.ts`.
+
+- Requereix Redis corrent. Variables: `REDIS_HOST`, `REDIS_PORT` (i `REDIS_PASSWORD` a producció)
+- En local: `docker-compose up` aixeca Redis automàticament
+- A producció: usar Redis gestionat (Upstash, Railway, Render) i afegir `REDIS_PASSWORD` al `.env`
+- El `delay` del job es calcula com `dataHoraFinal.getTime() - Date.now()` per disparar l'email just en acabar la cita
 
 ### Domain Model (Prisma)
 

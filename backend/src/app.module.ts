@@ -16,6 +16,7 @@ import { HorarisModule } from './horaris/horaris.module';
 import { JornadesModule } from './jornades/jornades.module';
 import { AbsenciesModule } from './absencies/absencies.module';
 import { AbsenciesEmpresaModule } from './absencies-empresa/absencies-empresa.module';
+import { HorariEmpresaModule } from './horari-empresa/horari-empresa.module';
 import { validateEnv } from './config/env.validation';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -58,6 +59,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     JornadesModule,
     AbsenciesModule,
     AbsenciesEmpresaModule,
+    HorariEmpresaModule,
   ],
   providers: [
     // Global exception filter - catch and format all errors

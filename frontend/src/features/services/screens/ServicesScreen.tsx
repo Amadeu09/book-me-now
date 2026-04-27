@@ -10,9 +10,10 @@ import {
     Image,
     StyleSheet,
     ActivityIndicator,
+    TextInput,
+    Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { spacing, radius } from "@/constants/theme";
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
 import type { Servei } from "@/types/servei.types";
@@ -38,6 +39,15 @@ export default function Services() {
     const [editing, setEditing] = useState<Servei | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<Servei | null>(null);
 
+    const [inlineForm, setInlineForm] = useState({
+        nom: '',
+        duradaMin: 30,
+        preu: 0,
+        actiu: true,
+        descripcio: '',
+    });
+    const [inlineDirty, setInlineDirty] = useState(false);
+
     const loadPage = async (targetPage = page) => {
         try {
             setLoadingList(true);
@@ -45,6 +55,9 @@ export default function Services() {
             setItems(res.data);
             setMeta(res.meta);
             setPage(res.meta.page);
+            if (!selectedService && res.data.length > 0) {
+                setSelectedService(res.data[0]);
+            }
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message || 'No se pudieron cargar los servicios');
         } finally {
@@ -55,6 +68,19 @@ export default function Services() {
     useEffect(() => {
         loadPage(1);
     }, []);
+
+    useEffect(() => {
+        if (selectedService) {
+            setInlineForm({
+                nom: selectedService.nom,
+                duradaMin: selectedService.duradaMin,
+                preu: selectedService.preu,
+                actiu: selectedService.actiu,
+                descripcio: selectedService.descripcio ?? '',
+            });
+            setInlineDirty(false);
+        }
+    }, [selectedService?.id]);
 
     const openCreate = () => {
         setFormMode('create');
@@ -94,6 +120,20 @@ export default function Services() {
         }
     };
 
+    const handleInlineSave = async () => {
+        if (!selectedService) return;
+        try {
+            setMutating(true);
+            await updateServei(selectedService.id, inlineForm);
+            await loadPage(page);
+            setInlineDirty(false);
+        } catch (err: any) {
+            Alert.alert('Error', err?.response?.data?.message || 'No se pudo guardar');
+        } finally {
+            setMutating(false);
+        }
+    };
+
     const handleConfirmDelete = async () => {
         if (!deleteTarget) return;
         try {
@@ -110,202 +150,282 @@ export default function Services() {
         }
     };
 
+    const showList = isTablet || !selectedService;
+    const showDetail = isTablet || !!selectedService;
+
+    const disablePrev = page <= 1 || loadingList || mutating;
+    const disableNext = page >= meta.pageCount || loadingList || mutating;
+
+    // ─── List item ─────────────────────────────────────────────────────────────
     const renderListItem = ({ item }: { item: Servei }) => {
         const isSelected = selectedService?.id === item.id;
         return (
             <TouchableOpacity
-                style={[
-                    styles.listItem,
-                    isSelected && { backgroundColor: theme.primaryLight },
-                ]}
+                style={[styles.listItem, isSelected && styles.listItemSelected]}
                 onPress={() => setSelectedService(item)}
                 activeOpacity={0.7}
             >
                 {item.fotoUrl ? (
                     <Image source={{ uri: item.fotoUrl }} style={styles.listImage} resizeMode="cover" />
                 ) : (
-                    <View style={[styles.listImage, styles.listImagePlaceholder, { backgroundColor: theme.primaryMid }]}>
-                        <Ionicons name="cut-outline" size={20} color={theme.primary} />
+                    <View style={[styles.listImage, styles.listImagePlaceholder]}>
+                        <Ionicons name="cut-outline" size={18} color={HC.textLight} />
                     </View>
                 )}
                 <View style={styles.listItemContent}>
-                    <Text
-                        style={[styles.listItemTitle, isSelected && { color: theme.primary }]}
-                        numberOfLines={1}
-                    >
+                    <Text style={[styles.listItemTitle, isSelected && styles.listItemTitleSelected]} numberOfLines={1}>
                         {item.nom}
                     </Text>
-                    <Text style={[styles.listItemSubtitle, isSelected && { color: theme.primary + 'aa' }]}>
-                        {item.duradaMin} min • {Number(item.preu || 0).toFixed(2)} €
+                    <Text style={styles.listItemSubtitle}>
+                        {item.duradaMin} min · {Number(item.preu || 0).toFixed(2)} €
                     </Text>
                 </View>
+                {isSelected && <Ionicons name="chevron-forward" size={13} color={theme.primary} />}
             </TouchableOpacity>
         );
     };
 
+    // ─── Detail panel (inline edit) ────────────────────────────────────────────
     const renderDetail = () => {
         if (!selectedService) {
             return (
                 <View style={styles.detailPlaceholder}>
+                    <Ionicons name="cube-outline" size={32} color={HC.textLight} />
                     <Text style={styles.detailPlaceholderText}>
-                        Selecciona un servicio para ver los detalles
+                        Selecciona un servicio para editarlo
                     </Text>
                 </View>
             );
         }
 
+        const saveDisabled = !inlineDirty || mutating;
+
         return (
             <View style={styles.detailContainer}>
-                {/* Botó "Volver" fora del scroll, fix al top */}
                 {!isTablet && (
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => setSelectedService(null)}
-                    >
-                        <Text style={[styles.backButtonText, { color: theme.primary }]}>← Volver a la lista</Text>
+                    <TouchableOpacity style={styles.backButton} onPress={() => setSelectedService(null)}>
+                        <Ionicons name="chevron-back" size={16} color="#2D5A27" />
+                        <Text style={[styles.backButtonText, { color: '#2D5A27' }]}>Volver a la lista</Text>
                     </TouchableOpacity>
                 )}
 
-                {/* Contingut scrollable: imatge + info */}
+                {/* Image */}
+                <View style={[styles.detailImageSquareContainer, { backgroundColor: theme.background }]}>
+                    {selectedService.fotoUrl ? (
+                        <Image source={{ uri: selectedService.fotoUrl }} style={styles.detailImageSquare} resizeMode="cover" />
+                    ) : (
+                        <View style={[styles.detailImageSquare, styles.detailImagePlaceholderFull]}>
+                            <View style={styles.placeholderIconCircle}>
+                                <Ionicons name="cut-outline" size={32} color="#CCCCCC" />
+                            </View>
+                        </View>
+                    )}
+                    <TouchableOpacity
+                        style={styles.pencilButton}
+                        onPress={() => handleEdit(selectedService)}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="pencil-outline" size={16} color="#111111" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Inline form */}
                 <ScrollView
                     style={styles.detailScroll}
                     contentContainerStyle={styles.detailScrollContent}
                     showsVerticalScrollIndicator={false}
+                    bounces={false}
                 >
-                    {/* Imatge amb botó X */}
-                    <View style={styles.detailImageContainer}>
-                        {selectedService.fotoUrl ? (
-                            <Image
-                                source={{ uri: selectedService.fotoUrl }}
-                                style={styles.detailImage}
-                                resizeMode="cover"
-                            />
-                        ) : (
-                            <View style={[styles.detailImage, styles.detailImagePlaceholder]}>
-                                <View style={[styles.detailPlaceholderIcon, { backgroundColor: theme.primaryMid }]}>
-                                    <Ionicons name="cut-outline" size={40} color={theme.primary} />
-                                </View>
-                            </View>
-                        )}
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setSelectedService(null)}
-                        >
-                            <Text style={styles.closeButtonText}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <Text style={styles.detailTitle}>{selectedService.nom}</Text>
+                    <Text style={styles.detailSubtitle}>Edita els detalls del servei directament aquí</Text>
 
-                    {/* Info */}
-                    <View style={styles.detailContent}>
-                        <Text style={styles.detailTitle}>{selectedService.nom}</Text>
-                        <Text style={styles.detailInfo}>Duración: {selectedService.duradaMin} min</Text>
-                        <Text style={styles.detailInfo}>Precio: {Number(selectedService.preu || 0).toFixed(2)} €</Text>
-                        {selectedService.descripcio ? (
-                            <View style={styles.descripcioBox}>
-                                <Text style={styles.descripcioLabel}>Descripción</Text>
-                                <Text style={styles.descripcioText}>{selectedService.descripcio}</Text>
-                            </View>
-                        ) : null}
-                        <View style={styles.actionButtons}>
-                            <TouchableOpacity
-                                style={[styles.button, styles.editButton, { backgroundColor: theme.primary }]}
-                                onPress={() => handleEdit(selectedService)}
-                            >
-                                <Text style={[styles.buttonText, { color: theme.textOnPrimary }]}>Editar</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.button, styles.deleteButton]}
-                                onPress={() => handleDelete(selectedService)}
-                            >
-                                <Text style={styles.buttonText}>Eliminar</Text>
-                            </TouchableOpacity>
+                    <Text style={styles.inlineLabel}>NOM DEL SERVEI</Text>
+                    <TextInput
+                        style={styles.inlineInput}
+                        value={inlineForm.nom}
+                        onChangeText={(v) => { setInlineForm({ ...inlineForm, nom: v }); setInlineDirty(true); }}
+                        placeholder="Nom del servei"
+                        placeholderTextColor="#CCCCCC"
+                    />
+
+                    <View style={styles.inlineRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.inlineLabel}>PREU (€)</Text>
+                            <TextInput
+                                style={styles.inlineInput}
+                                value={String(inlineForm.preu)}
+                                onChangeText={(v) => { setInlineForm({ ...inlineForm, preu: parseFloat(v) || 0 }); setInlineDirty(true); }}
+                                keyboardType="decimal-pad"
+                                placeholder="0.00"
+                                placeholderTextColor="#CCCCCC"
+                            />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.inlineLabel}>DURACIÓ (MIN)</Text>
+                            <TextInput
+                                style={styles.inlineInput}
+                                value={String(inlineForm.duradaMin)}
+                                onChangeText={(v) => { setInlineForm({ ...inlineForm, duradaMin: parseInt(v, 10) || 0 }); setInlineDirty(true); }}
+                                keyboardType="number-pad"
+                                placeholder="30"
+                                placeholderTextColor="#CCCCCC"
+                            />
                         </View>
                     </View>
+
+                    <Text style={styles.inlineLabel}>DESCRIPCIÓ</Text>
+                    <TextInput
+                        style={[styles.inlineInput, styles.inlineTextarea]}
+                        value={inlineForm.descripcio}
+                        onChangeText={(v) => { setInlineForm({ ...inlineForm, descripcio: v }); setInlineDirty(true); }}
+                        multiline
+                        numberOfLines={4}
+                        placeholder="Descripció opcional..."
+                        placeholderTextColor="#CCCCCC"
+                        textAlignVertical="top"
+                    />
                 </ScrollView>
+
+                {/* Action bar */}
+                <View style={styles.actionBar}>
+                    <TouchableOpacity
+                        style={styles.deleteBtn}
+                        onPress={() => handleDelete(selectedService)}
+                        activeOpacity={0.75}
+                    >
+                        <Ionicons name="trash-outline" size={14} color="#E5352A" />
+                        <Text style={styles.deleteBtnText}>Eliminar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.saveBtn, saveDisabled && { opacity: 0.4 }, { backgroundColor: theme.primary }]}
+                        onPress={handleInlineSave}
+                        disabled={saveDisabled}
+                        activeOpacity={0.75}
+                    >
+                        <Text style={styles.saveBtnText}>Guardar canvis</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     };
 
-    const showList = isTablet || !selectedService;
-    const showDetail = isTablet || !!selectedService;
+    // ─── Pagination ────────────────────────────────────────────────────────────
+    const PaginationRow = () => (
+        <View style={styles.paginationRow}>
+            <TouchableOpacity
+                style={[styles.pageBtn, disablePrev && styles.pageBtnDisabled]}
+                onPress={() => loadPage(page - 1)}
+                disabled={disablePrev}
+                activeOpacity={0.7}
+            >
+                <Ionicons name="chevron-back" size={14} color={HC.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.pageMeta}>{page} / {Math.max(meta.pageCount, 1)}</Text>
+            <TouchableOpacity
+                style={[styles.pageBtn, disableNext && styles.pageBtnDisabled]}
+                onPress={() => loadPage(page + 1)}
+                disabled={disableNext}
+                activeOpacity={0.7}
+            >
+                <Ionicons name="chevron-forward" size={14} color={HC.textPrimary} />
+            </TouchableOpacity>
+        </View>
+    );
 
+    // ─── Left panel ────────────────────────────────────────────────────────────
+    const LeftPanel = () => (
+        <>
+            <View style={styles.panelHeader}>
+                <Text style={styles.panelTitle}>Serveis</Text>
+                <View style={styles.panelHeaderRight}>
+                    <PaginationRow />
+                    <TouchableOpacity
+                        style={[styles.btnPrimary, (loadingList || mutating) && styles.btnDisabled]}
+                        onPress={openCreate}
+                        disabled={loadingList || mutating}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="add" size={14} color={HC.white} />
+                        <Text style={styles.btnPrimaryText}>Añadir</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {loadingList && items.length === 0 ? (
+                <View style={styles.loaderBox}>
+                    <ActivityIndicator size="small" color={HC.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={items}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={renderListItem}
+                    contentContainerStyle={styles.listContent}
+                    ItemSeparatorComponent={() => <View style={styles.listSeparator} />}
+                    ListEmptyComponent={
+                        !loadingList ? <Text style={styles.emptyText}>No hay servicios aún</Text> : null
+                    }
+                />
+            )}
+        </>
+    );
+
+    // ─── Render ────────────────────────────────────────────────────────────────
     return (
-        <View style={[styles.safe, { backgroundColor: theme.background }]}>
+        <View style={styles.safe}>
             <ServicesHeader />
 
-            {/* Àrea principal: padding per tots costats → el card flota */}
-            <View style={styles.outerPad}>
-                <View style={[styles.card, { flexDirection: isTablet ? 'row' : 'column' }]}>
-
-                    {/* ── Panell esquerre: llista ── */}
-                    {showList && (
-                        <View style={[
-                            styles.listSection,
-                            isTablet ? styles.listSectionTablet : { flex: 1 },
-                        ]}>
-                            {/* Capçalera del panell */}
-                            <View style={[styles.panelHeader, { borderBottomColor: HC.border + '55' }]}>
-                                <Text style={styles.panelTitle}>Llista de serveis</Text>
+            {isTablet ? (
+                <View style={styles.outerPad}>
+                    <View style={styles.cardLeft}>
+                        <LeftPanel />
+                    </View>
+                    <View style={styles.cardRight}>
+                        {renderDetail()}
+                    </View>
+                </View>
+            ) : (
+                <View style={styles.mobileContainer}>
+                    {showList && !showDetail && (
+                        <>
+                            <View style={styles.panelHeader}>
+                                <Text style={styles.panelTitle}>Serveis</Text>
                                 <View style={styles.panelHeaderRight}>
+                                    <PaginationRow />
                                     <TouchableOpacity
-                                        style={[styles.pageBtn, (page <= 1 || loadingList) && styles.pageBtnDisabled]}
-                                        disabled={page <= 1 || loadingList}
-                                        onPress={() => loadPage(page - 1)}
-                                    >
-                                        <Text style={styles.pageBtnText}>‹</Text>
-                                    </TouchableOpacity>
-                                    <Text style={styles.pageMeta}>{page}/{Math.max(meta.pageCount, 1)}</Text>
-                                    <TouchableOpacity
-                                        style={[styles.pageBtn, (page >= meta.pageCount || loadingList) && styles.pageBtnDisabled]}
-                                        disabled={page >= meta.pageCount || loadingList}
-                                        onPress={() => loadPage(page + 1)}
-                                    >
-                                        <Text style={styles.pageBtnText}>›</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.btnPrimary,
-                                            { backgroundColor: theme.primary },
-                                            (loadingList || mutating) && styles.btnDisabled,
-                                        ]}
+                                        style={[styles.btnPrimary, (loadingList || mutating) && styles.btnDisabled]}
                                         onPress={openCreate}
                                         disabled={loadingList || mutating}
+                                        activeOpacity={0.8}
                                     >
-                                        <Text style={[styles.btnPrimaryText, { color: theme.textOnPrimary }]}>+ Añadir</Text>
+                                        <Ionicons name="add" size={14} color={HC.white} />
+                                        <Text style={styles.btnPrimaryText}>Añadir</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             {loadingList && items.length === 0 ? (
                                 <View style={styles.loaderBox}>
-                                    <ActivityIndicator size="large" color={theme.primary} />
+                                    <ActivityIndicator size="large" color={HC.primary} />
                                 </View>
                             ) : (
                                 <FlatList
                                     data={items}
                                     keyExtractor={(item) => item.id.toString()}
                                     renderItem={renderListItem}
-                                    contentContainerStyle={styles.listContent}
-                                    ItemSeparatorComponent={() => <View style={styles.separator} />}
-                                    ListEmptyComponent={<Text style={styles.emptyText}>No hay servicios aún</Text>}
+                                    contentContainerStyle={styles.mobileListContent}
+                                    ItemSeparatorComponent={() => <View style={styles.listSeparator} />}
+                                    ListEmptyComponent={
+                                        !loadingList ? <Text style={styles.emptyText}>No hay servicios aún</Text> : null
+                                    }
                                 />
                             )}
-                        </View>
+                        </>
                     )}
 
-                    {/* ── Línia divisòria vertical (tablet) ── */}
-                    {isTablet && showList && showDetail && (
-                        <View style={[styles.divider, { backgroundColor: HC.border + '44' }]} />
-                    )}
-
-                    {/* ── Panell dret: detall ── */}
-                    {showDetail && (
-                        <View style={styles.detailSection}>
-                            {renderDetail()}
-                        </View>
-                    )}
+                    {showDetail && renderDetail()}
                 </View>
-            </View>
+            )}
 
             <ServiceFormModal
                 visible={formVisible}
@@ -335,54 +455,57 @@ export default function Services() {
     );
 }
 
-const PANEL_GAP = 20;
-
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-    },
-
-    // Padding exterior que fa "flotar" el card
-    outerPad: {
-        flex: 1,
-        padding: PANEL_GAP,
-        maxWidth: 1400,
-        minWidth: 1400,
-        paddingTop: 60,
-        alignContent: 'center',
-        alignSelf: 'center',
-    },
-
-    // El card principal flotant (llista + detall)
-    card: {
-        flex: 1,
-        backgroundColor: HC.card,
-        borderRadius: 18,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 4,
-    },
-
-    // ── Panell esquerre (llista) ──
-    // flex: 1 s'aplica en mobile via style inline; en tablet s'usa width fix
-    listSection: {
         backgroundColor: HC.screenBg,
     },
-    listSectionTablet: {
-        width: 300,
+
+    // ─── Tablet: dos cards flotants ────────────────────────────────────────────
+    outerPad: {
+        flex: 1,
+        flexDirection: 'row',
+        paddingHorizontal: 48,
+        paddingTop: 24,
+        paddingBottom: 40,
+        gap: 16,
+        backgroundColor: HC.screenBg,
+        width: '100%',
+    },
+    cardLeft: {
+        width: 460,
         flexShrink: 0,
-        flexGrow: 0,
+        backgroundColor: HC.card,
+        borderRadius: 14,
+        overflow: 'hidden',
+        flexDirection: 'column',
+        ...cardShadow,
+    },
+    cardRight: {
+        flex: 1,
+        backgroundColor: HC.card,
+        borderRadius: 14,
+        overflow: 'hidden',
+        ...cardShadow,
     },
 
+    // ─── Mobile ────────────────────────────────────────────────────────────────
+    mobileContainer: {
+        flex: 1,
+        backgroundColor: HC.screenBg,
+    },
+    mobileListContent: {
+        padding: 16,
+        gap: 4,
+    },
+
+    // ─── Panel header ──────────────────────────────────────────────────────────
     panelHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md + 2,
+        paddingHorizontal: 18,
+        paddingVertical: 14,
         borderBottomWidth: 1,
         borderBottomColor: HC.border,
         backgroundColor: HC.screenBg,
@@ -397,210 +520,249 @@ const styles = StyleSheet.create({
     panelHeaderRight: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 8,
     },
 
+    // ─── List ──────────────────────────────────────────────────────────────────
     listContent: {
-        padding: spacing.md,
-        paddingBottom: spacing.xxl,
+        padding: 10,
     },
     listItem: {
-        paddingVertical: spacing.sm + 2,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.md,
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 14,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 10,
         backgroundColor: HC.card,
+    },
+    listItemSelected: {
+        backgroundColor: '#F0F0F0',
+        borderLeftWidth: 3,
+        borderLeftColor: HC.primary,
+    },
+    listImage: {
+        width: 56,
+        height: 56,
+        borderRadius: 10,
+    },
+    listImagePlaceholder: {
+        backgroundColor: HC.inputBg,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     listItemContent: {
         flex: 1,
-        justifyContent: 'center',
-    },
-    listImage: {
-        width: 48,
-        height: 48,
-        borderRadius: radius.md,
-        marginRight: spacing.md,
-        backgroundColor: HC.borderSoft,
-    },
-    listImagePlaceholder: {
-        alignItems: 'center',
-        justifyContent: 'center',
+        gap: 2,
     },
     listItemTitle: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '600',
         color: HC.textPrimary,
-        marginBottom: 2,
+    },
+    listItemTitleSelected: {
+        color: '#111111',
     },
     listItemSubtitle: {
-        fontSize: 12,
+        fontSize: 11,
         color: HC.textMuted,
     },
-    separator: {
-        height: 6,
+    listSeparator: {
+        height: 2,
         backgroundColor: 'transparent',
     },
 
-    // ── Línia divisòria vertical ──
-    divider: {
-        width: 1,
-        backgroundColor: HC.border,
-    },
-
-    // ── Panell dret (detall) ──
-    detailSection: {
+    // ─── Detail ────────────────────────────────────────────────────────────────
+    detailContainer: {
         flex: 1,
-        minWidth: 0,           // crític en web: evita que el flex item desbordï
-        overflow: 'hidden',    // clipa el contingut al límit del panell
+        flexDirection: 'column',
         backgroundColor: HC.card,
     },
     detailPlaceholder: {
         flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
-        padding: spacing.xl,
+        justifyContent: 'center',
+        gap: 10,
+        padding: 32,
     },
     detailPlaceholderText: {
-        fontSize: 14,
-        color: HC.textMuted,
+        fontSize: 13,
+        color: HC.textLight,
         textAlign: 'center',
     },
-    detailContainer: {
-        flex: 1,
-        overflow: 'hidden',
+
+    // Image
+    detailImageSquareContainer: {
+        position: 'relative',
+        alignItems: 'center',
+        paddingVertical: 24,
+        paddingHorizontal: 28,
+        borderBottomWidth: 1,
+        borderBottomColor: HC.border,
     },
+    detailImageSquare: {
+        width: 180,
+        height: 180,
+        borderRadius: 14,
+    },
+    detailImagePlaceholderFull: {
+        backgroundColor: '#EEEEEE',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    placeholderIconCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#E0E0E0',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pencilButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255,255,255,0.90)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+    },
+
+    // Inline form
     detailScroll: {
         flex: 1,
     },
     detailScrollContent: {
-        flexGrow: 1,
+        paddingHorizontal: 28,
+        paddingVertical: 24,
     },
-    backButton: {
-        minHeight: 44,
-        paddingHorizontal: spacing.lg,
+    detailTitle: {
+        fontSize: 21,
+        fontWeight: '300',
+        color: '#111111',
+        letterSpacing: -0.3,
+        marginBottom: 4,
+    },
+    detailSubtitle: {
+        fontSize: 13,
+        color: '#888888',
+        marginBottom: 24,
+        lineHeight: 20,
+    },
+    inlineLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#AAAAAA',
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
+        marginBottom: 6,
+        marginTop: 16,
+    },
+    inlineInput: {
+        backgroundColor: '#F7F7F8',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E8E8E8',
+        paddingHorizontal: 14,
+        paddingVertical: 11,
+        fontSize: 14,
+        color: '#111111',
+    },
+    inlineTextarea: {
+        minHeight: 96,
+        paddingTop: 11,
+    },
+    inlineRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    switchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 16,
+        marginBottom: 4,
+    },
+    switchLabel: {
+        fontSize: 13,
+        color: '#555555',
+    },
+
+    // Action bar
+    actionBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        borderTopWidth: 1,
+        borderTopColor: HC.border,
+        padding: 16,
+        backgroundColor: HC.card,
+    },
+    deleteBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        height: 42,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: '#E5352A',
+        backgroundColor: HC.card,
         justifyContent: 'center',
+    },
+    deleteBtnText: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#E5352A',
+    },
+    saveBtn: {
+        flex: 1,
+        height: 42,
+        borderRadius: 8,
+        backgroundColor: HC.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    saveBtnText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+
+    // ─── Back button (mobile) ──────────────────────────────────────────────────
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         backgroundColor: HC.screenBg,
         borderBottomWidth: 1,
-        borderBottomColor: HC.border + '44',
+        borderBottomColor: HC.border,
     },
     backButtonText: {
         fontSize: 14,
         fontWeight: '500',
     },
-    detailImageContainer: {
-        position: 'relative',
-        width: '100%',
-    },
-    detailImage: {
-        width: '100%',
-        height: 240,
-        backgroundColor: HC.borderSoft,
-    },
-    detailImagePlaceholder: {
-        backgroundColor: HC.borderSoft,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    detailPlaceholderIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    closeButton: {
-        position: 'absolute',
-        top: spacing.md,
-        right: spacing.md,
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        backgroundColor: 'rgba(0,0,0,0.38)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 10,
-    },
-    closeButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: 'bold',
-        lineHeight: 18,
-    },
-    detailContent: {
-        padding: spacing.xl,
-    },
-    detailTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: HC.textPrimary,
-        marginBottom: spacing.md,
-    },
-    detailInfo: {
-        fontSize: 14,
-        color: HC.textMuted,
-        marginBottom: spacing.sm,
-    },
-    descripcioBox: {
-        marginTop: spacing.md,
-        padding: spacing.md,
-        backgroundColor: HC.screenBg,
-        borderRadius: radius.md,
-    },
-    descripcioLabel: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: HC.textMuted,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        marginBottom: 6,
-    },
-    descripcioText: {
-        fontSize: 14,
-        color: HC.textSecondary,
-        lineHeight: 20,
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        marginTop: spacing.xl,
-        gap: spacing.md,
-    },
-    button: {
-        flex: 1,
-        minHeight: 42,
-        borderRadius: radius.md,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    editButton: {
-        backgroundColor: HC.primary,
-    },
-    deleteButton: {
-        backgroundColor: HC.red,
-    },
-    buttonText: {
-        color: HC.white,
-        fontSize: 14,
-        fontWeight: '600',
-    },
 
-    // ── Controls ──
-    loaderBox: {
-        flex: 1,
-        justifyContent: 'center',
+    // ─── Pagination ────────────────────────────────────────────────────────────
+    paginationRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-    },
-    emptyText: {
-        fontSize: 14,
-        color: HC.textMuted,
-        textAlign: 'center',
-        marginTop: spacing.xl,
+        gap: 4,
     },
     pageBtn: {
         width: 28,
         height: 28,
-        borderRadius: 8,
-        backgroundColor: HC.card,
+        borderRadius: 7,
+        backgroundColor: HC.inputBg,
         borderWidth: 1,
         borderColor: HC.border,
         alignItems: 'center',
@@ -609,28 +771,42 @@ const styles = StyleSheet.create({
     pageBtnDisabled: {
         opacity: 0.35,
     },
-    btnDisabled: {
-        opacity: 0.5,
-    },
-    btnPrimary: {
-        paddingHorizontal: spacing.md,
-        paddingVertical: 6,
-        borderRadius: radius.md,
-    },
-    btnPrimaryText: {
-        fontWeight: '600',
-        fontSize: 12,
-    },
-    pageBtnText: {
-        color: HC.textPrimary,
-        fontWeight: '700',
-        fontSize: 16,
-        lineHeight: 18,
-    },
     pageMeta: {
         fontSize: 11,
         color: HC.textMuted,
+        fontWeight: '600',
         minWidth: 28,
         textAlign: 'center',
+    },
+    btnPrimary: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: HC.primary,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+    },
+    btnPrimaryText: {
+        color: HC.white,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    btnDisabled: {
+        opacity: 0.45,
+    },
+
+    // ─── Misc ──────────────────────────────────────────────────────────────────
+    loaderBox: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyText: {
+        fontSize: 13,
+        color: HC.textMuted,
+        textAlign: 'center',
+        fontStyle: 'italic',
+        paddingVertical: 20,
     },
 });

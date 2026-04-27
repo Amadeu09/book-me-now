@@ -7,22 +7,22 @@ export function CategorySection() {
             <div className="absolute -top-12 -left-12 w-64 h-64 bg-primary-fixed rounded-full blur-3xl opacity-30"></div>
             <div className="relative z-10 space-y-8">
               <h2 className="text-5xl md:text-7xl font-black editorial-kern leading-[0.8]">
-                Master <br /> Your <br />{" "}
-                <span className="text-primary italic">Routine.</span>
+                Domina <br /> tu <br />{" "}
+                <span className="text-primary italic">Rutina.</span>
               </h2>
               <p className="text-on-surface-variant text-lg max-w-md">
-                Every journey is personal. Whether you seek the heat of the
-                sauna or the rigor of the ring, we curate only the elite.
+                Cada viaje es personal. Ya sea que busques la calma del spa o
+                el rigor del entrenamiento, solo seleccionamos lo mejor.
               </p>
               <div className="flex flex-wrap gap-4">
                 <span className="px-8 py-3 bg-white rounded-full border border-outline-variant/20 font-bold text-sm hover:border-primary transition-colors cursor-pointer">
-                  Sartorial Salons
+                  Salones de Estilo
                 </span>
                 <span className="px-8 py-3 bg-white rounded-full border border-outline-variant/20 font-bold text-sm hover:border-primary transition-colors cursor-pointer">
-                  Recharge Retreats
+                  Retiros de Bienestar
                 </span>
                 <span className="px-8 py-3 bg-white rounded-full border border-outline-variant/20 font-bold text-sm hover:border-primary transition-colors cursor-pointer">
-                  Performance Hubs
+                  Centros de Rendimiento
                 </span>
               </div>
             </div>

@@ -13,7 +13,7 @@ import { useTheme } from '@/core/theme/ThemeProvider';
 function formatDateRange(inici: string, fi: string): string {
     const s = new Date(inici);
     const e = new Date(fi);
-    const fmt = (d: Date) => d.toLocaleDateString('ca-ES', { day: '2-digit', month: 'short' });
+    const fmt = (d: Date) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
     return s.toDateString() === e.toDateString() ? fmt(s) : `${fmt(s)} – ${fmt(e)}`;
 }
 
@@ -47,10 +47,10 @@ function AbsenciaItem({
 function FestiosPanel() {
     const theme = useTheme();
     const TIPUS_CONFIG: Record<TipusAbsenciaEmpresa, { label: string; color: string; bg: string }> = {
-        FESTA_LOCAL: { label: 'Festa Local', color: theme.primary, bg: theme.primaryLight },
-        FESTA_ESTATAL: { label: 'Festa Estatal', color: '#3B82F6', bg: '#EFF6FF' },
-        PONT: { label: 'Pont', color: HC.yellow, bg: HC.yellowLight },
-        ALTRE: { label: 'Altre', color: HC.textMuted, bg: HC.borderSoft },
+        FESTA_LOCAL: { label: 'Fiesta Local', color: theme.primary, bg: theme.primaryLight },
+        FESTA_ESTATAL: { label: 'Fiesta Estatal', color: '#3B82F6', bg: '#EFF6FF' },
+        PONT: { label: 'Puente', color: HC.yellow, bg: HC.yellowLight },
+        ALTRE: { label: 'Otro', color: HC.textMuted, bg: HC.borderSoft },
     };
 
     const {
@@ -67,7 +67,7 @@ function FestiosPanel() {
             try {
                 await remove(item.id);
             } catch (e: any) {
-                const err = e?.response?.data?.message || 'No s\'ha pogut eliminar.';
+                const err = e?.response?.data?.message || 'No se ha podido eliminar.';
                 Platform.OS === 'web' ? window.alert(err) : Alert.alert('Error', err);
             }
         };
@@ -75,7 +75,7 @@ function FestiosPanel() {
             if (window.confirm(msg)) execute();
         } else {
             Alert.alert('Eliminar', msg, [
-                { text: 'Cancel·lar', style: 'cancel' },
+                { text: 'Cancelar', style: 'cancel' },
                 { text: 'Eliminar', style: 'destructive', onPress: execute },
             ]);
         }
@@ -86,7 +86,7 @@ function FestiosPanel() {
             {/* ── Header ── */}
             <View style={styles.panelHeader}>
                 <View style={styles.panelHeaderLeft}>
-                    <Text style={styles.panelTitle}>Excepcions & Festius</Text>
+                    <Text style={styles.panelTitle}>Excepciones y Festivos</Text>
                     {total > 0 && (
                         <View style={[styles.countBadge, { backgroundColor: theme.primaryLight }]}>
                             <Text style={[styles.countBadgeText, { color: theme.primary }]}>{total}</Text>
@@ -100,7 +100,7 @@ function FestiosPanel() {
                     {isLoading ? (
                         <ActivityIndicator color={theme.primary} style={{ marginVertical: 16 }} />
                     ) : data.length === 0 ? (
-                        <Text style={styles.emptyText}>No hi ha festius propers registrats.</Text>
+                        <Text style={styles.emptyText}>No hay festivos próximos registrados.</Text>
                     ) : (
                         <>
                             {data.map(item => (
@@ -143,7 +143,7 @@ function FestiosPanel() {
                         activeOpacity={0.8}
                     >
                         <Ionicons name="add" size={16} color={theme.primary} />
-                        <Text style={[styles.addBtnText, { color: theme.primary }]}>Afegir absència</Text>
+                        <Text style={[styles.addBtnText, { color: theme.primary }]}>Añadir ausencia</Text>
                     </TouchableOpacity>
                 </View>
 

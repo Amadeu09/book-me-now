@@ -10,10 +10,10 @@ import { DatePickerField } from '../DatePickerField';
 import type { AbsenciaEmpresa, CreateAbsenciaEmpresaDto, TipusAbsenciaEmpresa } from '../../types/absencies-empresa.types';
 
 const TIPUS_OPTIONS: { key: TipusAbsenciaEmpresa; label: string }[] = [
-    { key: 'FESTA_LOCAL',   label: 'Festa Local' },
-    { key: 'FESTA_ESTATAL', label: 'Festa Estatal' },
-    { key: 'PONT',          label: 'Pont' },
-    { key: 'ALTRE',         label: 'Altre' },
+    { key: 'FESTA_LOCAL',   label: 'Fiesta Local' },
+    { key: 'FESTA_ESTATAL', label: 'Fiesta Estatal' },
+    { key: 'PONT',          label: 'Puente' },
+    { key: 'ALTRE',         label: 'Otro' },
 ];
 
 interface Props {
@@ -57,15 +57,15 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
 
     const handleSubmit = async () => {
         setError('');
-        if (!titol.trim()) return setError('El títol és obligatori.');
-        if (!inici) return setError('La data d\'inici és obligatòria.');
+        if (!titol.trim()) return setError('El título es obligatorio.');
+        if (!inici) return setError('La fecha de inicio es obligatoria.');
 
         setIsSubmitting(true);
         try {
             await onSubmit({ titol: titol.trim(), inici, fi: fi || undefined, tipus });
             onClose();
         } catch (e: any) {
-            const msg = e?.response?.data?.message || 'No s\'ha pogut guardar l\'absència.';
+            const msg = e?.response?.data?.message || 'No se ha podido guardar la ausencia.';
             setError(Array.isArray(msg) ? msg.join(', ') : msg);
         } finally {
             setIsSubmitting(false);
@@ -80,7 +80,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                     {/* ── Header ── */}
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>
-                            {isEdit ? 'Editar absència' : 'Nova absència'}
+                            {isEdit ? 'Editar ausencia' : 'Nueva ausencia'}
                         </Text>
                         <TouchableOpacity
                             onPress={handleClose}
@@ -102,7 +102,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                             <Text style={styles.errorText}>{error}</Text>
                         )}
 
-                        <Text style={styles.label}>Títol *</Text>
+                        <Text style={styles.label}>Título *</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="ex. Sant Joan, Pont Constitució..."
@@ -114,26 +114,26 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
 
                         <View style={styles.dateRow}>
                             <View style={styles.dateCol}>
-                                <Text style={styles.label}>Data inici *</Text>
+                                <Text style={styles.label}>Fecha inicio *</Text>
                                 <DatePickerField
                                     value={inici}
                                     onChange={setInici}
-                                    placeholder="Seleccionar inici"
+                                    placeholder="Seleccionar inicio"
                                     disabled={isSubmitting}
                                 />
                             </View>
                             <View style={styles.dateCol}>
-                                <Text style={styles.label}>Data fi (opcional)</Text>
+                                <Text style={styles.label}>Fecha fin (opcional)</Text>
                                 <DatePickerField
                                     value={fi}
                                     onChange={setFi}
-                                    placeholder="Seleccionar fi"
+                                    placeholder="Seleccionar fin"
                                     disabled={isSubmitting}
                                 />
                             </View>
                         </View>
 
-                        <Text style={styles.label}>Tipus *</Text>
+                        <Text style={styles.label}>Tipo *</Text>
                         <View style={styles.chipsRow}>
                             {TIPUS_OPTIONS.map(opt => (
                                 <TouchableOpacity
@@ -158,7 +158,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                             disabled={isSubmitting}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.btnCancelText}>Cancel·lar</Text>
+                            <Text style={styles.btnCancelText}>Cancelar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.btnSave, { backgroundColor: theme.primary }, isSubmitting && styles.btnSaveDisabled]}

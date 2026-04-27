@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -8,7 +8,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto, SignupDto, LoginResponseDto, ChangePasswordDto } from './dto/auth.dto';
+import { LoginDto, SignupDto, LoginResponseDto, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto } from './dto/auth.dto';
 import { UsuarisService } from '../usuaris/usuaris.service';
 
 @ApiTags('auth')
@@ -82,6 +82,38 @@ export class AuthController {
   ): Promise<{ message: string }> {
     this.logger.debug(`POST /api/auth/change-password - User: ${user.userId}`);
     return this.authService.changePassword(user.userId, dto);
+  }
+
+  @Patch('me/color')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualitzar color primari del usuari (self-service)' })
+  @ApiBody({ type: UpdateColorDto })
+  @ApiResponse({ status: 200, description: 'Color actualitzat' })
+  async updateColor(
+    @Body() dto: UpdateColorDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    this.logger.debug(`PATCH /api/auth/me/color - User: ${user.userId}`);
+    return this.authService.updateColor(user.userId, dto);
+  }
+
+  @Patch('me/idioma')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualitzar idioma del usuari (self-service)' })
+  @ApiBody({ type: UpdateIdiomaDto })
+  @ApiResponse({ status: 200, description: 'Idioma actualitzat' })
+  async updateIdioma(
+    @Body() dto: UpdateIdiomaDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    this.logger.debug(`PATCH /api/auth/me/idioma - User: ${user.userId}`);
+    return this.authService.updateIdioma(user.userId, dto);
   }
 
   @Patch('me/foto')
