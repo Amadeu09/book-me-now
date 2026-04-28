@@ -20,6 +20,7 @@ const ALL_NAV_ITEMS = [
   { name: 'Servicios', icon: 'grid-outline', activeIcon: 'grid', path: '/services', adminOnly: true },
   { name: 'Horarios y disponibilidad', icon: 'time-outline', activeIcon: 'time', path: '/horarios', adminOnly: true },
   { name: 'Vacaciones', icon: 'sunny-outline', activeIcon: 'sunny', path: '/vacaciones', adminOnly: false },
+  { name: 'Estadísticas', icon: 'bar-chart-outline', activeIcon: 'bar-chart', path: '/estadisticas', adminOnly: true },
 ];
 
 type NavbarProps = {

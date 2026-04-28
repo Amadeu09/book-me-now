@@ -53,6 +53,7 @@ export default function MainLayout() {
                     <Tabs.Screen name="services" />
                     <Tabs.Screen name="horarios" />
                     <Tabs.Screen name="vacaciones" />
+                    <Tabs.Screen name="estadisticas" />
                 </Tabs>
             </View>
 
