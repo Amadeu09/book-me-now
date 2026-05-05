@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { createClient, updateClient } from '../../services/clients.service';
 import type { ClientItem } from '../../types/clients.types';
 
@@ -33,6 +34,7 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
     const [errors, setErrors] = useState<Partial<FormState>>({});
     const [loading, setLoading] = useState(false);
 
+    const { t } = useLanguage();
     const isEditMode = !!initialData;
 
     useEffect(() => {
@@ -52,9 +54,9 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
 
     const validate = (): boolean => {
         const newErrors: Partial<FormState> = {};
-        if (!form.nom.trim()) newErrors.nom = 'El nom és obligatori';
+        if (!form.nom.trim()) newErrors.nom = t('nameRequired');
         if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-            newErrors.email = 'Format d\'email no vàlid';
+            newErrors.email = t('clientEmailInvalidFormat');
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -77,8 +79,8 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
             onSuccess();
             onClose();
         } catch (err: any) {
-            const msg = err?.response?.data?.message || (isEditMode ? 'No s\'ha pogut editar el client' : 'No s\'ha pogut crear el client');
-            Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+            const msg = err?.response?.data?.message || (isEditMode ? t('clientUpdateError') : t('clientCreateError'));
+            Platform.OS === 'web' ? window.alert(msg) : Alert.alert(t('error'), msg);
         } finally {
             setLoading(false);
         }
@@ -93,7 +95,7 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
 
                     {/* Header */}
                     <View style={s.header}>
-                        <Text style={s.headerTitle}>{isEditMode ? 'Editar client' : 'Añadir cliente'}</Text>
+                        <Text style={s.headerTitle}>{isEditMode ? t('clientModalTitleEdit') : t('clientModalTitleAdd')}</Text>
                         <TouchableOpacity onPress={handleClose} disabled={loading}>
                             <Ionicons name="close" size={24} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -109,10 +111,10 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
                         <View style={s.infoCard}>
                             {/* Nombre */}
                             <View style={s.fieldBlock}>
-                                <Text style={s.fieldLabel}>Nom complet <Text style={s.required}>*</Text></Text>
+                                <Text style={s.fieldLabel}>{t('clientModalNomLabel')} <Text style={s.required}>*</Text></Text>
                                 <TextInput
                                     style={[s.input, errors.nom ? s.inputError : null]}
-                                    placeholder="Ex. Anna García"
+                                    placeholder={t('clientModalNomPh')}
                                     placeholderTextColor={HC.textLight}
                                     value={form.nom}
                                     onChangeText={set('nom')}
@@ -123,10 +125,10 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
 
                             {/* Email */}
                             <View style={s.fieldBlock}>
-                                <Text style={s.fieldLabel}>Correu electrònic</Text>
+                                <Text style={s.fieldLabel}>{t('clientModalEmailLabel')}</Text>
                                 <TextInput
                                     style={[s.input, errors.email ? s.inputError : null]}
-                                    placeholder="Ex. anna@email.com"
+                                    placeholder={t('clientModalEmailPh')}
                                     placeholderTextColor={HC.textLight}
                                     value={form.email}
                                     onChangeText={set('email')}
@@ -139,10 +141,10 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
 
                             {/* Teléfono */}
                             <View style={[s.fieldBlock, s.lastField]}>
-                                <Text style={s.fieldLabel}>Telèfon</Text>
+                                <Text style={s.fieldLabel}>{t('clientModalTelefonLabel')}</Text>
                                 <TextInput
                                     style={s.input}
-                                    placeholder="Ex. 600 111 222"
+                                    placeholder={t('clientModalTelefonPh')}
                                     placeholderTextColor={HC.textLight}
                                     value={form.telefon}
                                     onChangeText={set('telefon')}
@@ -156,7 +158,7 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
                     {/* Footer */}
                     <View style={[s.footer, isDesktop && s.footerDesktop]}>
                         <TouchableOpacity style={s.btnCancel} onPress={handleClose} disabled={loading} activeOpacity={0.7}>
-                            <Text style={s.btnCancelText}>Cancelar</Text>
+                            <Text style={s.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[s.btnSave, { backgroundColor: theme.primary }, loading && s.btnDisabled]}
@@ -166,7 +168,7 @@ export function CreateClientModal({ visible, onClose, onSuccess, initialData }: 
                         >
                             {loading
                                 ? <ActivityIndicator color={HC.white} size="small" />
-                                : <Text style={s.btnSaveText}>{isEditMode ? 'Guardar canvis' : 'Guardar client'}</Text>
+                                : <Text style={s.btnSaveText}>{isEditMode ? t('clientModalSaveEdit') : t('clientModalSaveCreate')}</Text>
                             }
                         </TouchableOpacity>
                     </View>

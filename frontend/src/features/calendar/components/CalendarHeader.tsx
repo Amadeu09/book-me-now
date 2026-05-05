@@ -4,6 +4,7 @@ import { palette, spacing, typography, radius } from "@/constants/theme";
 import { ViewMode } from './types';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 interface CalendarHeaderProps {
     viewMode: ViewMode;
@@ -11,18 +12,19 @@ interface CalendarHeaderProps {
     onQuickCreate: () => void;
 }
 
-const MODE_LABELS: Record<ViewMode, string> = {
-    day: 'Dia',
-    week: 'Setmana',
-    month: 'Mes',
-};
-
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     viewMode,
     onViewChange,
     onQuickCreate
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
+
+    const MODE_LABELS: Record<ViewMode, string> = {
+        day: t('calendarViewDay'),
+        week: t('calendarViewWeek'),
+        month: t('calendarViewMonth'),
+    };
     const { width } = useWindowDimensions();
     const isDesktop = Platform.OS === 'web' && width >= 1024;
 
@@ -31,9 +33,9 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     return (
         <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
             <View>
-                <Text style={[styles.title, { color: theme.headerText }]}>Reserves</Text>
+                <Text style={[styles.title, { color: theme.headerText }]}>{t('calendarTitle')}</Text>
                 {isDesktop && (
-                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>Gestiona les reserves i la disponibilitat.</Text>
+                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>{t('calendarSubtitle')}</Text>
                 )}
             </View>
 
@@ -60,7 +62,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
                 <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={onQuickCreate}>
                     <Ionicons name="add" size={20} color={theme.textOnPrimary} />
-                    {isDesktop && <Text style={[styles.createButtonText, { color: theme.textOnPrimary }]}>Nova reserva</Text>}
+                    {isDesktop && <Text style={[styles.createButtonText, { color: theme.textOnPrimary }]}>{t('calendarNewBooking')}</Text>}
                 </TouchableOpacity>
             </View>
         </View>

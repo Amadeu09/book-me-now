@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, Min, Matches, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, Matches, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Rol } from '@prisma/client';
 
@@ -58,6 +58,12 @@ export class SignupEmpresaDto {
   @IsOptional()
   @IsString()
   descripcio?: string;
+
+  @ApiProperty({ example: 14, description: 'Dies d\'antelació màxima per fer reserves', required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  diasAntesReserva?: number;
 
 }
 

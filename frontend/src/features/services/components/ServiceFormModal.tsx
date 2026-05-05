@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     Image,
     Modal,
@@ -9,11 +10,15 @@ import {
     StyleSheet,
     Text,
     TextInput,
+    TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Input, Button } from '@/ui/components/common';
+import { Ionicons } from '@expo/vector-icons';
+import { Input } from '@/ui/components/common';
+import { HC, cardShadow } from '../../horarios/constants/horarios.constants';
+import { useTheme } from '@/core/theme/ThemeProvider';
 
 export type ServiceFormValues = {
     nom: string;
@@ -45,7 +50,8 @@ export default function ServiceFormModal({
     submitLabel = 'Crear',
 }: Props) {
     const { width } = useWindowDimensions();
-    const isWeb = width > 900;
+    const isDesktop = width >= 768;
+    const theme = useTheme();
 
     const [form, setForm] = useState<ServiceFormValues>({
         nom: '',
@@ -117,15 +123,23 @@ export default function ServiceFormModal({
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
             <View style={styles.overlay}>
-                <View style={[styles.card, isWeb && styles.cardWeb]}>
+                <View style={[styles.modal, isDesktop && styles.modalDesktop]}>
+
+                    {/* ── Header ────────────────── */}
+                    <View style={styles.header}>
+                        <Text style={styles.headerTitle}>{title}</Text>
+                        <TouchableOpacity onPress={handleClose} disabled={loading}>
+                            <Ionicons name="close" size={24} color={HC.textMuted} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* ── Scrollable content ────── */}
                     <ScrollView
-                        style={styles.scroll}
-                        contentContainerStyle={styles.cardContent}
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
                     >
-                        <Text style={styles.title}>{title}</Text>
-
                         <Pressable onPress={pickImage} disabled={loading} style={styles.imagePicker}>
                             {previewUri ? (
                                 <Image source={{ uri: previewUri }} style={styles.imagePreview} resizeMode="cover" />
@@ -172,11 +186,11 @@ export default function ServiceFormModal({
                             />
 
                             <View style={styles.textareaWrapper}>
-                                <Text style={styles.textareaLabel}>Descripción</Text>
+                                <Text style={styles.label}>Descripción</Text>
                                 <TextInput
                                     style={styles.textarea}
                                     placeholder="Describe el servicio..."
-                                    placeholderTextColor="#CCCCCC"
+                                    placeholderTextColor={HC.textMuted}
                                     value={form.descripcio ?? ''}
                                     onChangeText={(descripcio) => setForm({ ...form, descripcio })}
                                     multiline
@@ -186,21 +200,32 @@ export default function ServiceFormModal({
                                 />
                             </View>
                         </View>
-
-                        <View style={styles.actions}>
-                            <Button
-                                variant="ghost"
-                                label="Cancelar"
-                                onPress={handleClose}
-                                disabled={loading}
-                            />
-                            <Button
-                                label={loading ? 'Guardando...' : submitLabel}
-                                onPress={handleSubmit}
-                                loading={loading}
-                            />
-                        </View>
                     </ScrollView>
+
+                    {/* ── Footer ────────────────── */}
+                    <View style={[styles.footer, isDesktop && styles.footerDesktop]}>
+                        <TouchableOpacity
+                            style={styles.btnCancel}
+                            onPress={handleClose}
+                            activeOpacity={0.7}
+                            disabled={loading}
+                        >
+                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.btnSave, { backgroundColor: theme.primary }, loading && styles.btnSaveDisabled]}
+                            onPress={handleSubmit}
+                            activeOpacity={0.8}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator size="small" color={HC.white} />
+                            ) : (
+                                <Text style={styles.btnSaveText}>{submitLabel}</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </Modal>
@@ -210,47 +235,54 @@ export default function ServiceFormModal({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.25)',
-        padding: 20,
+        backgroundColor: 'rgba(0,0,0,0.45)',
         justifyContent: 'center',
+        alignItems: 'center',
     },
-    card: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#EBEBEB',
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 24,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 6,
-    },
-    cardWeb: {
-        maxWidth: 560,
-        alignSelf: 'center',
+    modal: {
         width: '100%',
+        height: '100%',
+        backgroundColor: HC.white,
+        flexDirection: 'column',
     },
-    scroll: {
+    modalDesktop: {
+        width: '90%',
+        maxWidth: 560,
+        height: 'auto',
+        maxHeight: '90%',
+        borderRadius: 16,
+        ...cardShadow,
+        shadowOpacity: 0.15,
+        elevation: 8,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+        paddingVertical: 18,
+        borderBottomWidth: 1,
+        borderBottomColor: HC.border,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: HC.textPrimary,
+    },
+    scrollView: {
         flex: 1,
     },
-    cardContent: {
-        padding: 28,
+    scrollContent: {
+        padding: 24,
+        paddingBottom: 40,
         gap: 20,
-        flexGrow: 1,
-    },
-    title: {
-        fontSize: 17,
-        fontWeight: '400',
-        color: '#111111',
-        letterSpacing: -0.2,
     },
     imagePicker: {
         width: '100%',
         aspectRatio: 16 / 9,
         borderRadius: 10,
         overflow: 'hidden',
-        backgroundColor: '#F5F5F5',
+        backgroundColor: HC.screenBg,
     },
     imagePreview: {
         width: '100%',
@@ -261,14 +293,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: HC.border,
         borderStyle: 'dashed',
         borderRadius: 10,
-        backgroundColor: '#FAFAFA',
+        backgroundColor: HC.screenBg,
     },
     imagePlaceholderText: {
         fontSize: 13,
-        color: '#CCCCCC',
+        color: HC.textMuted,
         fontWeight: '400',
     },
     imageOverlay: {
@@ -281,36 +313,76 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     imageOverlayText: {
-        color: '#FFFFFF',
+        color: HC.white,
         fontSize: 12,
         fontWeight: '500',
     },
     form: {
-        gap: 16,
-    },
-    actions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 10,
-        marginTop: 8,
+        gap: 4,
     },
     textareaWrapper: {
-        gap: 6,
+        gap: 0,
     },
-    textareaLabel: {
-        fontSize: 12,
+    label: {
+        fontSize: 14,
         fontWeight: '500',
-        color: '#555555',
+        color: HC.textPrimary,
+        marginBottom: 8,
+        marginTop: 12,
     },
     textarea: {
-        backgroundColor: '#FAFAFA',
+        backgroundColor: HC.screenBg,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: HC.border,
         borderRadius: 8,
-        padding: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         fontSize: 14,
-        color: '#111111',
+        color: HC.textPrimary,
         minHeight: 96,
         lineHeight: 22,
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        borderTopWidth: 1,
+        borderTopColor: HC.border,
+        backgroundColor: HC.white,
+    },
+    footerDesktop: {
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
+    },
+    btnCancel: {
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: HC.border,
+        backgroundColor: HC.white,
+    },
+    btnCancelText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: HC.textPrimary,
+    },
+    btnSave: {
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 10,
+        minWidth: 120,
+        alignItems: 'center',
+    },
+    btnSaveDisabled: {
+        opacity: 0.7,
+    },
+    btnSaveText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: HC.white,
     },
 });

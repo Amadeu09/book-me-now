@@ -7,15 +7,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { palette, spacing, radius, shadow } from '@/constants/theme';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import {
     createHorariTram, deleteHorariTram,
     type HorariEmpresa,
 } from '../../services/horari-empresa.service';
-
-/* ── Helpers ────────────────────────────── */
-
-const DOW_SHORT = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
-const DOW_FULL  = ['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte', 'Diumenge'];
 
 export const minsToHHMM = (mins: number) => {
     const h = Math.floor(mins / 60).toString().padStart(2, '0');
@@ -91,6 +87,16 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
+
+    const DOW_SHORT = [
+        t('dayShortMonday'), t('dayShortTuesday'), t('dayShortWednesday'), t('dayShortThursday'),
+        t('dayShortFriday'), t('dayShortSaturday'), t('dayShortSunday'),
+    ];
+    const DOW_FULL = [
+        t('dayMonday'), t('dayTuesday'), t('dayWednesday'), t('dayThursday'),
+        t('dayFriday'), t('daySaturday'), t('daySunday'),
+    ];
 
     const [draft, setDraft] = useState<DraftState>(() => buildDraft(trams));
     const [addingDow, setAddingDow] = useState<number | null>(null);
@@ -132,9 +138,9 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
         setRangError('');
         const ini = HHMMToMins(rangInici);
         const fi  = HHMMToMins(rangFi);
-        if (ini === null || fi === null) { setRangError('Format invàlid. Usa HH:MM (ex: 09:00)'); return; }
-        if (ini >= fi) { setRangError("L'inici ha de ser anterior a la fi"); return; }
-        if (!rangDays.some(Boolean)) { setRangError('Selecciona almenys un dia'); return; }
+        if (ini === null || fi === null) { setRangError(t('editScheduleFormatError')); return; }
+        if (ini >= fi) { setRangError(t('editScheduleStartBeforeEnd')); return; }
+        if (!rangDays.some(Boolean)) { setRangError(t('editScheduleSelectDay')); return; }
         setDraft(prev => {
             const next = prev.map(d => [...d]);
             rangDays.forEach((sel, dow) => { if (sel) next[dow] = [...next[dow], { iniciMin: ini, fiMin: fi }]; });
@@ -156,8 +162,8 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
         setAddError('');
         const ini = HHMMToMins(addInici);
         const fi  = HHMMToMins(addFi);
-        if (ini === null || fi === null) { setAddError('Format invàlid (HH:MM)'); return; }
-        if (ini >= fi) { setAddError("L'inici ha de ser anterior a la fi"); return; }
+        if (ini === null || fi === null) { setAddError(t('editScheduleFormatErrorShort')); return; }
+        if (ini >= fi) { setAddError(t('editScheduleStartBeforeEnd')); return; }
         setDraft(prev => {
             const next = prev.map(d => [...d]);
             next[addingDow!] = [...next[addingDow!], { iniciMin: ini, fiMin: fi }];
@@ -200,7 +206,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
             onSaved();
             onClose();
         } catch {
-            setSaveError('Error en guardar. Torna-ho a intentar.');
+            setSaveError(t('editScheduleSaveError'));
         } finally {
             setSaving(false);
         }
@@ -215,7 +221,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
 
                     {/* ── Header ── */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Editar horari d'obertura</Text>
+                        <Text style={styles.headerTitle}>{t('editScheduleTitle')}</Text>
                         <TouchableOpacity onPress={onClose} disabled={saving}>
                             <Ionicons name="close" size={24} color={palette.textMuted} />
                         </TouchableOpacity>
@@ -229,7 +235,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* ── Rang general section ── */}
-                        <Text style={styles.sectionTitle}>Aplicar rang a múltiples dies</Text>
+                        <Text style={styles.sectionTitle}>{t('editScheduleRangTitle')}</Text>
 
                         {/* Day pills */}
                         <View style={styles.dayPills}>
@@ -250,7 +256,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                         </View>
 
                         {/* Time range */}
-                        <Text style={styles.label}>Rang horari</Text>
+                        <Text style={styles.label}>{t('editScheduleRangLabel')}</Text>
                         <TimeRangeRow
                             inici={rangInici} fi={rangFi}
                             onChangeInici={v => { setRangInici(v); setRangError(''); }}
@@ -263,11 +269,11 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                             onPress={handleApplyRang}
                         >
                             <Ionicons name="checkmark" size={15} color="#fff" />
-                            <Text style={styles.applyBtnText}>Aplicar als dies seleccionats</Text>
+                            <Text style={styles.applyBtnText}>{t('editScheduleApply')}</Text>
                         </TouchableOpacity>
 
                         {/* ── Days section ── */}
-                        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Dies de la setmana</Text>
+                        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>{t('editScheduleDays')}</Text>
 
                         {draft.map((dayTrams, dow) => (
                             <View key={dow} style={[styles.dayRow, dow < 6 && styles.dayRowBorder]}>
@@ -290,7 +296,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
 
                                 {/* Tram chips */}
                                 {dayTrams.length === 0 && addingDow !== dow && (
-                                    <Text style={styles.tancat}>Tancat</Text>
+                                    <Text style={styles.tancat}>{t('closed')}</Text>
                                 )}
                                 {dayTrams.length > 0 && (
                                     <View style={styles.chips}>
@@ -301,7 +307,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                                                 </Text>
                                                 {!t.id && (
                                                     <View style={styles.newBadge}>
-                                                        <Text style={styles.newBadgeText}>nou</Text>
+                                                        <Text style={styles.newBadgeText}>{t('newBadge')}</Text>
                                                     </View>
                                                 )}
                                                 <TouchableOpacity
@@ -329,13 +335,13 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                                                 style={[styles.addConfirmBtn, { backgroundColor: theme.primary }]}
                                                 onPress={handleConfirmAdd}
                                             >
-                                                <Text style={styles.addConfirmText}>Afegir</Text>
+                                                <Text style={styles.addConfirmText}>{t('add')}</Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity
                                                 style={styles.addCancelBtn}
                                                 onPress={() => setAddingDow(null)}
                                             >
-                                                <Text style={styles.addCancelText}>Cancel·lar</Text>
+                                                <Text style={styles.addCancelText}>{t('cancel')}</Text>
                                             </TouchableOpacity>
                                         </View>
                                     </View>
@@ -356,7 +362,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                             activeOpacity={0.7}
                             disabled={saving}
                         >
-                            <Text style={styles.btnCancelText}>Cancel·lar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.btnSave, { backgroundColor: theme.primary }, saving && styles.btnSaveDisabled]}
@@ -366,7 +372,7 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                         >
                             {saving
                                 ? <ActivityIndicator size="small" color="#fff" />
-                                : <Text style={styles.btnSaveText}>Desar canvis</Text>
+                                : <Text style={styles.btnSaveText}>{t('editScheduleSave')}</Text>
                             }
                         </TouchableOpacity>
                     </View>

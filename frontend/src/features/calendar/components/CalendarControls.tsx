@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { palette, spacing, radius, shadow } from "@/constants/theme";
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '@/core/i18n';
 import type { ApiTreballador, ApiServei } from '../types';
 
 interface CalendarControlsProps {
@@ -37,14 +38,15 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
     onServiceSelect,
     showWorkerFilter = true
 }) => {
+    const { t } = useLanguage();
     const [isWorkerMenuOpen, setIsWorkerMenuOpen] = useState(false);
     const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false);
 
     const selectedWorker = workers.find(w => w.id.toString() === selectedWorkerId);
-    const workerLabel = selectedWorker ? selectedWorker.nom : "All Employees";
+    const workerLabel = selectedWorker ? selectedWorker.nom : t('calendarAllEmployees');
 
     const selectedService = services.find(s => s.id.toString() === selectedServiceId);
-    const serviceLabel = selectedService ? selectedService.nom : "All Services Types";
+    const serviceLabel = selectedService ? selectedService.nom : t('calendarAllServices');
 
     const handleWorkerSelect = (worker: ApiTreballador | null) => {
         setIsWorkerMenuOpen(false);
@@ -81,7 +83,7 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
                                         style={styles.menuItem}
                                         onPress={() => handleWorkerSelect(null)}
                                     >
-                                        <Text style={styles.menuItemText}>All Employees</Text>
+                                        <Text style={styles.menuItemText}>{t('calendarAllEmployees')}</Text>
                                     </TouchableOpacity>
                                     {workers.map(w => (
                                         <TouchableOpacity
@@ -115,7 +117,7 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
                                     style={styles.menuItem}
                                     onPress={() => handleServiceSelect(null)}
                                 >
-                                    <Text style={styles.menuItemText}>All Services Types</Text>
+                                    <Text style={styles.menuItemText}>{t('calendarAllServices')}</Text>
                                 </TouchableOpacity>
                                 {services.map(s => (
                                     <TouchableOpacity

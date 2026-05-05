@@ -6,7 +6,7 @@ import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.
 import { Roles } from '../common/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiParam } from '@nestjs/swagger';
-import { CreateJornadaTreballadorExistDto, CreateTreballadorDto, JornadaTreballadorDto } from './dto/CreateTreballadorDto';
+import { CreateTreballadorDto } from './dto/CreateTreballadorDto';
 import { AssignarServeisDto } from './dto/AssignarServeisDto';
 import { GetDisponibilitatDto } from './dto/GetDisponibilitatDto';
 import { UpdateTreballadorDto } from './dto/UpdateTreballadorDto';
@@ -28,33 +28,6 @@ export class TreballadorsController {
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
   create(@Body() createTreballadorDto: CreateTreballadorDto, @CurrentUser() user: CurrentUserData) {
     return this.treballadorsService.create(user.empresaId, createTreballadorDto, user.userId);
-  }
-
-  @Post('assignar-jornada')
-  @Roles('ADMIN_GENERAL')
-  @ApiOperation({ summary: 'Asignar jornada a un trabajador existente' })
-  @ApiBody({ type: CreateJornadaTreballadorExistDto })
-  @ApiResponse({ status: 201, description: 'Jornada asignada correctamente' })
-  @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación)' })
-  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
-  @ApiResponse({ status: 404, description: 'No encontrado: Trabajador o plantilla no existen' })
-  @ApiResponse({ status: 409, description: 'Conflicto' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  assignarJornada(@Body() createTreballadorDto: CreateJornadaTreballadorExistDto, @CurrentUser() user: CurrentUserData) {
-    return this.treballadorsService.assignJornadaTreballador(user.empresaId, createTreballadorDto, user.userId);
-  }
-
-  @Delete("assignar-jornada/:id")
-  @Roles('ADMIN_GENERAL')
-  @ApiOperation({ summary: 'Eliminar jornada asignada a un trabajador' })
-  @ApiResponse({ status: 200, description: 'Jornada eliminada correctamente' })
-  @ApiResponse({ status: 400, description: 'Petición incorrecta (ID inválido)' })
-  @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
-  @ApiResponse({ status: 404, description: 'No encontrado: Trabajador o jornada no existen' })
-  @ApiResponse({ status: 409, description: 'Conflicto' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  eliminarJornada(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
-    return this.treballadorsService.eliminarJornadaTreballador(user.empresaId, id, user.userId);
   }
 
   @Post('assignar-serveis')

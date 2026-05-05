@@ -16,6 +16,7 @@ import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { uploadMyFoto } from '../services/profile.service';
 import { EditProfileModal } from './modal/EditProfileModal';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { patchStoredUser } from '@/utils/session';
 
 const AVATAR_SIZE_MOBILE = 90;
@@ -37,9 +38,9 @@ function getInitials(name: string): string {
     return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function getRolLabel(rol: string): string {
-    if (rol === 'ADMIN_GENERAL') return 'Administrador';
-    if (rol === 'EMPLEAT') return 'Empleado';
+function getRolLabel(rol: string, t: (key: string) => string): string {
+    if (rol === 'ADMIN_GENERAL') return t('rolAdmin');
+    if (rol === 'EMPLEAT') return t('rolEmpleat');
     return rol;
 }
 
@@ -146,12 +147,13 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     const isDesktop = width >= 768;
     const queryClient = useQueryClient();
     const theme = useTheme();
+    const { t } = useLanguage();
 
     const handlePickPhoto = async () => {
         try {
             const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!perm.granted) {
-                Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería.');
+                Alert.alert(t('permissionRequired'), t('galleryPermission'));
                 return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -169,7 +171,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             if (cloudUrl) await patchStoredUser({ fotoPerfil: cloudUrl });
             queryClient.invalidateQueries({ queryKey: ['mi-treballador'] });
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'No se pudo subir la foto.');
+            Alert.alert(t('error'), err?.response?.data?.message || t('photoUploadError'));
         } finally {
             setUploading(false);
         }
@@ -184,13 +186,13 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     }
 
     const initials = getInitials(nom || 'U');
-    const roleLabel = getRolLabel(rol);
+    const roleLabel = getRolLabel(rol, t);
     const displayPhoto = localPhoto ?? fotoPerfil;
 
     const fields = [
-        { icon: 'briefcase-outline', label: 'ESPECIALIDAD', value: roleLabel },
-        { icon: 'mail-outline', label: 'EMAIL', value: email },
-        ...(jornada ? [{ icon: 'time-outline', label: 'JORNADA ASIGNADA', value: jornada }] : []),
+        { icon: 'briefcase-outline', label: t('labelEspecialitat'), value: roleLabel },
+        { icon: 'mail-outline', label: t('labelEmail'), value: email },
+        ...(jornada ? [{ icon: 'time-outline', label: t('labelJornada'), value: jornada }] : []),
     ];
 
     /* ── Desktop horizontal layout ── */
@@ -214,7 +216,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                         {/* Name row + button */}
                         <View style={styles.desktopNameRow}>
                             <View>
-                                <Text style={styles.name}>{nom || 'Usuario'}</Text>
+                                <Text style={styles.name}>{nom || t('userFallback')}</Text>
                                 {!!location && (
                                     <View style={styles.locationRow}>
                                         <Ionicons name="location-outline" size={13} color={HC.textMuted} />
@@ -229,7 +231,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                                 activeOpacity={0.8}
                             >
                                 <Ionicons name="key-outline" size={15} color={theme.textOnPrimary} />
-                                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Editar perfil</Text>
+                                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>{t('editProfile')}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -267,7 +269,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 />
             </View>
 
-            <Text style={styles.nameCentered}>{nom || 'Usuario'}</Text>
+            <Text style={styles.nameCentered}>{nom || t('userFallback')}</Text>
 
             {!!location && (
                 <View style={[styles.locationRow, styles.locationCentered]}>
@@ -295,7 +297,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 activeOpacity={0.8}
             >
                 <Ionicons name="key-outline" size={16} color={theme.textOnPrimary} />
-                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>Editar perfil</Text>
+                <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>{t('editProfile')}</Text>
             </TouchableOpacity>
 
             <EditProfileModal visible={editVisible} onClose={() => setEditVisible(false)} />

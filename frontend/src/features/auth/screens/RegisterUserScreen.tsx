@@ -109,6 +109,7 @@ export default function RegisterUser() {
       descripcio: (params.descripcio as string) || undefined,
     };
     if (params.tipo) empresaData.tipo = params.tipo as string;
+    if (params.diasAntesReserva) empresaData.diasAntesReserva = parseInt(params.diasAntesReserva as string, 10);
 
     const userData = {
       email: email.trim().toLowerCase(),

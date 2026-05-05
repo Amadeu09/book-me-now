@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/horarios.constants';
 import type { PlantillaSummary } from '../types/jornades.types';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 interface PlantillaCardProps {
     template: PlantillaSummary;
@@ -15,6 +16,7 @@ interface PlantillaCardProps {
 export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOptions, onEdit, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
     const theme = useTheme();
+    const { t } = useLanguage();
 
     return (
         <View style={[styles.card, {
@@ -30,7 +32,7 @@ export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOption
                     <Text style={styles.name}>{template.nom}</Text>
                     {!template.activa && (
                         <View style={styles.inactiveBadge}>
-                            <Text style={styles.inactiveBadgeText}>Inactiva</Text>
+                            <Text style={styles.inactiveBadgeText}>{t('plantillaInactive')}</Text>
                         </View>
                     )}
                 </View>
@@ -38,7 +40,7 @@ export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOption
                     <Text style={styles.days}>{template.daysLabel}</Text>
                     {'   '}
                     {template.hoursLabel}
-                    {template.rotationsCount > 1 ? ` • ${template.rotationsCount} rotaciones` : ''}
+                    {template.rotationsCount > 1 ? ` • ${template.rotationsCount} ${t('plantillaRotations')}` : ''}
                 </Text>
             </View>
             <View style={{ position: 'relative', zIndex: 10 }}>
@@ -48,11 +50,11 @@ export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOption
                 {showMenu && (
                     <View style={styles.menuPopover}>
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onEdit?.(template); }}>
-                            <Text style={styles.menuItemText}>Editar</Text>
+                            <Text style={styles.menuItemText}>{t('edit')}</Text>
                         </TouchableOpacity>
                         <View style={styles.menuDivider} />
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onDelete?.(template); }}>
-                            <Text style={[styles.menuItemText, { color: HC.red }]}>Eliminar</Text>
+                            <Text style={[styles.menuItemText, { color: HC.red }]}>{t('delete')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -63,31 +65,40 @@ export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOption
 
 /* ── Empty / Loading / Error states ───── */
 
-export const PlantillaListEmpty: React.FC = () => (
-    <View style={styles.emptyContainer}>
-        <Ionicons name="layers-outline" size={40} color={HC.textLight} />
-        <Text style={styles.emptyTitle}>Sin plantillas</Text>
-        <Text style={styles.emptySubtitle}>Crea tu primera plantilla de jornada</Text>
-    </View>
-);
+export const PlantillaListEmpty: React.FC = () => {
+    const { t } = useLanguage();
+    return (
+        <View style={styles.emptyContainer}>
+            <Ionicons name="layers-outline" size={40} color={HC.textLight} />
+            <Text style={styles.emptyTitle}>{t('plantillaEmpty')}</Text>
+            <Text style={styles.emptySubtitle}>{t('plantillaEmptySubtitle')}</Text>
+        </View>
+    );
+};
 
-export const PlantillaListLoading: React.FC = () => (
-    <View style={styles.loadingContainer}>
-        <ActivityIndicator color={HC.primary} />
-        <Text style={styles.loadingText}>Cargando plantillas…</Text>
-    </View>
-);
+export const PlantillaListLoading: React.FC = () => {
+    const { t } = useLanguage();
+    return (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator color={HC.primary} />
+            <Text style={styles.loadingText}>{t('plantillaLoading')}</Text>
+        </View>
+    );
+};
 
-export const PlantillaListError: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
-    <View style={styles.emptyContainer}>
-        <Ionicons name="warning-outline" size={40} color={HC.red} />
-        <Text style={styles.emptyTitle}>Error</Text>
-        <Text style={styles.emptySubtitle}>{message}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.7}>
-            <Text style={styles.retryText}>Reintentar</Text>
-        </TouchableOpacity>
-    </View>
-);
+export const PlantillaListError: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => {
+    const { t } = useLanguage();
+    return (
+        <View style={styles.emptyContainer}>
+            <Ionicons name="warning-outline" size={40} color={HC.red} />
+            <Text style={styles.emptyTitle}>{t('error')}</Text>
+            <Text style={styles.emptySubtitle}>{message}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.7}>
+                <Text style={styles.retryText}>{t('retry')}</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
 
 const styles = StyleSheet.create({
     card: {

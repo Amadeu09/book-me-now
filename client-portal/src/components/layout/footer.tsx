@@ -10,16 +10,16 @@ export function Footer() {
         </p>
       </div>
       <div className="flex flex-wrap justify-center gap-12">
-        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-violet-500 transition-colors opacity-100 hover:opacity-70">
+        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-primary transition-colors opacity-100 hover:opacity-70">
           Privacy Policy
         </Link>
-        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-violet-500 transition-colors opacity-100 hover:opacity-70">
+        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-primary transition-colors opacity-100 hover:opacity-70">
           Terms of Service
         </Link>
-        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-violet-500 transition-colors opacity-100 hover:opacity-70">
+        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-primary transition-colors opacity-100 hover:opacity-70">
           Contact Us
         </Link>
-        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-violet-500 transition-colors opacity-100 hover:opacity-70">
+        <Link href="#" className="text-slate-400 dark:text-slate-600 hover:text-primary transition-colors opacity-100 hover:opacity-70">
           Press Kit
         </Link>
       </div>

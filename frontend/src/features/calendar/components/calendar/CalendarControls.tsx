@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { palette, spacing, radius } from "@/constants/theme";
 import { Feather } from '@expo/vector-icons';
+import { useLanguage } from '@/core/i18n';
 
 interface CalendarControlsProps {
     dateRange: string;
@@ -22,12 +23,13 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
     onPrev,
     onNext
 }) => {
+    const { t } = useLanguage();
     return (
         <View style={styles.container}>
             <View style={styles.filters}>
-                <Dropdown label="All Employees" icon="users" />
-                <Dropdown label="All Service Types" icon="grid" />
-                <Dropdown label="All Rooms" icon="map" />
+                <Dropdown label={t('calendarAllEmployees')} icon="users" />
+                <Dropdown label={t('calendarAllServices')} icon="grid" />
+                <Dropdown label={t('calendarAllRooms')} icon="map" />
             </View>
 
             <View style={styles.navigator}>

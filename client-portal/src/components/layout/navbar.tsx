@@ -8,7 +8,7 @@ export function Navbar() {
       </div>
       <div className="hidden md:flex gap-10 items-center font-['Plus_Jakarta_Sans'] tracking-tight font-medium">
         {/* Changed from Destinations to Home */}
-        <Link href="/" className="text-violet-600 dark:text-violet-400 font-semibold transition-opacity duration-300 hover:opacity-80">
+        <Link href="/" className="text-primary dark:text-primary font-semibold transition-opacity duration-300 hover:opacity-80">
           Home
         </Link>
         {/*

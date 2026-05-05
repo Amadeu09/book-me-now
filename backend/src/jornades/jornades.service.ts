@@ -280,7 +280,7 @@ export class JornadesService {
         }
 
         // 3. Comprovar que no hi hagi treballadors assignats
-        const assignmentsCount = await this.prisma.treballadorJornadaPlantilla.count({
+        const assignmentsCount = await this.prisma.treballador.count({
             where: { plantillaId: id }
         });
 

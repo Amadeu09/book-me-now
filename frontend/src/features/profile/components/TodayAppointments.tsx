@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { ProfileReserva } from '../services/profile.service';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 const MAX_VISIBLE = 3;
 
@@ -48,12 +49,13 @@ interface AppointmentItemProps {
 
 const AppointmentItem: React.FC<AppointmentItemProps> = ({ item }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const durada = item.servei?.duradaMin ?? 60;
     const startTime = formatTime(item.dataHora);
     const endTime = formatEndTime(item.dataHora, durada);
     const upcoming = isFutureOrNow(item.dataHora, durada);
-    const clientName = item.client?.nom ?? item.clientNom ?? 'Cliente';
-    const serviceName = item.servei?.nom ?? 'Servicio';
+    const clientName = item.client?.nom ?? item.clientNom ?? t('clientFallback');
+    const serviceName = item.servei?.nom ?? t('serviceFallback');
     const initials = getInitials(clientName);
 
     return (
@@ -85,6 +87,7 @@ interface TodayAppointmentsProps {
 export const TodayAppointments: React.FC<TodayAppointmentsProps> = ({ bookings, isLoading }) => {
     const [expanded, setExpanded] = useState(false);
     const theme = useTheme();
+    const { t } = useLanguage();
 
     const sorted = [...bookings].sort(
         (a, b) => new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime(),
@@ -95,10 +98,10 @@ export const TodayAppointments: React.FC<TodayAppointmentsProps> = ({ bookings, 
     return (
         <View style={[styles.container, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.header}>
-                <Text style={styles.title}>Citas de Hoy</Text>
+                <Text style={styles.title}>{t('todayAppointments')}</Text>
                 {hasMore && (
                     <TouchableOpacity onPress={() => setExpanded((v) => !v)}>
-                        <Text style={[styles.link, { color: theme.primary }]}>{expanded ? 'Ver menos' : 'Ver todas →'}</Text>
+                        <Text style={[styles.link, { color: theme.primary }]}>{expanded ? t('showLess') : t('showAllFem')}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -108,7 +111,7 @@ export const TodayAppointments: React.FC<TodayAppointmentsProps> = ({ bookings, 
             ) : sorted.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Ionicons name="calendar-outline" size={32} color={HC.textLight} />
-                    <Text style={styles.emptyText}>No tienes citas para hoy</Text>
+                    <Text style={styles.emptyText}>{t('noTodayAppointments')}</Text>
                 </View>
             ) : (
                 <FlatList

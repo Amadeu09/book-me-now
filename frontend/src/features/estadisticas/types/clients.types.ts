@@ -4,6 +4,7 @@ export interface ClientItem {
     email?: string | null;
     telefon?: string | null;
     empresaId: number;
+    visites?: number;
     createdAt: string;
     updatedAt: string;
 }

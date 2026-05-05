@@ -4,20 +4,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { palette, spacing, typography } from "@/constants/theme";
 import { HC } from '../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 export const HorariosHeader: React.FC = () => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
 
     return (
         <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
             <View style={styles.leftBlock}>
-                <Text style={[styles.title, { color: theme.headerText }]}>Configuración de Horarios</Text>
+                <Text style={[styles.title, { color: theme.headerText }]}>{t('horariosTitle')}</Text>
                 <View style={styles.subtitleRow}>
                     <View style={[styles.subtitleDot, { backgroundColor: theme.primary }]} />
                     <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>
-                        Gestiona los horarios globales y la disponibilidad de tu equipo.
+                        {t('horariosSubtitle')}
                     </Text>
                 </View>
             </View>

@@ -11,16 +11,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { updateReservaEstat, deleteReserva } from '../services/calendarApi';
 import type { CalendarEvent } from './types';
-
-const ESTAT_LABELS: Record<string, string> = {
-    PENDENT:    'Pendent',
-    CONFIRMADA: 'Confirmada',
-    CANCELLADA: 'Cancel·lada',
-    FINALITZADA:'Finalitzada',
-    NO_SHOW:    'No Show',
-};
 
 const ESTAT_COLORS: Record<string, string> = {
     PENDENT:    '#F59E0B',
@@ -56,6 +49,17 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 
 export function BookingDetailModal({ visible, event, onClose, onStatusChanged }: Props) {
     const theme = useTheme();
+    const { t, lang } = useLanguage();
+    const locale = lang === 'ca' ? 'ca-ES' : 'es-ES';
+
+    const ESTAT_LABELS: Record<string, string> = {
+        PENDENT:     t('bookingPendent'),
+        CONFIRMADA:  t('bookingConfirmada'),
+        CANCELLADA:  t('bookingCancellada'),
+        FINALITZADA: t('bookingFinalitzada'),
+        NO_SHOW:     t('bookingNoShow'),
+    };
+
     const [loading, setLoading] = useState<'CANCELLADA' | 'NO_SHOW' | null>(null);
     const [confirming, setConfirming] = useState<'CANCELLADA' | 'NO_SHOW' | null>(null);
     const [localEstat, setLocalEstat] = useState<string | null>(null);
@@ -74,10 +78,10 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
     const estat = localEstat ?? r.estat;
     const isTerminal = TERMINAL_STATS.includes(estat);
 
-    const wallClock = r.dataHora.replace('Z', '').replace(/\+.*$/, '');
-    const date = new Date(wallClock);
-    const dateStr = date.toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const timeStr = date.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
+    const date = new Date(r.dataHora);
+    const TZ = 'Europe/Madrid';
+    const dateStr = date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ });
+    const timeStr = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 
     const clientNom   = r.clientNom || r.client?.nom || '—';
     const clientEmail = r.clientEmail || r.client?.email || '';
@@ -136,34 +140,34 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
                         contentContainerStyle={styles.bodyContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        <Text style={styles.sectionTitle}>Detalls de la cita</Text>
+                        <Text style={styles.sectionTitle}>{t('bookingDetailTitle')}</Text>
 
                         <View style={styles.infoCard}>
-                            <InfoRow icon="calendar-outline"    label="Data"         value={dateStr} />
-                            <InfoRow icon="time-outline"        label="Hora"         value={timeStr} />
-                            {durMin  && <InfoRow icon="hourglass-outline"  label="Durada"       value={`${durMin} min`} />}
-                            {preu    && <InfoRow icon="pricetag-outline"   label="Preu"         value={`${Number(preu).toFixed(2)} €`} />}
+                            <InfoRow icon="calendar-outline"    label={t('bookingFieldDate')}     value={dateStr} />
+                            <InfoRow icon="time-outline"        label={t('bookingFieldTime')}     value={timeStr} />
+                            {durMin  && <InfoRow icon="hourglass-outline"  label={t('bookingFieldDuration')} value={`${durMin} min`} />}
+                            {preu    && <InfoRow icon="pricetag-outline"   label={t('bookingFieldPrice')}    value={`${Number(preu).toFixed(2)} €`} />}
                         </View>
 
-                        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Client</Text>
+                        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('bookingFieldClient')}</Text>
                         <View style={styles.infoCard}>
-                            <InfoRow icon="person-outline"      label="Nom"          value={clientNom} />
-                            {clientEmail && <InfoRow icon="mail-outline"        label="Email"        value={clientEmail} />}
-                            {clientTel   && <InfoRow icon="call-outline"        label="Telèfon"      value={clientTel} />}
+                            <InfoRow icon="person-outline"      label={t('bookingFieldNom')}   value={clientNom} />
+                            {clientEmail && <InfoRow icon="mail-outline"   label={t('bookingFieldEmail')} value={clientEmail} />}
+                            {clientTel   && <InfoRow icon="call-outline"   label={t('bookingFieldPhone')} value={clientTel} />}
                         </View>
 
                         {worker && (
                             <>
-                                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Professional</Text>
+                                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('bookingFieldProfessional')}</Text>
                                 <View style={styles.infoCard}>
-                                    <InfoRow icon="cut-outline" label="Treballador" value={worker} />
+                                    <InfoRow icon="cut-outline" label={t('bookingFieldWorker')} value={worker} />
                                 </View>
                             </>
                         )}
 
                         {obs ? (
                             <>
-                                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Observacions</Text>
+                                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('bookingFieldNotes')}</Text>
                                 <View style={styles.infoCard}>
                                     <Text style={styles.obsText}>{obs}</Text>
                                 </View>
@@ -184,7 +188,7 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
                                     ? <ActivityIndicator size="small" color="#F97316" />
                                     : <>
                                         <Ionicons name="eye-off-outline" size={16} color="#F97316" />
-                                        <Text style={[styles.actionBtnText, { color: '#F97316' }]}>No Show</Text>
+                                        <Text style={[styles.actionBtnText, { color: '#F97316' }]}>{t('bookingNoShow')}</Text>
                                     </>
                                 }
                             </TouchableOpacity>
@@ -199,7 +203,7 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
                                     ? <ActivityIndicator size="small" color="#fff" />
                                     : <>
                                         <Ionicons name="close-circle-outline" size={16} color="#fff" />
-                                        <Text style={[styles.actionBtnText, { color: '#fff' }]}>Cancel·lar cita</Text>
+                                        <Text style={[styles.actionBtnText, { color: '#fff' }]}>{t('bookingCancelAppointment')}</Text>
                                     </>
                                 }
                             </TouchableOpacity>
@@ -210,8 +214,8 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
                         <View style={styles.confirmFooter}>
                             <Text style={styles.confirmText}>
                                 {confirming === 'CANCELLADA'
-                                    ? 'Cancel·lar aquesta cita?'
-                                    : 'Marcar com a No Show?'}
+                                    ? t('bookingCancelConfirmQ')
+                                    : t('bookingNoShowConfirmQ')}
                             </Text>
                             <View style={styles.confirmBtns}>
                                 <TouchableOpacity
@@ -219,7 +223,7 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
                                     onPress={() => setConfirming(null)}
                                     activeOpacity={0.8}
                                 >
-                                    <Text style={[styles.actionBtnText, { color: HC.textSecondary }]}>No</Text>
+                                    <Text style={[styles.actionBtnText, { color: HC.textSecondary }]}>{t('no')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={[styles.actionBtn, confirming === 'CANCELLADA' ? styles.cancelBtn : styles.noShowConfirmBtn]}
@@ -229,7 +233,7 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
                                 >
                                     {loading !== null
                                         ? <ActivityIndicator size="small" color={confirming === 'CANCELLADA' ? '#fff' : '#F97316'} />
-                                        : <Text style={[styles.actionBtnText, { color: confirming === 'CANCELLADA' ? '#fff' : '#F97316' }]}>Sí, confirmar</Text>
+                                        : <Text style={[styles.actionBtnText, { color: confirming === 'CANCELLADA' ? '#fff' : '#F97316' }]}>{t('bookingConfirmYes')}</Text>
                                     }
                                 </TouchableOpacity>
                             </View>
@@ -241,7 +245,7 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
                             <View style={[styles.terminalBanner, { backgroundColor: ESTAT_COLORS[estat] + '15' }]}>
                                 <Ionicons name="lock-closed-outline" size={14} color={ESTAT_COLORS[estat]} />
                                 <Text style={[styles.terminalText, { color: ESTAT_COLORS[estat] }]}>
-                                    Estat final — no es pot modificar
+                                    {t('bookingFinalState')}
                                 </Text>
                             </View>
                         </View>

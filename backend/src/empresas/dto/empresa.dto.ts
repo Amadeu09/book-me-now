@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsBoolean, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, IsBoolean, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BusinessType } from '@prisma/client';
 
@@ -33,6 +33,12 @@ export class CreateEmpresaDto {
   @IsOptional()
   @IsEnum(BusinessType)
   tipo?: BusinessType;
+
+  @ApiProperty({ example: 14, description: 'Dies d\'antelació màxima per fer reserves', required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  diasAntesReserva?: number;
 }
 
 export class UpdateEmpresaDto {
@@ -66,4 +72,10 @@ export class UpdateEmpresaDto {
   @IsOptional()
   @IsEnum(BusinessType)
   tipo?: BusinessType;
+
+  @ApiProperty({ example: 14, required: false, description: 'Dies d\'antelació màxima per fer reserves' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  diasAntesReserva?: number;
 }

@@ -3,18 +3,20 @@ import { View, Text, StyleSheet } from 'react-native';
 import { palette, spacing, typography } from '@/constants/theme';
 import { HC } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 export function EstadisticasHeader() {
     const theme = useTheme();
+    const { t } = useLanguage();
 
     return (
         <View style={[styles.container, { backgroundColor: theme.headerBg }]}>
             <View style={styles.leftBlock}>
-                <Text style={[styles.title, { color: theme.headerText }]}>Estadísticas y Clientes</Text>
+                <Text style={[styles.title, { color: theme.headerText }]}>{t('statsTitle')}</Text>
                 <View style={styles.subtitleRow}>
                     <View style={[styles.subtitleDot, { backgroundColor: theme.primary }]} />
                     <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>
-                        Consulta el rendimiento del negocio y analiza tu base de clientes.
+                        {t('statsSubtitle')}
                     </Text>
                 </View>
             </View>

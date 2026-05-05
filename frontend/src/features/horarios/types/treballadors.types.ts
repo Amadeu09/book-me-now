@@ -12,20 +12,13 @@ export interface UsuariResponse {
     nom: string;
     rol: string;
     empresaId: number;
-    // other fields omitted
-}
-
-export interface JornadaTreballadorPayload {
-    plantillaJornadaId: number;
-    dataInici: string; // ISO String
-    dataFi: string; // ISO String
 }
 
 export interface CreateTreballadorPayload {
     nom: string;
     idUsuari: number;
     diesVacancesAnuals?: number;
-    jornadaTreballador?: JornadaTreballadorPayload;
+    plantillaId?: number;
     serveisIds?: number[];
 }
 
@@ -33,17 +26,6 @@ export interface TreballadorResponse {
     id: number;
     nom: string;
     idUsuari: number;
-    // other fields omitted
-}
-
-/** Assignació de plantilla de jornada a un treballador (backend response) */
-export interface PlantillaAssignacioResponse {
-    plantilla?: {
-        id: number;
-        nom: string;
-    };
-    dataInici?: string;
-    dataFi?: string;
 }
 
 /** Forma completa del treballador tal como la devuelve el backend paginado */
@@ -51,14 +33,19 @@ export interface TreballadorBackendItem {
     id: number;
     nom: string;
     idUsuari: number;
+    diesVacancesAnuals?: number;
     Usuari?: {
         email: string;
         fotoPerfil?: string | null;
     };
-    jornadesPlantillaAssignacions?: PlantillaAssignacioResponse[];
+    plantilla?: {
+        id: number;
+        nom: string;
+    } | null;
+    serveis?: { serveiId: number; servei: { id: number; nom: string } }[];
 }
 
-/** Respuesta paginada del backend para GET /treballadors/:empresaId/paginades */
+/** Resposta paginada del backend per a GET /treballadors/:empresaId/paginades */
 export interface TreballadorPaginatedResponse {
     data: TreballadorBackendItem[];
     total: number;

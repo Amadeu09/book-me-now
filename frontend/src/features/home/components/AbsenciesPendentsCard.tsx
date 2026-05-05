@@ -7,25 +7,7 @@ import { HC, cardShadow } from '../constants/inicio.constants';
 import { useAbsenciesPendents, useUpdateEstatAbsencia } from '../hooks/useAbsenciesPendents';
 import type { AbsenciaPendent, TipusAbsencia } from '../services/absencies-pendents.service';
 import { useTheme } from '@/core/theme/ThemeProvider';
-
-const TIPUS_LABEL: Record<TipusAbsencia, string> = {
-    VACANCES: 'Vacaciones',
-    MALALTIA: 'Enfermedad',
-    PERMIS: 'Permiso',
-    ALTRE: 'Otro',
-};
-
-const ROWS = 4;
-
-function formatRange(inici: string, fi: string): string {
-    const fmt = (s: string) => new Date(s).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-    const days = Math.round((new Date(fi).getTime() - new Date(inici).getTime()) / 86_400_000) + 1;
-    const start = inici.substring(0, 10);
-    const end = fi.substring(0, 10);
-    return start === end
-        ? `${fmt(inici)} · 1 día`
-        : `${fmt(inici)} – ${fmt(fi)} · ${days}d`;
-}
+import { useLanguage } from '@/core/i18n';
 
 function Avatar({ nom, fotoPerfil, bgColor, textColor }: { nom: string; fotoPerfil: string | null; bgColor: string; textColor: string }) {
     if (fotoPerfil) {
@@ -56,6 +38,23 @@ function AbsenciaRow({
     primaryColor: string;
     primaryMidColor: string;
 }) {
+    const { t, lang } = useLanguage();
+    const locale = lang === 'ca' ? 'ca-ES' : 'es-ES';
+    const tipusLabels: Record<TipusAbsencia, string> = {
+        VACANCES: t('absVacances'),
+        MALALTIA: t('absMalaltia'),
+        PERMIS: t('absPermis'),
+        ALTRE: t('absAltre'),
+    };
+    const formatRange = (inici: string, fi: string): string => {
+        const fmt = (s: string) => new Date(s).toLocaleDateString(locale, { day: '2-digit', month: 'short' });
+        const days = Math.round((new Date(fi).getTime() - new Date(inici).getTime()) / 86_400_000) + 1;
+        const start = inici.substring(0, 10);
+        const end = fi.substring(0, 10);
+        return start === end
+            ? `${fmt(inici)} · ${t('oneDay')}`
+            : `${fmt(inici)} – ${fmt(fi)} · ${days}d`;
+    };
     return (
         <View style={[styles.row, !isLast && styles.rowBorder]}>
             <Avatar nom={item.treballador.nom} fotoPerfil={item.treballador.Usuari.fotoPerfil} bgColor={primaryMidColor} textColor={primaryColor} />
@@ -63,7 +62,7 @@ function AbsenciaRow({
                 <Text style={styles.workerName} numberOfLines={1}>{item.treballador.nom}</Text>
                 <View style={styles.rowMeta}>
                     <View style={[styles.tipusBadge, { backgroundColor: primaryMidColor }]}>
-                        <Text style={[styles.tipusText, { color: primaryColor }]}>{TIPUS_LABEL[item.tipus]}</Text>
+                        <Text style={[styles.tipusText, { color: primaryColor }]}>{tipusLabels[item.tipus]}</Text>
                     </View>
                     <Text style={styles.dates}>{formatRange(item.inici, item.fi)}</Text>
                 </View>
@@ -89,6 +88,7 @@ function AbsenciaRow({
 export function AbsenciesPendentsCard() {
     const [page, setPage] = useState(1);
     const theme = useTheme();
+    const { t } = useLanguage();
     const { data, isLoading } = useAbsenciesPendents(page);
     const { mutate: updateEstat, variables: pendingVars, isPending } = useUpdateEstatAbsencia();
 
@@ -99,7 +99,7 @@ export function AbsenciesPendentsCard() {
         <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             {/* Header */}
             <View style={styles.headerRow}>
-                <Text style={styles.title}>Ausencias pendientes</Text>
+                <Text style={styles.title}>{t('pendingAbsences')}</Text>
                 {totalPages > 1 && (
                     <View style={styles.pagination}>
                         <TouchableOpacity
@@ -129,7 +129,7 @@ export function AbsenciesPendentsCard() {
             ) : items.length === 0 ? (
                 <View style={styles.center}>
                     <Ionicons name="checkmark-circle-outline" size={32} color={theme.primary} />
-                    <Text style={styles.emptyText}>Sin ausencias por aprobar</Text>
+                    <Text style={styles.emptyText}>{t('noPendingAbsences')}</Text>
                 </View>
             ) : (
                 items.map((item, i) => (

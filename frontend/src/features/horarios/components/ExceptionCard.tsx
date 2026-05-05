@@ -9,18 +9,12 @@ import { useAbsenciesEmpresa } from '../hooks/useAbsenciesEmpresa';
 import { AbsenciaEmpresaModal } from './modal/AbsenciaEmpresaModal';
 import type { AbsenciaEmpresa, TipusAbsenciaEmpresa } from '../types/absencies-empresa.types';
 import { useTheme } from '@/core/theme/ThemeProvider';
-
-function formatDateRange(inici: string, fi: string): string {
-    const s = new Date(inici);
-    const e = new Date(fi);
-    const fmt = (d: Date) => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-    return s.toDateString() === e.toDateString() ? fmt(s) : `${fmt(s)} – ${fmt(e)}`;
-}
+import { useLanguage } from '@/core/i18n';
 
 /* ── Absence row item ───────────────────────── */
 function AbsenciaItem({
-    item, onEdit, onDelete, tipusConfig,
-}: { item: AbsenciaEmpresa; onEdit: () => void; onDelete: () => void; tipusConfig: Record<TipusAbsenciaEmpresa, { label: string; color: string; bg: string }> }) {
+    item, onEdit, onDelete, tipusConfig, formatDateRange,
+}: { item: AbsenciaEmpresa; onEdit: () => void; onDelete: () => void; tipusConfig: Record<TipusAbsenciaEmpresa, { label: string; color: string; bg: string }>; formatDateRange: (i: string, f: string) => string }) {
     const cfg = tipusConfig[item.tipus];
     return (
         <View style={styles.item}>
@@ -46,11 +40,21 @@ function AbsenciaItem({
 /* ── Shared panel content ───────────────────── */
 function FestiosPanel() {
     const theme = useTheme();
+    const { t, lang } = useLanguage();
+    const locale = lang === 'ca' ? 'ca-ES' : 'es-ES';
+
+    const formatDateRange = (inici: string, fi: string): string => {
+        const s = new Date(inici);
+        const e = new Date(fi);
+        const fmt = (d: Date) => d.toLocaleDateString(locale, { day: '2-digit', month: 'short' });
+        return s.toDateString() === e.toDateString() ? fmt(s) : `${fmt(s)} – ${fmt(e)}`;
+    };
+
     const TIPUS_CONFIG: Record<TipusAbsenciaEmpresa, { label: string; color: string; bg: string }> = {
-        FESTA_LOCAL: { label: 'Fiesta Local', color: theme.primary, bg: theme.primaryLight },
-        FESTA_ESTATAL: { label: 'Fiesta Estatal', color: '#3B82F6', bg: '#EFF6FF' },
-        PONT: { label: 'Puente', color: HC.yellow, bg: HC.yellowLight },
-        ALTRE: { label: 'Otro', color: HC.textMuted, bg: HC.borderSoft },
+        FESTA_LOCAL: { label: t('tipusFiestaLocal'), color: theme.primary, bg: theme.primaryLight },
+        FESTA_ESTATAL: { label: t('tipusFiestaEstatal'), color: '#3B82F6', bg: '#EFF6FF' },
+        PONT: { label: t('tipusPuente'), color: HC.yellow, bg: HC.yellowLight },
+        ALTRE: { label: t('absAltre'), color: HC.textMuted, bg: HC.borderSoft },
     };
 
     const {
@@ -62,21 +66,21 @@ function FestiosPanel() {
     const [itemToEdit, setItemToEdit] = useState<AbsenciaEmpresa | null>(null);
 
     const handleDelete = (item: AbsenciaEmpresa) => {
-        const msg = `Eliminar "${item.titol}"?`;
+        const msg = `${t('delete')} "${item.titol}"?`;
         const execute = async () => {
             try {
                 await remove(item.id);
             } catch (e: any) {
-                const err = e?.response?.data?.message || 'No se ha podido eliminar.';
-                Platform.OS === 'web' ? window.alert(err) : Alert.alert('Error', err);
+                const err = e?.response?.data?.message || t('exceptionDeleteError');
+                Platform.OS === 'web' ? window.alert(err) : Alert.alert(t('error'), err);
             }
         };
         if (Platform.OS === 'web') {
             if (window.confirm(msg)) execute();
         } else {
-            Alert.alert('Eliminar', msg, [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Eliminar', style: 'destructive', onPress: execute },
+            Alert.alert(t('delete'), msg, [
+                { text: t('cancel'), style: 'cancel' },
+                { text: t('delete'), style: 'destructive', onPress: execute },
             ]);
         }
     };
@@ -86,7 +90,7 @@ function FestiosPanel() {
             {/* ── Header ── */}
             <View style={styles.panelHeader}>
                 <View style={styles.panelHeaderLeft}>
-                    <Text style={styles.panelTitle}>Excepciones y Festivos</Text>
+                    <Text style={styles.panelTitle}>{t('exceptionTitle')}</Text>
                     {total > 0 && (
                         <View style={[styles.countBadge, { backgroundColor: theme.primaryLight }]}>
                             <Text style={[styles.countBadgeText, { color: theme.primary }]}>{total}</Text>
@@ -100,7 +104,7 @@ function FestiosPanel() {
                     {isLoading ? (
                         <ActivityIndicator color={theme.primary} style={{ marginVertical: 16 }} />
                     ) : data.length === 0 ? (
-                        <Text style={styles.emptyText}>No hay festivos próximos registrados.</Text>
+                        <Text style={styles.emptyText}>{t('exceptionEmpty')}</Text>
                     ) : (
                         <>
                             {data.map(item => (
@@ -108,6 +112,7 @@ function FestiosPanel() {
                                     key={item.id}
                                     item={item}
                                     tipusConfig={TIPUS_CONFIG}
+                                    formatDateRange={formatDateRange}
                                     onEdit={() => { setItemToEdit(item); setModalVisible(true); }}
                                     onDelete={() => handleDelete(item)}
                                 />
@@ -143,7 +148,7 @@ function FestiosPanel() {
                         activeOpacity={0.8}
                     >
                         <Ionicons name="add" size={16} color={theme.primary} />
-                        <Text style={[styles.addBtnText, { color: theme.primary }]}>Añadir ausencia</Text>
+                        <Text style={[styles.addBtnText, { color: theme.primary }]}>{t('exceptionAdd')}</Text>
                     </TouchableOpacity>
                 </View>
 

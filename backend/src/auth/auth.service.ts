@@ -125,6 +125,7 @@ export class AuthService {
           capacitat: signupDto.empresa.capacitat ?? null,
           activa: true,
           descripcio: signupDto.empresa.descripcio ?? null,
+          ...(signupDto.empresa.diasAntesReserva ? { diasAntesReserva: signupDto.empresa.diasAntesReserva } : {}),
         },
       });
 

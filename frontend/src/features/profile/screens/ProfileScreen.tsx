@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HC } from '@/features/home/constants/inicio.constants';
 import { spacing } from '@/constants/theme';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import type { AuthUser } from '@/features/auth/services/auth.service';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileCard } from '../components/ProfileCard';
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
 
     useEffect(() => {
         AsyncStorage.getItem('user').then((raw) => {
@@ -44,7 +46,7 @@ export default function ProfileScreen() {
     const { data: serveis = [], isLoading: loadingServeis } = useTreballadorServeis(treballadorId);
     const { data: bookings = [], isLoading: loadingBookings } = useTodayBookings(treballadorId);
 
-    const nom = treballador?.nom ?? user?.empresa?.nom ?? 'Usuario';
+    const nom = treballador?.nom ?? user?.empresa?.nom ?? t('userFallback');
     const email = user?.email ?? '';
     const rol = user?.rol ?? '';
     const fotoPerfil = treballador?.Usuari?.fotoPerfil ?? null;

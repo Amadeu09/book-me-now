@@ -31,7 +31,7 @@ export type AppTheme = {
   setPrimaryColor: (hex: string | null) => void;
 };
 
-const DEFAULT_PRIMARY = '#FF6A00';
+const DEFAULT_PRIMARY = '#FF6B6B';
 
 // Default theme — used when the company has NOT set a custom color.
 // Cards are neutral/white; primary is still orange for buttons/navbar.
@@ -53,7 +53,7 @@ const defaultTheme: AppTheme = {
   headerSubtitle: '#6b7280',
   softBorderWidth: 0,
   softBorderColor: 'transparent',
-  setPrimaryColor: () => {},
+  setPrimaryColor: () => { },
 };
 
 const ThemeContext = createContext<AppTheme>(defaultTheme);

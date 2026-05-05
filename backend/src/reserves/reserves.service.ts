@@ -31,10 +31,10 @@ export class ReservesService {
 
   private getMonday(d: Date): Date {
     const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    date.setDate(diff);
-    date.setHours(0, 0, 0, 0);
+    const day = date.getUTCDay();
+    const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1);
+    date.setUTCDate(diff);
+    date.setUTCHours(0, 0, 0, 0);
     return date;
   }
 
@@ -57,32 +57,27 @@ export class ReservesService {
     });
     if (workerAbsence) throw new ConflictException('No hi ha disponibilitat per a aquest horari');
 
-    const assignment = await this.prisma.treballadorJornadaPlantilla.findFirst({
-      where: { treballadorId },
-      orderBy: { dataInici: 'desc' },
+    const treballadorAmbPlantilla = await this.prisma.treballador.findUnique({
+      where: { id: treballadorId },
       include: {
         plantilla: { include: { rotacions: { include: { dies: { include: { trams: true } } } } } },
       },
     });
 
-    if (!assignment || !assignment.plantilla.rotacions?.length) {
+    const plantilla = treballadorAmbPlantilla?.plantilla;
+    if (!plantilla || !plantilla.rotacions?.length) {
       throw new ConflictException('No hi ha disponibilitat per a aquest horari');
     }
 
     let dow = dataHoraInici.getDay();
     if (dow === 0) dow = 7;
 
-    const oneDay = 24 * 60 * 60 * 1000;
-    const assignmentStartMonday = this.getMonday(new Date(assignment.dataInici));
-    const currentMonday = this.getMonday(dataHoraInici);
-    const diffWeeks = Math.max(0, Math.floor((currentMonday.getTime() - assignmentStartMonday.getTime()) / (7 * oneDay)));
-    const rotationIndex = (assignment.anchorRotacioIndex + diffWeeks) % assignment.plantilla.rotacions.length;
-    const rotacionsOrdenades = [...assignment.plantilla.rotacions].sort((a, b) => a.index - b.index);
-    const rotacio = rotacionsOrdenades[rotationIndex];
+    const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
+    const rotacio = rotacionsOrdenades[0];
 
     if (!rotacio) throw new ConflictException('No hi ha disponibilitat per a aquest horari');
 
-    const diaRotacio = rotacio.dies.find(d => d.dow === dow);
+    const diaRotacio = rotacio.dies?.find(d => d.dow === dow);
     if (!diaRotacio || diaRotacio.esDescans || !diaRotacio.trams?.length) {
       throw new ConflictException('No hi ha disponibilitat per a aquest horari');
     }
@@ -112,7 +107,13 @@ export class ReservesService {
     const treballador = await this.prisma.treballador.findUnique({ where: { id: dto.idTreballador } });
     if (!treballador || (options.checkActiu && !treballador.actiu)) throw new NotFoundException('Treballador no trobat');
 
-    const dataHoraInici = new Date(`${dto.data}T${dto.hora}`);
+    const treballadorServei = await this.prisma.treballadorServei.findUnique({
+      where: { treballadorId_serveiId: { treballadorId: dto.idTreballador, serveiId: dto.idServei } },
+    });
+    if (!treballadorServei) throw new ForbiddenException('El treballador no ofereix aquest servei');
+
+    const dataHoraInici = new Date(`${dto.data}T${dto.hora}:00`);
+
     if (isNaN(dataHoraInici.getTime())) throw new BadRequestException(`Data o hora invàlida: "${dto.data}T${dto.hora}"`);
 
     const dataHoraFinal = new Date(dataHoraInici.getTime() + servei.duradaMin * 60 * 1000);
@@ -242,7 +243,8 @@ export class ReservesService {
       throw new NotFoundException('Treballador no trobat');
     }
 
-    const dataHoraInici = new Date(`${dto.data}T${dto.hora}`);
+    const dataHoraInici = new Date(`${dto.data}T${dto.hora}:00`);
+
     const dataHoraFinal = new Date(dataHoraInici.getTime() + servei.duradaMin * 60 * 1000);
 
     await this.checkSlotAvailable(
@@ -451,8 +453,8 @@ export class ReservesService {
     tokenGestio: string | null,
   ): Promise<void> {
     const portalUrl = this.config.get<string>('PORTAL_URL', 'http://localhost:3002');
-    const dataFormatada = dataHoraInici.toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const horaFormatada = dataHoraInici.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
+    const dataFormatada = dataHoraInici.toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' });
+    const horaFormatada = dataHoraInici.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
     const gestioLink = tokenGestio ? `${portalUrl}/reserva/${tokenGestio}` : null;
 
     await this.resend.emails.send({
@@ -515,7 +517,8 @@ export class ReservesService {
     if (reserva.estat === 'CANCELLADA') throw new BadRequestException('No es pot modificar una reserva cancel·lada');
     if (reserva.dataHora < new Date()) throw new BadRequestException('No es pot modificar una cita ja passada');
 
-    const dataHoraInici = new Date(`${dto.data}T${dto.hora}`);
+    const dataHoraInici = new Date(`${dto.data}T${dto.hora}:00`);
+
     if (isNaN(dataHoraInici.getTime())) throw new BadRequestException('Data o hora invàlida');
 
     const dataHoraFinal = new Date(dataHoraInici.getTime() + reserva.servei.duradaMin * 60 * 1000);

@@ -61,7 +61,7 @@ export default async function EmpresaPage({
           ) : (
             <div
               className="w-full h-full"
-              style={{ background: 'linear-gradient(135deg, #3B0764 0%, #1F2937 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #CC2222 0%, #1F2937 100%)' }}
             />
           )}
 
@@ -83,9 +83,9 @@ export default async function EmpresaPage({
             <span
               className="inline-flex items-center gap-1 px-2.5 py-1 mb-2 text-[10px] font-semibold uppercase tracking-widest rounded-full border"
               style={{
-                background: 'rgba(139,92,246,0.25)',
-                borderColor: 'rgba(167,139,250,0.45)',
-                color: '#DDD6FE',
+                background: 'rgba(255,107,107,0.25)',
+                borderColor: 'rgba(255,107,107,0.45)',
+                color: '#FFD0D0',
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>verified</span>
@@ -124,7 +124,7 @@ export default async function EmpresaPage({
               className="w-20 h-20 rounded-full flex items-center justify-center"
               style={{
                 border: '3px solid white',
-                background: 'linear-gradient(135deg, #7C3AED, #4C1D95)',
+                background: 'linear-gradient(135deg, #FF6B6B, #CC3333)',
               }}
             >
               <span className="text-2xl font-bold text-white">{initial}</span>
@@ -167,9 +167,9 @@ export default async function EmpresaPage({
                         ) : (
                           <div
                             className="w-12 h-12 rounded-full flex items-center justify-center border border-gray-100"
-                            style={{ background: '#EDE9FE' }}
+                            style={{ background: '#FFE8E8' }}
                           >
-                            <span className="text-sm font-bold" style={{ color: '#6D28D9' }}>
+                            <span className="text-sm font-bold" style={{ color: '#FF6B6B' }}>
                               {tInitial}
                             </span>
                           </div>

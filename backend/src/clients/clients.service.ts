@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { ReservaEstat } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 import { ClientsPaginatsQueryDto, CreateClientDto, UpdateClientDto } from './dto/clients.dto';
@@ -107,15 +108,27 @@ export class ClientsService {
       ? { reserves: { _count: 'desc' as const } }
       : { nom: 'asc' as const };
 
-    const [data, total] = await Promise.all([
+    const [rawData, total] = await Promise.all([
       this.prisma.client.findMany({
         where: { empresaId },
         orderBy,
         skip,
         take: limit,
+        include: {
+          _count: {
+            select: {
+              reserves: { where: { estat: ReservaEstat.CONFIRMADA } },
+            },
+          },
+        },
       }),
       this.prisma.client.count({ where: { empresaId } }),
     ]);
+
+    const data = rawData.map(({ _count, ...c }) => ({
+      ...c,
+      visites: _count.reserves,
+    }));
 
     return {
       data,

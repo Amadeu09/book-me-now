@@ -27,8 +27,8 @@ function ServiceRow({
         {servei.fotoUrl ? (
           <img src={servei.fotoUrl} alt={servei.nom} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-violet-100 flex items-center justify-center">
-            <span className="text-xs font-bold text-violet-700">{initial}</span>
+          <div className="w-full h-full flex items-center justify-center" style={{ background: '#FFE8E8' }}>
+            <span className="text-xs font-bold text-primary">{initial}</span>
           </div>
         )}
       </div>
@@ -44,7 +44,7 @@ function ServiceRow({
       {/* Reservar pill */}
       <button
         onClick={onReservar}
-        className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors"
+        className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
         style={{ borderRadius: 999 }}
       >
         Reservar

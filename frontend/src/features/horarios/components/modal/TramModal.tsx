@@ -5,8 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC } from '../../constants/horarios.constants';
-
-const DOW_LABELS_FULL = ['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte', 'Diumenge'];
+import { useLanguage } from '@/core/i18n';
 
 export const minsToHHMM = (mins: number) => {
     const h = Math.floor(mins / 60).toString().padStart(2, '0');
@@ -35,7 +34,13 @@ interface TramModalProps {
 export const TramModal: React.FC<TramModalProps> = ({
     visible, dow, initialInici, initialFi, onSave, onClose,
 }) => {
+    const { t } = useLanguage();
     const isEditing = initialInici !== undefined && initialFi !== undefined;
+
+    const DOW_LABELS_FULL = [
+        t('dayMonday'), t('dayTuesday'), t('dayWednesday'), t('dayThursday'),
+        t('dayFriday'), t('daySaturday'), t('daySunday'),
+    ];
 
     const [inici, setInici] = useState(isEditing ? minsToHHMM(initialInici!) : '09:00');
     const [fi, setFi] = useState(isEditing ? minsToHHMM(initialFi!) : '18:00');
@@ -55,11 +60,11 @@ export const TramModal: React.FC<TramModalProps> = ({
         const iniciMin = HHMMToMins(inici);
         const fiMin = HHMMToMins(fi);
         if (iniciMin === null || fiMin === null) {
-            setError('Format invàlid. Usa HH:MM (ex: 09:00)');
+            setError(t('editScheduleFormatError'));
             return;
         }
         if (iniciMin >= fiMin) {
-            setError("L'hora d'inici ha de ser anterior a la fi");
+            setError(t('editScheduleStartBeforeEnd'));
             return;
         }
         setSaving(true);
@@ -67,7 +72,7 @@ export const TramModal: React.FC<TramModalProps> = ({
             await onSave(iniciMin, fiMin);
             onClose();
         } catch {
-            setError('Error en guardar. Torna-ho a intentar.');
+            setError(t('editScheduleSaveError'));
             setSaving(false);
         }
     };
@@ -83,7 +88,7 @@ export const TramModal: React.FC<TramModalProps> = ({
                     <View style={styles.header}>
                         <View>
                             <Text style={styles.title}>
-                                {isEditing ? 'Editar tram' : 'Afegir tram'}
+                                {isEditing ? t('tramModalTitleEdit') : t('tramModalTitleAdd')}
                             </Text>
                             <Text style={styles.subtitle}>{DOW_LABELS_FULL[dow]}</Text>
                         </View>
@@ -95,7 +100,7 @@ export const TramModal: React.FC<TramModalProps> = ({
                     {/* Time inputs */}
                     <View style={styles.row}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Inici</Text>
+                            <Text style={styles.label}>{t('tramInici')}</Text>
                             <TextInput
                                 style={styles.input}
                                 value={inici}
@@ -113,7 +118,7 @@ export const TramModal: React.FC<TramModalProps> = ({
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Fi</Text>
+                            <Text style={styles.label}>{t('tramFi')}</Text>
                             <TextInput
                                 style={styles.input}
                                 value={fi}
@@ -127,14 +132,14 @@ export const TramModal: React.FC<TramModalProps> = ({
                         </View>
                     </View>
 
-                    <Text style={styles.hint}>Format: HH:MM (ex: 09:00 – 18:00)</Text>
+                    <Text style={styles.hint}>{t('tramFormatHint')}</Text>
 
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                     {/* Actions */}
                     <View style={styles.actions}>
                         <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-                            <Text style={styles.cancelBtnText}>Cancel·lar</Text>
+                            <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
@@ -143,7 +148,7 @@ export const TramModal: React.FC<TramModalProps> = ({
                         >
                             {saving
                                 ? <ActivityIndicator size="small" color="#fff" />
-                                : <Text style={styles.saveBtnText}>Guardar</Text>
+                                : <Text style={styles.saveBtnText}>{t('save')}</Text>
                             }
                         </TouchableOpacity>
                     </View>

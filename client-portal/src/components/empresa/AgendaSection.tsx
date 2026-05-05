@@ -16,7 +16,7 @@ const TIPUS_LABEL: Record<AbsenciaEmpresaPublic['tipus'], string> = {
 
 const TIPUS_COLOR: Record<AbsenciaEmpresaPublic['tipus'], string> = {
   FESTA_LOCAL:   'bg-amber-50 text-amber-700 border-amber-200',
-  FESTA_ESTATAL: 'bg-purple-50 text-purple-700 border-purple-200',
+  FESTA_ESTATAL: 'bg-primary/5 text-primary border-primary/20',
   PONT:          'bg-blue-50 text-blue-700 border-blue-200',
   ALTRE:         'bg-gray-50 text-gray-600 border-gray-200',
 };
@@ -74,7 +74,7 @@ export function AgendaSection({ agenda }: AgendaSectionProps) {
       <button
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1 text-sm font-semibold transition-colors"
-        style={{ color: '#7C3AED' }}
+        style={{ color: '#FF6B6B' }}
       >
         {open ? 'Tancar agenda' : 'Consultar agenda'}
         <span
@@ -107,13 +107,13 @@ export function AgendaSection({ agenda }: AgendaSectionProps) {
                     key={dow}
                     className={`rounded-lg p-2.5 flex flex-col gap-1 border ${
                       isToday
-                        ? 'border-violet-300 bg-violet-50'
+                        ? 'border-primary/30 bg-primary/5'
                         : 'border-gray-100 bg-gray-50'
                     }`}
                   >
                     <span
                       className={`text-[10px] font-bold uppercase tracking-wide ${
-                        isToday ? 'text-violet-600' : 'text-gray-400'
+                        isToday ? 'text-primary' : 'text-gray-400'
                       }`}
                     >
                       {DOW_FULL[dow].slice(0, 2)}
@@ -146,16 +146,16 @@ export function AgendaSection({ agenda }: AgendaSectionProps) {
                   <div
                     key={dow}
                     className={`flex items-center justify-between py-2.5 ${
-                      isToday ? 'text-violet-700' : ''
+                      isToday ? 'text-primary' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       {isToday && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                       )}
                       <span
                         className={`text-sm font-medium w-24 ${
-                          isToday ? 'text-violet-700 font-semibold' : 'text-gray-700'
+                          isToday ? 'text-primary font-semibold' : 'text-gray-700'
                         }`}
                       >
                         {DOW_FULL[dow]}

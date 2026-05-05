@@ -28,7 +28,7 @@ export class EstadisticasService {
         const visitesStart = new Date(now.getFullYear(), now.getMonth() - nVisites + 1, 1);
         const noShowStart = new Date(now.getFullYear(), now.getMonth() - nNoShow + 1, 1);
 
-        const [visitesRaw, noShowsRaw, ingressosActuals, ingressosPassats] = await Promise.all([
+        const [visitesRaw, noShowsRaw, ingressosActuals, ingressosPassats, valoracioAgg] = await Promise.all([
             this.prisma.reserva.findMany({
                 where: { empresaId, estat: ReservaEstat.CONFIRMADA, dataHora: { gte: visitesStart } },
                 select: { dataHora: true },
@@ -45,6 +45,11 @@ export class EstadisticasService {
                 where: { empresaId, estat: ReservaEstat.CONFIRMADA, dataHora: { gte: prevMonthStart, lt: currentMonthStart } },
                 select: { servei: { select: { preu: true } } },
             }),
+            this.prisma.valoracio.aggregate({
+                where: { empresaId, treballadorId: null },
+                _avg: { puntuacio: true },
+                _count: { puntuacio: true },
+            }),
         ]);
 
         const reservesMes = this.buildMonthMap(nVisites, now);
@@ -59,6 +64,10 @@ export class EstadisticasService {
             if (noShowsMes[key]) noShowsMes[key].total++;
         }
 
+        const valoracioMitjana = valoracioAgg._count.puntuacio > 0
+            ? Math.round((valoracioAgg._avg.puntuacio ?? 0) * 10) / 10
+            : null;
+
         return {
             reservesMes,
             noShowsMes,
@@ -66,6 +75,7 @@ export class EstadisticasService {
                 mesActual: this.sumPreu(ingressosActuals),
                 mesPassat: this.sumPreu(ingressosPassats),
             },
+            valoracioMitjana,
         };
     }
 

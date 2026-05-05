@@ -16,8 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { HC, cardShadow } from '../../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { RotationTabs } from './RotationTabs';
-import { DatePickerField } from '../DatePickerField';
 
 // Hooks & Services
 import { useCreateUsuari, useCreateTreballador } from '../../hooks/useTreballadors';
@@ -41,14 +41,16 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
 
-    // Tabs
-    const [activeTab, setActiveTab] = useState(0);
+    // Tabs — computed inside component so t() works
     const tabs = [
-        { index: 0, nom: 'Usuari' },
-        { index: 1, nom: 'Serveis' },
-        { index: 2, nom: 'Jornada' },
+        { index: 0, nom: t('tabUsuari') },
+        { index: 1, nom: t('tabServeis') },
+        { index: 2, nom: t('tabJornada') },
     ];
+
+    const [activeTab, setActiveTab] = useState(0);
 
     // Form State - Usuari
     const [email, setEmail] = useState('');
@@ -65,8 +67,6 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 
     // Form State - Jornada
     const [plantillaJornadaId, setPlantillaJornadaId] = useState<number | null>(null);
-    const [dataInici, setDataInici] = useState('');
-    const [dataFi, setDataFi] = useState('');
 
     // Mutations
     const { mutateAsync: createUsuari, isPending: isCreatingUsuari } = useCreateUsuari();
@@ -108,14 +108,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 // Pre-fill vacation days
                 setDiesVacancesAnuals(String(initialData.diesVacancesAnuals ?? 25));
 
-                // Pre-fill templates (just the active one)
-                if (initialData.jornadesPlantillaAssignacions && initialData.jornadesPlantillaAssignacions.length > 0) {
-                    const activeAssig = initialData.jornadesPlantillaAssignacions[0];
-                    setPlantillaJornadaId(activeAssig.plantillaJornadaId);
-                    // Extract YYYY-MM-DD
-                    setDataInici(activeAssig.dataInici ? new Date(activeAssig.dataInici).toISOString().split('T')[0] : '');
-                    setDataFi(activeAssig.dataFi ? new Date(activeAssig.dataFi).toISOString().split('T')[0] : '');
-                }
+                setPlantillaJornadaId(initialData.plantilla?.id ?? null);
             } else {
                 resetForm();
             }
@@ -139,14 +132,12 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
         setServeisIds([]);
         setDiesVacancesAnuals('25');
         setPlantillaJornadaId(null);
-        setDataInici('');
-        setDataFi('');
     };
 
     const pickPhoto = async () => {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!perm.granted) {
-            Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para subir una foto.');
+            Alert.alert(t('permissionRequired'), t('galleryPermission'));
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -171,16 +162,14 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
         
         // 1. Validate mandatory fields
         if (initialData) {
-            // Edit mode: password is not mandatory, email is not updatable via this API currently
             if (!nom.trim()) {
-                setUsuariError('El nombre es obligatorio.');
+                setUsuariError(t('nameRequired'));
                 setActiveTab(0);
                 return;
             }
         } else {
-            // Create mode
             if (!email.trim() || !nom.trim() || !password.trim()) {
-                setUsuariError('Email, nombre y contraseña son obligatorios.');
+                setUsuariError(t('workerFieldsRequired'));
                 setActiveTab(0);
                 return;
             }
@@ -196,16 +185,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     diesVacancesAnuals: parseInt(diesVacancesAnuals, 10) || 25,
                 };
                 
-                if (plantillaJornadaId && dataInici) {
-                     updatePayload.jornadaTreballador = {
-                         plantillaJornadaId,
-                         dataInici: new Date(dataInici).toISOString(),
-                         // dataFi is optional
-                     };
-                     if (dataFi) {
-                         updatePayload.jornadaTreballador.dataFi = new Date(dataFi).toISOString();
-                     }
-                }
+                updatePayload.plantillaId = plantillaJornadaId;
                 
                 await updateTreballador(initialData.id, updatePayload);
                 setIsUpdating(false);
@@ -236,14 +216,8 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     treballadorPayload.serveisIds = serveisIds;
                 }
 
-                if (plantillaJornadaId && dataInici) {
-                    treballadorPayload.jornadaTreballador = {
-                        plantillaJornadaId,
-                        dataInici: new Date(dataInici).toISOString(),
-                    };
-                    if (dataFi) {
-                        treballadorPayload.jornadaTreballador.dataFi = new Date(dataFi).toISOString();
-                    }
+                if (plantillaJornadaId) {
+                    treballadorPayload.plantillaId = plantillaJornadaId;
                 }
 
                 await createTreballador(treballadorPayload);
@@ -259,8 +233,8 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
             const msg =
                 (error as { response?: { data?: { message?: string | string[] } }; message?: string })?.response?.data?.message ||
                 (error as { message?: string })?.message ||
-                'Error al guardar el trabajador.';
-            setUsuariError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Error al guardar el trabajador.'));
+                t('workerSaveError');
+            setUsuariError(Array.isArray(msg) ? msg.join(', ') : (msg ?? t('workerSaveError')));
         }
     };
 
@@ -285,25 +259,25 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                         </View>
                     </TouchableOpacity>
                     <View style={styles.avatarInfo}>
-                        <Text style={styles.avatarLabel}>Foto de perfil</Text>
-                        <Text style={styles.avatarHint}>Opcional · Toca para seleccionar</Text>
+                        <Text style={styles.avatarLabel}>{t('workerPhotoLabel')}</Text>
+                        <Text style={styles.avatarHint}>{t('workerPhotoHint')}</Text>
                     </View>
                 </View>
             )}
 
-            <Text style={styles.label}>Nombre completo *</Text>
+            <Text style={styles.label}>{t('workerNameLabel')}</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Ej. Juan Pérez"
+                placeholder={t('workerNamePh')}
                 value={nom}
                 onChangeText={setNom}
                 editable={!isSubmitting}
             />
 
-            <Text style={styles.label}>Email {initialData ? '' : '*'}</Text>
+            <Text style={styles.label}>{t('workerEmailLabel')}{initialData ? '' : ' *'}</Text>
             <TextInput
                 style={[styles.input, initialData && styles.inputDisabled]}
-                placeholder="Ej. worker@bookmenow.com"
+                placeholder={t('workerEmailPh')}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -313,10 +287,10 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 
             {!initialData && (
                 <>
-                    <Text style={styles.label}>Contraseña *</Text>
+                    <Text style={styles.label}>{t('workerPasswordLabel')}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="Mínimo 8 caracteres"
+                        placeholder={t('workerPasswordPh')}
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
@@ -325,7 +299,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 </>
             )}
 
-            <Text style={styles.label}>Días de vacaciones anuales</Text>
+            <Text style={styles.label}>{t('workerVacationDaysLabel')}</Text>
             <TextInput
                 style={styles.input}
                 placeholder="25"
@@ -340,12 +314,12 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 
     const renderServeisTab = () => (
         <View style={styles.tabContainer}>
-            <Text style={styles.sectionTitle}>Selecciona los servicios asignados:</Text>
+            <Text style={styles.sectionTitle}>{t('workerServicesTitle')}</Text>
             
             {isLoadingServeis ? (
                 <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 20 }} />
             ) : serveisList.length === 0 ? (
-                <Text style={styles.emptyText}>No hay servicios disponibles.</Text>
+                <Text style={styles.emptyText}>{t('workerNoServices')}</Text>
             ) : (
                 <View style={styles.servicesGrid}>
                     {serveisList.map((servei: any) => {
@@ -375,14 +349,14 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 
     const renderJornadaTab = () => (
         <View style={styles.tabContainer}>
-            <Text style={styles.sectionTitle}>Asignar una jornada (Opcional):</Text>
-            
-            <Text style={styles.label}>Plantilla de Jornada</Text>
+            <Text style={styles.sectionTitle}>{t('workerJornadaTitle')}</Text>
+
+            <Text style={styles.label}>{t('workerJornadaLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
                 {isLoadingJornades ? (
                     <ActivityIndicator size="small" color={HC.primary} />
                 ) : jornadesList.length === 0 ? (
-                    <Text style={styles.emptyText}>No hay plantillas de jornada.</Text>
+                    <Text style={styles.emptyText}>{t('workerNoJornades')}</Text>
                 ) : (
                     jornadesList.map((j: any) => {
                         const isSelected = plantillaJornadaId === j.id;
@@ -401,26 +375,6 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 )}
             </ScrollView>
 
-            <View style={styles.row}>
-                <View style={[styles.col, { paddingRight: 8 }]}>
-                    <Text style={styles.label}>Fecha Inicio</Text>
-                    <DatePickerField
-                        value={dataInici}
-                        onChange={setDataInici}
-                        placeholder="Seleccionar inicio"
-                        disabled={isSubmitting}
-                    />
-                </View>
-                <View style={[styles.col, { paddingLeft: 8 }]}>
-                    <Text style={styles.label}>Fecha Fin</Text>
-                    <DatePickerField
-                        value={dataFi}
-                        onChange={setDataFi}
-                        placeholder="Seleccionar fin"
-                        disabled={isSubmitting}
-                    />
-                </View>
-            </View>
         </View>
     );
 
@@ -437,7 +391,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 
                     {/* ── Header ────────────────── */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>{initialData ? 'Editar trabajador' : 'Crear trabajador'}</Text>
+                        <Text style={styles.headerTitle}>{initialData ? t('workerModalTitleEdit') : t('workerModalTitleCreate')}</Text>
                         <TouchableOpacity onPress={handleClose} disabled={isSubmitting}>
                             <Ionicons name="close" size={24} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -473,7 +427,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                             activeOpacity={0.7}
                             disabled={isSubmitting}
                         >
-                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -485,7 +439,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                             {isSubmitting ? (
                                 <ActivityIndicator size="small" color={HC.white} />
                             ) : (
-                                <Text style={styles.btnSaveText}>Confirmar</Text>
+                                <Text style={styles.btnSaveText}>{t('confirm')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>

@@ -123,12 +123,12 @@ export function ValoracioClient({ info, token }: Props) {
   return (
     <main className="min-h-screen" style={{ background: '#F7F7F8' }}>
       {/* Header */}
-      <div className="w-full" style={{ background: 'linear-gradient(135deg, #3B0764 0%, #1F2937 100%)', padding: '32px 0 48px' }}>
+      <div className="w-full" style={{ background: 'linear-gradient(135deg, #CC2222 0%, #1F2937 100%)', padding: '32px 0 48px' }}>
         <div className="max-w-lg mx-auto px-6 flex items-center gap-4">
           {info.empresa.fotoPerfil ? (
             <img src={info.empresa.fotoPerfil} alt={info.empresa.nom} className="w-14 h-14 rounded-full object-cover border-2 border-white/30" />
           ) : (
-            <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/30" style={{ background: 'rgba(124,58,237,0.4)' }}>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/30" style={{ background: 'rgba(255,107,107,0.4)' }}>
               <span className="text-xl font-bold text-white">{empresaInitial}</span>
             </div>
           )}
@@ -177,7 +177,7 @@ export function ValoracioClient({ info, token }: Props) {
               <button
                 onClick={() => setView('form')}
                 className="w-full py-4 rounded-full font-bold text-sm text-white transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg, #7C3AED, #4C1D95)' }}
+                style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' }}
               >
                 Tornar
               </button>
@@ -195,8 +195,8 @@ export function ValoracioClient({ info, token }: Props) {
                 {info.empresa.fotoPerfil ? (
                   <img src={info.empresa.fotoPerfil} alt={info.empresa.nom} className="w-10 h-10 rounded-full object-cover border border-gray-100" />
                 ) : (
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-100" style={{ background: '#EDE9FE' }}>
-                    <span className="text-sm font-bold" style={{ color: '#6D28D9' }}>{empresaInitial}</span>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-100" style={{ background: '#FFE8E8' }}>
+                    <span className="text-sm font-bold" style={{ color: '#FF6B6B' }}>{empresaInitial}</span>
                   </div>
                 )}
                 <p className="font-semibold text-gray-800">{info.empresa.nom}</p>
@@ -214,7 +214,7 @@ export function ValoracioClient({ info, token }: Props) {
                   onChange={(e) => setComentariEmpresa(e.target.value)}
                   placeholder="Com ha estat la teva experiència a l'establiment?"
                   rows={3}
-                  className="w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+                  className="w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                 />
               </div>
             </div>
@@ -227,8 +227,8 @@ export function ValoracioClient({ info, token }: Props) {
                   {info.treballador!.fotoPerfil ? (
                     <img src={info.treballador!.fotoPerfil} alt={info.treballador!.nom} className="w-10 h-10 rounded-full object-cover border border-gray-100" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-100" style={{ background: '#EDE9FE' }}>
-                      <span className="text-sm font-bold" style={{ color: '#6D28D9' }}>{treballadorInitial}</span>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-100" style={{ background: '#FFE8E8' }}>
+                      <span className="text-sm font-bold" style={{ color: '#FF6B6B' }}>{treballadorInitial}</span>
                     </div>
                   )}
                   <p className="font-semibold text-gray-800">{info.treballador!.nom}</p>
@@ -246,7 +246,7 @@ export function ValoracioClient({ info, token }: Props) {
                     onChange={(e) => setComentariTreballador(e.target.value)}
                     placeholder="Com ha estat l'atenció del professional?"
                     rows={3}
-                    className="w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+                    className="w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                   />
                 </div>
               </div>
@@ -256,7 +256,7 @@ export function ValoracioClient({ info, token }: Props) {
               onClick={handleSubmit}
               disabled={!canSubmit || loading}
               className="w-full py-4 rounded-full font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #7C3AED, #4C1D95)' }}
+              style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' }}
             >
               {loading ? 'Enviant...' : 'Enviar valoració'}
             </button>

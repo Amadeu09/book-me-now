@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray, Min, Max } from 'class-validator';
-import { JornadaTreballadorDto } from './CreateTreballadorDto';
+import { IsInt, IsOptional, IsString, ValidateIf, IsArray, Min, Max } from 'class-validator';
 
 export class UpdateTreballadorDto {
     @ApiProperty({ example: 'Juan Pérez', description: 'Nombre del trabajador', required: false })
@@ -9,11 +8,12 @@ export class UpdateTreballadorDto {
     @IsOptional()
     nom?: string;
 
-    @ApiProperty({ type: () => JornadaTreballadorDto, required: false, description: 'Datos de la jornada a actualizar (opcional)' })
-    @ValidateNested()
-    @Type(() => JornadaTreballadorDto)
+    @ApiProperty({ example: 10, required: false, nullable: true, description: 'ID de la plantilla de jornada. null per desassignar.' })
     @IsOptional()
-    jornadaTreballador?: JornadaTreballadorDto;
+    @ValidateIf((o) => o.plantillaId !== null)
+    @IsInt()
+    @Type(() => Number)
+    plantillaId?: number | null;
 
     @ApiProperty({ example: [1, 2, 3], required: false, description: 'Lista de IDs de servicios a asignar (opcional)' })
     @IsArray()

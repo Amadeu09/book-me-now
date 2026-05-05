@@ -3,11 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { radius } from '@/constants/theme';
 import { useEstadisticasDetall } from '../hooks/useEstadisticasDetall';
 import type { DetallServei, DetallTreballador } from '../types/estadisticas.types';
 
-const MESOS_CA = ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'];
+const MES_KEYS = ['mesGen', 'mesFeb', 'mesMar', 'mesAbr', 'mesMai', 'mesJun',
+    'mesJul', 'mesAgo', 'mesSep', 'mesOct', 'mesNov', 'mesDes'] as const;
 
 interface Props {
     onBack: () => void;
@@ -16,6 +18,7 @@ interface Props {
 
 export function DetallView({ onBack, isDesktop }: Props) {
     const theme = useTheme();
+    const { t } = useLanguage();
     const now = new Date();
     const [year, setYear] = useState(now.getFullYear());
     const [mes, setMes] = useState(now.getMonth() + 1);
@@ -38,13 +41,13 @@ export function DetallView({ onBack, isDesktop }: Props) {
             <View style={dv.navRow}>
                 <TouchableOpacity style={dv.backBtn} onPress={onBack} activeOpacity={0.7}>
                     <Ionicons name="arrow-back" size={16} color={theme.primary} />
-                    <Text style={[dv.backText, { color: theme.primary }]}>Tornar</Text>
+                    <Text style={[dv.backText, { color: theme.primary }]}>{t('back')}</Text>
                 </TouchableOpacity>
                 <View style={dv.monthNav}>
                     <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} activeOpacity={0.7}>
                         <Ionicons name="chevron-back" size={20} color={HC.textPrimary} />
                     </TouchableOpacity>
-                    <Text style={dv.monthLabel}>{data?.mes ?? `${MESOS_CA[mes - 1]} ${year}`}</Text>
+                    <Text style={dv.monthLabel}>{data?.mes ?? `${t(MES_KEYS[mes - 1])} ${year}`}</Text>
                     <TouchableOpacity onPress={nextMonth} disabled={isCurrentMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} activeOpacity={0.7}>
                         <Ionicons name="chevron-forward" size={20} color={isCurrentMonth ? HC.textLight : HC.textPrimary} />
                     </TouchableOpacity>
@@ -65,18 +68,19 @@ export function DetallView({ onBack, isDesktop }: Props) {
 }
 
 function ServeisCard({ serveis, isDesktop }: { serveis: DetallServei[]; isDesktop: boolean }) {
+    const { t } = useLanguage();
     return (
         <View style={[dv.card, isDesktop && dv.flex1]}>
-            <Text style={dv.cardTitle}>Serveis destacats</Text>
+            <Text style={dv.cardTitle}>{t('detallFeaturedServices')}</Text>
             {isDesktop && (
                 <View style={dv.tableHead}>
-                    <Text style={[dv.th, dv.flex2]}>SERVEI</Text>
-                    <Text style={[dv.th, dv.w90]}>RESERVES</Text>
-                    <Text style={[dv.th, dv.w110]}>INGRESSOS</Text>
+                    <Text style={[dv.th, dv.flex2]}>{t('detallColService')}</Text>
+                    <Text style={[dv.th, dv.w90]}>{t('detallColReserves')}</Text>
+                    <Text style={[dv.th, dv.w110]}>{t('detallColRevenue')}</Text>
                 </View>
             )}
             {serveis.length === 0 ? (
-                <Text style={dv.empty}>Sense reserves aquest mes</Text>
+                <Text style={dv.empty}>{t('detallNoReserves')}</Text>
             ) : serveis.map(sv => (
                 isDesktop ? (
                     <View key={sv.id} style={dv.tableRow}>
@@ -87,7 +91,7 @@ function ServeisCard({ serveis, isDesktop }: { serveis: DetallServei[]; isDeskto
                 ) : (
                     <View key={sv.id} style={dv.mobileRow}>
                         <Text style={dv.tdPrimary} numberOfLines={1}>{sv.nom}</Text>
-                        <Text style={dv.tdMuted}>{sv.reserves} reserves · {sv.ingressos.toLocaleString('ca-ES')}€</Text>
+                        <Text style={dv.tdMuted}>{sv.reserves} {t('detallReservesUnit')} · {sv.ingressos.toLocaleString('ca-ES')}€</Text>
                     </View>
                 )
             ))}
@@ -96,19 +100,20 @@ function ServeisCard({ serveis, isDesktop }: { serveis: DetallServei[]; isDeskto
 }
 
 function TreballadorsCard({ treballadors, isDesktop }: { treballadors: DetallTreballador[]; isDesktop: boolean }) {
+    const { t } = useLanguage();
     return (
         <View style={[dv.card, isDesktop && dv.flex1]}>
-            <Text style={dv.cardTitle}>Treballadors destacats</Text>
+            <Text style={dv.cardTitle}>{t('detallFeaturedWorkers')}</Text>
             {isDesktop && (
                 <View style={dv.tableHead}>
-                    <Text style={[dv.th, dv.flex2]}>TREBALLADOR</Text>
-                    <Text style={[dv.th, dv.w90]}>RESERVES</Text>
-                    <Text style={[dv.th, dv.w110]}>INGRESSOS</Text>
-                    <Text style={[dv.th, dv.w90]}>NO-SHOWS</Text>
+                    <Text style={[dv.th, dv.flex2]}>{t('detallColWorker')}</Text>
+                    <Text style={[dv.th, dv.w90]}>{t('detallColReserves')}</Text>
+                    <Text style={[dv.th, dv.w110]}>{t('detallColRevenue')}</Text>
+                    <Text style={[dv.th, dv.w90]}>{t('detallColNoShows')}</Text>
                 </View>
             )}
             {treballadors.length === 0 ? (
-                <Text style={dv.empty}>Sense reserves aquest mes</Text>
+                <Text style={dv.empty}>{t('detallNoReserves')}</Text>
             ) : treballadors.map(tr => (
                 isDesktop ? (
                     <View key={tr.id} style={dv.tableRow}>
@@ -120,7 +125,7 @@ function TreballadorsCard({ treballadors, isDesktop }: { treballadors: DetallTre
                 ) : (
                     <View key={tr.id} style={dv.mobileRow}>
                         <Text style={dv.tdPrimary} numberOfLines={1}>{tr.nom}</Text>
-                        <Text style={dv.tdMuted}>{tr.reserves} reserves · {tr.ingressos.toLocaleString('ca-ES')}€ · {tr.noShows} no-shows</Text>
+                        <Text style={dv.tdMuted}>{tr.reserves} {t('detallReservesUnit')} · {tr.ingressos.toLocaleString('ca-ES')}€ · {tr.noShows} {t('detallNoShowsUnit')}</Text>
                     </View>
                 )
             ))}

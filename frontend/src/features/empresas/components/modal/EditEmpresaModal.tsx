@@ -17,21 +17,23 @@ import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { AuthUser } from '@/features/auth/services/auth.service';
 import { updateEmpresa } from '../../services/empresas.service';
 import { patchStoredEmpresa } from '@/utils/session';
+import { useLanguage } from '@/core/i18n';
+import type { TranslationKeys } from '@/core/i18n/locales/ca';
 
-const BUSINESS_TYPES = [
-    { label: 'Perruqueria', value: 'PERRUQUERIA' },
-    { label: 'Barberia', value: 'BARBERIA' },
-    { label: 'Estètica', value: 'ESTETICA' },
-    { label: 'Spa', value: 'SPA' },
-    { label: 'Massatges', value: 'MASSATGES' },
-    { label: 'Fitness', value: 'FITNESS' },
-    { label: 'Pilates', value: 'PILATES' },
-    { label: 'Ioga', value: 'IOGA' },
-    { label: 'Nutricionista', value: 'NUTRICIONISTA' },
-    { label: 'Fisioteràpia', value: 'FISIOTERAPIA' },
-    { label: 'Dental', value: 'DENTAL' },
-    { label: 'Veterinària', value: 'VETERINARIA' },
-    { label: 'Altres', value: 'ALTRES' },
+const BUSINESS_TYPES: { labelKey: TranslationKeys; value: string }[] = [
+    { labelKey: 'btPerruqueria', value: 'PERRUQUERIA' },
+    { labelKey: 'btBarberia', value: 'BARBERIA' },
+    { labelKey: 'btEstetica', value: 'ESTETICA' },
+    { labelKey: 'btSpa', value: 'SPA' },
+    { labelKey: 'btMassatges', value: 'MASSATGES' },
+    { labelKey: 'btFitness', value: 'FITNESS' },
+    { labelKey: 'btPilates', value: 'PILATES' },
+    { labelKey: 'btIoga', value: 'IOGA' },
+    { labelKey: 'btNutricionista', value: 'NUTRICIONISTA' },
+    { labelKey: 'btFisioterapia', value: 'FISIOTERAPIA' },
+    { labelKey: 'btDental', value: 'DENTAL' },
+    { labelKey: 'btVeterinaria', value: 'VETERINARIA' },
+    { labelKey: 'btAltres', value: 'ALTRES' },
 ];
 
 interface EditEmpresaModalProps {
@@ -46,6 +48,7 @@ interface EmpresaFormState {
     capacitat: string;
     descripcio: string;
     tipo: string;
+    diasAntesReserva: string;
 }
 
 import { useTheme } from '@/core/theme/ThemeProvider';
@@ -59,6 +62,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
     const isDesktop = width >= 768;
     const queryClient = useQueryClient();
     const theme = useTheme();
+    const { t } = useLanguage();
 
     const [form, setForm] = useState<EmpresaFormState>({
         nom: '',
@@ -66,6 +70,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
         capacitat: '',
         descripcio: '',
         tipo: '',
+        diasAntesReserva: '14',
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,6 +83,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                 capacitat: initialData.capacitat ? String(initialData.capacitat) : '',
                 descripcio: initialData.descripcio || '',
                 tipo: initialData.tipo || '',
+                diasAntesReserva: initialData.diasAntesReserva ? String(initialData.diasAntesReserva) : '14',
             });
             setErrors({});
         }
@@ -90,10 +96,13 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
 
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
-        if (!form.nom.trim()) newErrors.nom = 'El nombre es obligatorio';
-        if (!form.ubicacio.trim()) newErrors.ubicacio = 'La ubicación es obligatoria';
+        if (!form.nom.trim()) newErrors.nom = t('nameRequired');
+        if (!form.ubicacio.trim()) newErrors.ubicacio = t('locationRequired');
         if (form.capacitat && isNaN(Number(form.capacitat))) {
-            newErrors.capacitat = 'Debe ser un número válido';
+            newErrors.capacitat = t('mustBeNumber');
+        }
+        if (form.diasAntesReserva && (isNaN(Number(form.diasAntesReserva)) || Number(form.diasAntesReserva) < 1)) {
+            newErrors.diasAntesReserva = t('mustBePositiveNumber');
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -108,6 +117,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
             capacitat: form.capacitat.trim() ? Number(form.capacitat) : null,
             descripcio: form.descripcio.trim() || undefined,
             tipo: form.tipo || undefined,
+            diasAntesReserva: form.diasAntesReserva.trim() ? Number(form.diasAntesReserva) : undefined,
         };
 
         try {
@@ -117,7 +127,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
             queryClient.invalidateQueries({ queryKey: ['empresa', initialData.id] });
             onClose();
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'No se pudo actualizar la empresa');
+            Alert.alert(t('error'), err?.response?.data?.message || t('empresaUpdateError'));
         } finally {
             setLoading(false);
         }
@@ -132,7 +142,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Editar empresa</Text>
+                        <Text style={styles.headerTitle}>{t('empresaEdit')}</Text>
                         <TouchableOpacity onPress={handleClose} disabled={loading}>
                             <Ionicons name="close" size={24} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -146,10 +156,10 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                     >
                         {/* Nombre */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Nombre comercial</Text>
+                            <Text style={styles.fieldLabel}>{t('empresaName')}</Text>
                             <TextInput
                                 style={[styles.input, errors.nom ? styles.inputError : null]}
-                                placeholder="Ej. Studio Belleza Elegance"
+                                placeholder={t('empresaNamePh')}
                                 placeholderTextColor={HC.textLight}
                                 value={form.nom}
                                 onChangeText={(t) => handleTextChange('nom', t)}
@@ -160,10 +170,10 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
 
                         {/* Ubicación */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Dirección / Ubicación</Text>
+                            <Text style={styles.fieldLabel}>{t('empresaLocation')}</Text>
                             <TextInput
                                 style={[styles.input, errors.ubicacio ? styles.inputError : null]}
-                                placeholder="Ciudad, Calle, Número"
+                                placeholder={t('empresaLocationPh')}
                                 placeholderTextColor={HC.textLight}
                                 value={form.ubicacio}
                                 onChangeText={(t) => handleTextChange('ubicacio', t)}
@@ -174,10 +184,10 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
 
                         {/* Capacidad */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Capacidad máxima (Opcional)</Text>
+                            <Text style={styles.fieldLabel}>{t('empresaCapacity')}</Text>
                             <TextInput
                                 style={[styles.input, errors.capacitat ? styles.inputError : null]}
-                                placeholder="Ej. 20"
+                                placeholder={t('empresaCapacityPh')}
                                 placeholderTextColor={HC.textLight}
                                 value={form.capacitat}
                                 keyboardType="numeric"
@@ -187,12 +197,27 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                             {errors.capacitat ? <Text style={styles.errorText}>{errors.capacitat}</Text> : null}
                         </View>
 
+                        {/* Dies d'antelació */}
+                        <View style={styles.fieldBlock}>
+                            <Text style={styles.fieldLabel}>{t('empresaDaysAhead')}</Text>
+                            <TextInput
+                                style={[styles.input, errors.diasAntesReserva ? styles.inputError : null]}
+                                placeholder={t('empresaDaysAheadPh')}
+                                placeholderTextColor={HC.textLight}
+                                value={form.diasAntesReserva}
+                                keyboardType="numeric"
+                                onChangeText={(t) => handleTextChange('diasAntesReserva', t)}
+                                editable={!loading}
+                            />
+                            {errors.diasAntesReserva ? <Text style={styles.errorText}>{errors.diasAntesReserva}</Text> : null}
+                        </View>
+
                         {/* Descripción */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Descripción</Text>
+                            <Text style={styles.fieldLabel}>{t('empresaDesc')}</Text>
                             <TextInput
                                 style={[styles.input, styles.inputMultiline]}
-                                placeholder="Describe tu empresa, servicios, ambiente..."
+                                placeholder={t('empresaDescPh')}
                                 placeholderTextColor={HC.textLight}
                                 value={form.descripcio}
                                 onChangeText={(t) => handleTextChange('descripcio', t)}
@@ -205,7 +230,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
 
                         {/* Tipo de negoci */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Tipus de negoci</Text>
+                            <Text style={styles.fieldLabel}>{t('empresaType')}</Text>
                             <View style={styles.tipoGrid}>
                                 {BUSINESS_TYPES.map((bt) => (
                                     <TouchableOpacity
@@ -222,7 +247,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                                             styles.tipoChipText,
                                             form.tipo === bt.value && { color: '#fff' },
                                         ]}>
-                                            {bt.label}
+                                            {t(bt.labelKey)}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}
@@ -239,7 +264,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                             disabled={loading}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -250,7 +275,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
                         >
                             {loading
                                 ? <ActivityIndicator color={HC.white} size="small" />
-                                : <Text style={styles.btnSaveText}>Guardar</Text>
+                                : <Text style={styles.btnSaveText}>{t('save')}</Text>
                             }
                         </TouchableOpacity>
                     </View>

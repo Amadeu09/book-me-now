@@ -25,7 +25,8 @@ model Empresa {
   fotoPerfil   String?
   bannerUrl    String?
   descripcio   String?
-  tipo         BusinessType @default(OTROS)
+  tipo             BusinessType @default(OTROS)
+  diasAntesReserva Int          @default(14)
 
   // --- AFEGIT (additiu, no canvia res existent) ---
   jornadesPlantilla JornadaPlantilla[]
@@ -78,10 +79,8 @@ model Treballador {
   serveis     TreballadorServei[]
   valoracions Valoracio[]
 
-  // --- AFEGIT (additiu, no canvia res existent) ---
-  jornadesPlantillaAssignacions TreballadorJornadaPlantilla[]
-  // (opcional) per excepcions futures:
-  // jornadesExcepcions JornadaExcepcio[]
+  plantillaId Int?
+  plantilla   JornadaPlantilla? @relation(fields: [plantillaId], references: [id])
 
   @@index([empresaId])
   @@index([actiu])
@@ -250,7 +249,7 @@ model JornadaPlantilla {
   empresa   Empresa  @relation(fields: [empresaId], references: [id])
 
   rotacions    JornadaRotacio[]
-  assignacions TreballadorJornadaPlantilla[]
+  treballadors Treballador[]
 
   @@index([empresaId])
   @@unique([empresaId, nom])
@@ -305,31 +304,6 @@ model JornadaTram {
   dia      JornadaDiaRotacio @relation(fields: [diaId], references: [id])
 
   @@index([diaId])
-}
-
-//
-// Assignació d’una plantilla a un treballador per rang de dates
-// (AIXÒ és el que evita solapes i defineix amb quina rotació comença)
-//
-model TreballadorJornadaPlantilla {
-  id            Int      @id @default(autoincrement())
-  treballadorId Int
-  plantillaId   Int
-
-  dataInici     DateTime
-  dataFi        DateTime?
-
-  // amb quina rotació (index) comença a dataInici
-  anchorRotacioIndex Int @default(0)
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  treballador   Treballador      @relation(fields: [treballadorId], references: [id])
-  plantilla     JornadaPlantilla @relation(fields: [plantillaId], references: [id])
-
-  @@index([treballadorId, dataInici])
-  @@index([plantillaId])
 }
 
 model AbsenciaEmpresa {

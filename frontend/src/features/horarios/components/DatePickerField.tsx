@@ -4,12 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/horarios.constants';
-
-const MONTH_NAMES = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-];
-const DAY_LABELS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+import { useLanguage } from '@/core/i18n';
 
 function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate();
@@ -29,6 +24,18 @@ interface Props {
 }
 
 export function DatePickerField({ value, onChange, placeholder = 'Seleccionar fecha', disabled }: Props) {
+    const { t, lang } = useLanguage();
+    const locale = lang === 'ca' ? 'ca-ES' : 'es-ES';
+
+    const MONTH_NAMES = [
+        t('mesGen'), t('mesFeb'), t('mesMar'), t('mesAbr'), t('mesMai'), t('mesJun'),
+        t('mesJul'), t('mesAgo'), t('mesSep'), t('mesOct'), t('mesNov'), t('mesDes'),
+    ];
+    const DAY_LABELS = [
+        t('dayShortMonday'), t('dayShortTuesday'), t('dayShortWednesday'), t('dayShortThursday'),
+        t('dayShortFriday'), t('dayShortSaturday'), t('dayShortSunday'),
+    ];
+
     const today = new Date();
 
     const parsed = value
@@ -43,7 +50,7 @@ export function DatePickerField({ value, onChange, placeholder = 'Seleccionar fe
     const [viewMonth, setViewMonth] = useState(parsed?.month ?? today.getMonth());
 
     const displayText = value
-        ? new Date(value + 'T12:00:00').toLocaleDateString('es-ES', {
+        ? new Date(value + 'T12:00:00').toLocaleDateString(locale, {
             day: '2-digit', month: 'short', year: 'numeric',
           })
         : placeholder;

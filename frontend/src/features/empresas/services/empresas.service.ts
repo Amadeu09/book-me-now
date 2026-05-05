@@ -15,7 +15,7 @@ export async function getEmpresa(id: number): Promise<AuthUser['empresa']> {
  * Actualiza los datos de una empresa por su ID.
  * PATCH /empreses/:id
  */
-export async function updateEmpresa(id: number, payload: Partial<{ nom: string; ubicacio: string; capacitat: number | null; descripcio: string; tipo: string }>): Promise<AuthUser['empresa']> {
+export async function updateEmpresa(id: number, payload: Partial<{ nom: string; ubicacio: string; capacitat: number | null; descripcio: string; tipo: string; diasAntesReserva: number }>): Promise<AuthUser['empresa']> {
   const { data } = await api.patch(`/empreses/${id}`, payload);
   return data;
 }

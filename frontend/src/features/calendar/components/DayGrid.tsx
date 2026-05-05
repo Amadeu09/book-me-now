@@ -2,11 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { palette, spacing } from "@/constants/theme";
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { HOURS, HOUR_HEIGHT, START_HOUR } from './constants';
 import { CalendarEvent } from './types';
 import { EventCard } from './EventCard';
 import { format, isSameDay } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, ca } from 'date-fns/locale';
 
 interface DayGridProps {
     events: CalendarEvent[];
@@ -17,22 +18,31 @@ interface DayGridProps {
 
 export const DayGrid: React.FC<DayGridProps> = ({ events, currentDate, onEventPress, loading = false }) => {
     const theme = useTheme();
+    const { t, lang } = useLanguage();
+    const dateLocale = lang === 'ca' ? ca : es;
     const isToday = isSameDay(currentDate, new Date());
-    const dayName = format(currentDate, 'EEE', { locale: es }).toUpperCase();
+    const dayName = format(currentDate, 'EEE', { locale: dateLocale }).toUpperCase();
     const dayNum = format(currentDate, 'd');
-    const monthYear = format(currentDate, 'MMMM yyyy', { locale: es });
+    const monthYear = format(currentDate, 'MMMM yyyy', { locale: dateLocale });
 
     const dayEvents = events.filter(e => isSameDay(e.start, currentDate));
 
+    const madridHM = (date: Date) => {
+        const fmt = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: 'numeric', hour12: false, timeZone: 'Europe/Madrid' });
+        const parts = fmt.formatToParts(date);
+        return {
+            h: parseInt(parts.find(p => p.type === 'hour')?.value ?? '0'),
+            m: parseInt(parts.find(p => p.type === 'minute')?.value ?? '0'),
+        };
+    };
+
     const renderedEvents = dayEvents.map((event) => {
-        let startHour = event.start.getHours();
-        const startMin = event.start.getMinutes();
-        if (startHour < START_HOUR) startHour += 24;
+        const { h: startHourRaw, m: startMin } = madridHM(event.start);
+        let startHour = startHourRaw < START_HOUR ? startHourRaw + 24 : startHourRaw;
         const top = ((startHour - START_HOUR) + startMin / 60) * HOUR_HEIGHT;
 
-        let endHour = event.end.getHours();
-        const endMin = event.end.getMinutes();
-        if (endHour < START_HOUR) endHour += 24;
+        const { h: endHourRaw, m: endMin } = madridHM(event.end);
+        let endHour = endHourRaw < START_HOUR ? endHourRaw + 24 : endHourRaw;
         const durationHours = (endHour - startHour) + (endMin - startMin) / 60;
         const height = Math.max(durationHours * HOUR_HEIGHT, 32);
 
@@ -95,7 +105,7 @@ export const DayGrid: React.FC<DayGridProps> = ({ events, currentDate, onEventPr
 
             {!loading && dayEvents.length === 0 && (
                 <View style={styles.emptyOverlay} pointerEvents="none">
-                    <Text style={styles.emptyText}>No hay reservas este día</Text>
+                    <Text style={styles.emptyText}>{t('calendarNoDayBookings')}</Text>
                 </View>
             )}
         </View>

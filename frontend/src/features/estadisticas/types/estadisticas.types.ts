@@ -30,4 +30,5 @@ export interface EstadisticasResumResponse {
         mesActual: number;
         mesPassat: number;
     };
+    valoracioMitjana: number | null;
 }

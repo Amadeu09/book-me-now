@@ -10,7 +10,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
-import { DOW_LABELS, type Tram } from '../../types/jornades.types';
+import { useLanguage } from '@/core/i18n';
+import { type Tram } from '../../types/jornades.types';
 import { TimelinePainter } from './TimelinePainter';
 import { TimeRangeItem } from './TimeRangeItem';
 
@@ -36,6 +37,17 @@ export const MultiDayModal: React.FC<MultiDayModalProps> = ({
     onApply,
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
+
+    const DOW_SHORT_LABELS: Record<number, string> = {
+        1: t('dayShortMonday'),
+        2: t('dayShortTuesday'),
+        3: t('dayShortWednesday'),
+        4: t('dayShortThursday'),
+        5: t('dayShortFriday'),
+        6: t('dayShortSaturday'),
+        7: t('dayShortSunday'),
+    };
 
     const [selectedDows, setSelectedDows] = useState<number[]>([1, 2, 3, 4, 5]);
     const [trams, setTrams] = useState<Tram[]>([]);
@@ -78,7 +90,7 @@ export const MultiDayModal: React.FC<MultiDayModalProps> = ({
                 <View style={styles.modal}>
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Aplicar a varis dies</Text>
+                        <Text style={styles.headerTitle}>{t('multiDayTitle')}</Text>
                         <TouchableOpacity onPress={handleClose}>
                             <Ionicons name="close" size={22} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -91,7 +103,7 @@ export const MultiDayModal: React.FC<MultiDayModalProps> = ({
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Day selector */}
-                        <Text style={styles.sectionLabel}>Selecciona els dies</Text>
+                        <Text style={styles.sectionLabel}>{t('multiDaySelectDays')}</Text>
                         <View style={styles.daysRow}>
                             {ALL_DOWS.map((dow) => {
                                 const isSelected = selectedDows.includes(dow);
@@ -106,7 +118,7 @@ export const MultiDayModal: React.FC<MultiDayModalProps> = ({
                                         activeOpacity={0.7}
                                     >
                                         <Text style={[styles.dayChipText, isSelected && styles.dayChipTextSelected]}>
-                                            {DOW_LABELS[dow].slice(0, 2)}
+                                            {DOW_SHORT_LABELS[dow]}
                                         </Text>
                                     </TouchableOpacity>
                                 );
@@ -115,7 +127,7 @@ export const MultiDayModal: React.FC<MultiDayModalProps> = ({
 
                         {/* Timeline painter */}
                         <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
-                            Defineix el rang horari
+                            {t('multiDayTimeRange')}
                         </Text>
                         <TimelinePainter
                             trams={trams}
@@ -139,7 +151,7 @@ export const MultiDayModal: React.FC<MultiDayModalProps> = ({
                     {/* Footer */}
                     <View style={styles.footer}>
                         <TouchableOpacity style={styles.btnCancel} onPress={handleClose} activeOpacity={0.7}>
-                            <Text style={styles.btnCancelText}>Cancel·lar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.btnApply, { backgroundColor: theme.primary }, !canApply && styles.btnDisabled]}
@@ -147,7 +159,7 @@ export const MultiDayModal: React.FC<MultiDayModalProps> = ({
                             disabled={!canApply}
                             activeOpacity={0.8}
                         >
-                            <Text style={styles.btnApplyText}>Aplicar</Text>
+                            <Text style={styles.btnApplyText}>{t('apply')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

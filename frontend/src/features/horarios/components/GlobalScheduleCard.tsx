@@ -8,11 +8,7 @@ import { HC, cardShadow } from '../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { useHorariEmpresa } from '../hooks/useHorariEmpresa';
 import { EditScheduleModal, minsToHHMM } from './modal/EditScheduleModal';
-
-/* ── Constants ──────────────────────────── */
-
-const DOW_SHORT   = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
-const DOW_FULL    = ['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte', 'Diumenge'];
+import { useLanguage } from '@/core/i18n';
 
 /* ── GlobalScheduleCard ─────────────────── */
 
@@ -20,7 +16,11 @@ export const GlobalScheduleCard: React.FC = () => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
     const { trams, isLoading, isAdmin, empresaId, refetch } = useHorariEmpresa();
+
+    const DOW_SHORT = [t('dayShortMonday'), t('dayShortTuesday'), t('dayShortWednesday'), t('dayShortThursday'), t('dayShortFriday'), t('dayShortSaturday'), t('dayShortSunday')];
+    const DOW_FULL  = [t('dayMonday'), t('dayTuesday'), t('dayWednesday'), t('dayThursday'), t('dayFriday'), t('daySaturday'), t('daySunday')];
 
     const [editOpen, setEditOpen] = useState(false);
 
@@ -50,12 +50,12 @@ export const GlobalScheduleCard: React.FC = () => {
                         <Text style={[styles.dayLabel, { color: onPrimary }]}>{DOW_FULL[dow]}</Text>
 
                         {dayTrams.length === 0 ? (
-                            <Text style={[styles.tancat, { color: onPrimaryMuted }]}>Tancat</Text>
+                            <Text style={[styles.tancat, { color: onPrimaryMuted }]}>{t('closed')}</Text>
                         ) : (
-                            dayTrams.map(t => (
-                                <View key={t.id} style={[styles.tramChip, { borderColor: onPrimaryFaint }]}>
+                            dayTrams.map(tr => (
+                                <View key={tr.id} style={[styles.tramChip, { borderColor: onPrimaryFaint }]}>
                                     <Text style={[styles.tramText, { color: onPrimary }]}>
-                                        {minsToHHMM(t.iniciMin)} – {minsToHHMM(t.fiMin)}
+                                        {minsToHHMM(tr.iniciMin)} – {minsToHHMM(tr.fiMin)}
                                     </Text>
                                 </View>
                             ))
@@ -80,12 +80,12 @@ export const GlobalScheduleCard: React.FC = () => {
                     <Text style={[styles.mobileDayName, { color: onPrimary }]}>{DOW_FULL[dow]}</Text>
                     <View style={styles.mobileChips}>
                         {dayTrams.length === 0 ? (
-                            <Text style={[styles.tancat, { color: onPrimaryMuted }]}>Tancat</Text>
+                            <Text style={[styles.tancat, { color: onPrimaryMuted }]}>{t('closed')}</Text>
                         ) : (
-                            dayTrams.map(t => (
-                                <View key={t.id} style={[styles.tramChip, { borderColor: onPrimaryFaint }]}>
+                            dayTrams.map(tr => (
+                                <View key={tr.id} style={[styles.tramChip, { borderColor: onPrimaryFaint }]}>
                                     <Text style={[styles.tramText, { color: onPrimary }]}>
-                                        {minsToHHMM(t.iniciMin)} – {minsToHHMM(t.fiMin)}
+                                        {minsToHHMM(tr.iniciMin)} – {minsToHHMM(tr.fiMin)}
                                     </Text>
                                 </View>
                             ))
@@ -101,9 +101,9 @@ export const GlobalScheduleCard: React.FC = () => {
             {/* Header */}
             <View style={styles.topRow}>
                 <View style={styles.titleBlock}>
-                    <Text style={[styles.title, { color: onPrimary }]}>Horari Global d'Obertura</Text>
+                    <Text style={[styles.title, { color: onPrimary }]}>{t('globalScheduleTitle')}</Text>
                     <Text style={[styles.subtitle, { color: onPrimaryMuted }]}>
-                        Horari d'obertura de l'establiment
+                        {t('globalScheduleSubtitle')}
                     </Text>
                 </View>
                 <View style={styles.headerRight}>
@@ -114,7 +114,7 @@ export const GlobalScheduleCard: React.FC = () => {
                             onPress={() => setEditOpen(true)}
                         >
                             <Ionicons name="pencil-outline" size={14} color={onPrimary} />
-                            <Text style={[styles.editBtnText, { color: onPrimary }]}>Editar</Text>
+                            <Text style={[styles.editBtnText, { color: onPrimary }]}>{t('edit')}</Text>
                         </TouchableOpacity>
                     )}
                 </View>

@@ -5,8 +5,8 @@ import {
     StyleSheet,
 } from 'react-native';
 import { HC } from '../../constants/horarios.constants';
+import { useLanguage } from '@/core/i18n';
 import {
-    DOW_LABELS,
     type DiaRotacio,
     type Tram,
 } from '../../types/jornades.types';
@@ -27,7 +27,18 @@ interface DayRowProps {
 }
 
 export const DayRow: React.FC<DayRowProps> = ({ day, onUpdate, disabled }) => {
+    const { t } = useLanguage();
     const hasRange = day.trams.length > 0;
+
+    const DOW_FULL_LABELS: Record<number, string> = {
+        1: t('dayMonday'),
+        2: t('dayTuesday'),
+        3: t('dayWednesday'),
+        4: t('dayThursday'),
+        5: t('dayFriday'),
+        6: t('daySaturday'),
+        7: t('daySunday'),
+    };
 
     /* ── Timeline painter callback ── */
     const handleTramsChange = useCallback((newTrams: Tram[]) => {
@@ -45,10 +56,10 @@ export const DayRow: React.FC<DayRowProps> = ({ day, onUpdate, disabled }) => {
             {/* Day label + rest indicator */}
             <View style={styles.headerSection}>
                 <Text style={styles.dayLabel}>
-                    {DOW_LABELS[day.dow]}
+                    {DOW_FULL_LABELS[day.dow]}
                 </Text>
                 {!hasRange && (
-                    <Text style={styles.restLabel}>Dia de descans</Text>
+                    <Text style={styles.restLabel}>{t('diaDescans')}</Text>
                 )}
             </View>
 

@@ -114,8 +114,8 @@ export function AvailabilityModal({ treballadorId, allTreballadors, serveiId, tr
   const availableDates = new Set(
     disponibilitat
       ? Object.entries(disponibilitat)
-          .filter(([, slots]) => slots.length > 0)
-          .map(([date]) => date)
+        .filter(([, slots]) => slots.length > 0)
+        .map(([date]) => date)
       : [],
   );
 
@@ -221,12 +221,16 @@ export function AvailabilityModal({ treballadorId, allTreballadors, serveiId, tr
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+      style={{ backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget && step !== 'success') onClose(); }}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(24px)' }}
+        className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl overflow-y-auto"
+        style={{
+          background: 'rgba(255,255,255,0.97)',
+          backdropFilter: 'blur(24px)',
+          maxHeight: '90vh'
+        }}
       >
         {/* ── Header ── */}
         <div className="px-6 pt-6 pb-4 border-b border-outline-variant/15">
@@ -296,7 +300,7 @@ export function AvailabilityModal({ treballadorId, allTreballadors, serveiId, tr
                           className={`relative w-9 h-9 rounded-full text-sm font-medium transition-all flex items-center justify-center
                             ${isSelected ? 'bg-primary text-white shadow-md'
                               : isAvailable && !isPast ? 'hover:bg-primary/10 text-on-surface cursor-pointer'
-                              : 'text-on-surface-variant/40 cursor-default'}
+                                : 'text-on-surface-variant/40 cursor-default'}
                             ${isToday && !isSelected ? 'ring-1 ring-primary/40' : ''}`}
                         >
                           {date.getDate()}
@@ -322,11 +326,10 @@ export function AvailabilityModal({ treballadorId, allTreballadors, serveiId, tr
                       <button
                         key={slot}
                         onClick={() => setSelectedSlot(prev => prev === slot ? null : slot)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                          selectedSlot === slot
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'bg-surface-container text-on-surface hover:bg-primary/10 hover:text-primary'
-                        }`}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedSlot === slot
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'bg-surface-container text-on-surface hover:bg-primary/10 hover:text-primary'
+                          }`}
                       >
                         {slot.split(' - ')[0]}
                       </button>

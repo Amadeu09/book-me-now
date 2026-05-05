@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
+import { useLanguage } from '@/core/i18n';
 import type { ClientItem } from '../types/clients.types';
 
 interface ClientRowProps {
@@ -13,15 +14,16 @@ interface ClientRowProps {
 
 export function ClientRow({ client, isDesktop, onEdit, onDelete }: ClientRowProps) {
     const [showMenu, setShowMenu] = useState(false);
+    const { t } = useLanguage();
 
     const menu = showMenu && (
         <View style={cs.menuPopover}>
             <TouchableOpacity style={cs.menuItem} onPress={() => { setShowMenu(false); onEdit(client); }}>
-                <Text style={cs.menuItemText}>Editar</Text>
+                <Text style={cs.menuItemText}>{t('edit')}</Text>
             </TouchableOpacity>
             <View style={cs.menuDivider} />
             <TouchableOpacity style={cs.menuItem} onPress={() => { setShowMenu(false); onDelete(client); }}>
-                <Text style={[cs.menuItemText, { color: HC.red }]}>Eliminar</Text>
+                <Text style={[cs.menuItemText, { color: HC.red }]}>{t('delete')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -44,6 +46,7 @@ export function ClientRow({ client, isDesktop, onEdit, onDelete }: ClientRowProp
                 <Text style={[cs.tdPrimary, { flex: 2 }]} numberOfLines={1}>{client.nom}</Text>
                 <Text style={[cs.tdMuted, { flex: 2 }]} numberOfLines={1}>{client.email ?? '—'}</Text>
                 <Text style={[cs.tdMuted, { flex: 1 }]} numberOfLines={1}>{client.telefon ?? '—'}</Text>
+                <Text style={[cs.tdMuted, { flex: 1 }]} numberOfLines={1}>{client.visites ?? 0}</Text>
                 {dotsBtn}
             </View>
         );

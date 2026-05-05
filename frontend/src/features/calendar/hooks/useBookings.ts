@@ -46,11 +46,7 @@ export const useBookings = (startDate: Date, endDate: Date, userRole: string | u
 
                 // Map API response to Component UI standard (CalendarEvent)
                 const mappedEvents: CalendarEvent[] = filteredData.map(res => {
-                    // Strip timezone suffix so the stored "wall-clock" time is not
-                    // converted to local time. "2026-04-08T12:30:00.000Z" → parsed
-                    // as local 12:30, not UTC+2 14:30.
-                    const wallClock = res.dataHora.replace('Z', '').replace(/\+.*$/, '');
-                    const startRaw = new Date(wallClock);
+                    const startRaw = new Date(res.dataHora);
                     const durada = res.servei?.duradaMin || 60; // default 1h if no service duration provided
                     const endRaw = new Date(startRaw.getTime() + durada * 60000);
 

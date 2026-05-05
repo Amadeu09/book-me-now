@@ -4,29 +4,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AuthUser } from '@/features/auth/services/auth.service';
 import { HC } from '../constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
-
-function getGreetingText(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Buenos días';
-  if (h < 20) return 'Buenas tardes';
-  return 'Buenas noches';
-}
-
-function getTodayLabel(): string {
-  const raw = new Date().toLocaleDateString('es-ES', {
-    weekday: 'long', day: 'numeric', month: 'long',
-  });
-  return raw.charAt(0).toUpperCase() + raw.slice(1);
-}
+import { useLanguage } from '@/core/i18n';
 
 function GreetingBlock({ nom }: { nom: string }) {
   const theme = useTheme();
+  const { t, lang } = useLanguage();
   const firstName = nom.split(' ')[0];
+  const h = new Date().getHours();
+  const greeting = h < 12 ? t('greetingMorning') : h < 20 ? t('greetingAfternoon') : t('greetingEvening');
+  const locale = lang === 'ca' ? 'ca-ES' : 'es-ES';
+  const raw = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  const todayLabel = raw.charAt(0).toUpperCase() + raw.slice(1);
   return (
     <View style={greetStyles.wrapper}>
-      <Text style={greetStyles.date}>{getTodayLabel()}</Text>
+      <Text style={greetStyles.date}>{todayLabel}</Text>
       <Text style={[greetStyles.greeting, { color: theme.primary }]}>
-        {getGreetingText()}, {firstName}
+        {greeting}, {firstName}
       </Text>
     </View>
   );
@@ -65,7 +58,6 @@ export default function Home() {
   const isDesktop = width >= 768;
 
   const { data: empresa } = useEmpresa(user?.empresaId);
-
   useEffect(() => {
     (async () => {
       const u = await AsyncStorage.getItem('user');
@@ -73,8 +65,9 @@ export default function Home() {
     })();
   }, []);
 
+  const { t } = useLanguage();
   const empresaData = empresa || user?.empresa;
-  const nom = empresaData?.nom ?? user?.email ?? 'Usuario';
+  const nom = empresaData?.nom ?? user?.email ?? t('userFallback');
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>

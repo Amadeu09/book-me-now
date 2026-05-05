@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CalendarEvent } from '../types';
-import { palette, radius } from "@/constants/theme";
+import { palette } from "@/constants/theme";
 import { Feather } from '@expo/vector-icons';
 
 interface EventCardProps {
@@ -9,12 +9,10 @@ interface EventCardProps {
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event }) => {
-    // Basic text formatting for time range
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     };
 
-    // Calculate duration for styling decisions
     const duration = (event.end.getTime() - event.start.getTime()) / (1000 * 60);
     const isSmallShort = duration < 45;
 
@@ -22,8 +20,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
         <View style={[
             styles.container,
             {
-                backgroundColor: event.color || '#e2e8f0',
-                borderLeftColor: adjustColor(event.color || '#e2e8f0', -20),
+                backgroundColor: colorWithOpacity(event.color || '#e2e8f0', 0.92),
+                borderLeftColor: adjustColor(event.color || '#e2e8f0'),
             }
         ]}>
             <View style={styles.headerRow}>
@@ -33,9 +31,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
                     )}
                     {event.title}
                 </Text>
-                {event.isVip && (
-                    <Feather name="check-circle" size={12} color="#2563eb" style={{ marginLeft: 4 }} />
-                )}
             </View>
 
             {!isSmallShort && (
@@ -57,7 +52,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
 
             {event.badges && !isSmallShort && (
                 <View style={styles.badges}>
-                    {event.badges.map((badge: string, index: number) => (
+                    {event.badges.map((badge: string) => (
                         <View key={badge} style={styles.badge}>
                             <Text style={styles.badgeText}>{badge}</Text>
                         </View>
@@ -68,19 +63,30 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
     );
 };
 
-// Simple helper to darken color for border
-function adjustColor(color: string, amount: number) {
-    return color; // Placeholder
+function colorWithOpacity(color: string, opacity: number): string {
+    if (!color.startsWith('#') || color.length < 7) return color;
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${opacity})`;
+}
+
+function adjustColor(color: string): string {
+    if (!color.startsWith('#') || color.length < 7) return color;
+    const r = Math.max(0, parseInt(color.slice(1, 3), 16) - 40);
+    const g = Math.max(0, parseInt(color.slice(3, 5), 16) - 40);
+    const b = Math.max(0, parseInt(color.slice(5, 7), 16) - 40);
+    return `rgb(${r},${g},${b})`;
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1, // Fill the parent wrapper
-        borderRadius: radius.sm,
-        borderLeftWidth: 4,
+        flex: 1,
+        borderRadius: 6,
+        borderLeftWidth: 3,
         padding: 6,
         overflow: 'hidden',
-        marginRight: 4, // Spacing between events/cols
+        marginRight: 4,
     },
     headerRow: {
         flexDirection: 'row',
@@ -93,20 +99,22 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     time: {
-        fontSize: 11,
-        color: palette.textMuted,
+        fontSize: 10,
+        fontWeight: '500',
+        color: palette.textPrimary,
+        opacity: 0.75,
         marginTop: 2,
     },
     clientRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
+        marginTop: 3,
     },
     avatar: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.1)',
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: 'rgba(0,0,0,0.15)',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 4,
@@ -117,8 +125,10 @@ const styles = StyleSheet.create({
         color: palette.textPrimary,
     },
     clientName: {
-        fontSize: 11,
-        color: palette.textSubtle,
+        fontSize: 10,
+        fontWeight: '500',
+        color: palette.textPrimary,
+        flex: 1,
     },
     badges: {
         flexDirection: 'row',
@@ -126,14 +136,14 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     badge: {
-        backgroundColor: 'rgba(255,255,255,0.6)',
+        backgroundColor: 'rgba(255,255,255,0.5)',
         paddingHorizontal: 4,
         paddingVertical: 1,
         borderRadius: 4,
     },
     badgeText: {
-        fontSize: 9,
+        fontSize: 8,
         fontWeight: '600',
-        color: '#1e40af', // blue-800
+        color: palette.textPrimary,
     },
 });

@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import { palette } from "@/constants/theme";
+import { useLanguage } from '@/core/i18n';
 
 export default function Bookings() {
+    const { t } = useLanguage();
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
-                <Text style={styles.title}>Reservas</Text>
-                <Text style={styles.subtitle}>Gestiona tus reservas</Text>
+                <Text style={styles.title}>{t('tabsBookingsTitle')}</Text>
+                <Text style={styles.subtitle}>{t('tabsBookingsSubtitle')}</Text>
             </View>
         </SafeAreaView>
     );

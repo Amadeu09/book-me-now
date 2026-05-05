@@ -4,6 +4,7 @@ import { DAYS_OF_WEEK, HOURS } from '../constants';
 import { CalendarEvent } from '../types';
 import { EventCard } from './EventCard';
 import { palette } from "@/constants/theme";
+import { useLanguage } from '@/core/i18n';
 
 interface WeekGridProps {
     events: CalendarEvent[];
@@ -13,11 +14,20 @@ const HOUR_HEIGHT = 80; // height in pixels for one hour
 const START_HOUR = 8;   // Calendar starts at 8 AM
 
 export const WeekGrid: React.FC<WeekGridProps> = ({ events }) => {
+    const { t } = useLanguage();
 
     // Helper to calculate position
+    const madridHM = (d: Date) => {
+        const fmt = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: 'numeric', hour12: false, timeZone: 'Europe/Madrid' });
+        const parts = fmt.formatToParts(d);
+        return { h: parseInt(parts.find(p => p.type === 'hour')?.value ?? '0'), m: parseInt(parts.find(p => p.type === 'minute')?.value ?? '0') };
+    };
+
     const getEventLayout = (event: CalendarEvent) => {
-        const startHour = event.start.getHours() + event.start.getMinutes() / 60;
-        const endHour = event.end.getHours() + event.end.getMinutes() / 60;
+        const { h: sh, m: sm } = madridHM(event.start);
+        const { h: eh, m: em } = madridHM(event.end);
+        const startHour = sh + sm / 60;
+        const endHour = eh + em / 60;
 
         const top = (startHour - START_HOUR) * HOUR_HEIGHT;
         const height = (endHour - startHour) * HOUR_HEIGHT;
@@ -106,7 +116,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events }) => {
                             {i === 3 && (
                                 <View style={styles.maintenanceOverlay}>
                                     <View style={styles.maintenanceStripe} />
-                                    <Text style={styles.maintenanceText}>Maintenance Day</Text>
+                                    <Text style={styles.maintenanceText}>{t('calendarMaintenanceDay')}</Text>
                                 </View>
                             )}
 
@@ -169,6 +179,7 @@ const styles = StyleSheet.create({
     },
     gridBody: {
         flexDirection: 'row',
+        marginTop: -HOUR_HEIGHT,
         minHeight: HOURS.length * HOUR_HEIGHT,
     },
     timeGutter: {

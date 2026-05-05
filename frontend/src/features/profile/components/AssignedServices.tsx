@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { ProfileServei } from '../services/profile.service';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 const MAX_VISIBLE = 3;
 
@@ -55,6 +56,7 @@ interface AssignedServicesProps {
 export const AssignedServices: React.FC<AssignedServicesProps> = ({ services, isLoading }) => {
     const [expanded, setExpanded] = useState(false);
     const theme = useTheme();
+    const { t } = useLanguage();
 
     const hasMore = services.length > MAX_VISIBLE;
     const visible = expanded ? services : services.slice(0, MAX_VISIBLE);
@@ -62,10 +64,10 @@ export const AssignedServices: React.FC<AssignedServicesProps> = ({ services, is
     return (
         <View style={[styles.container, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.header}>
-                <Text style={styles.title}>Servicios Asignados</Text>
+                <Text style={styles.title}>{t('assignedServices')}</Text>
                 {hasMore && (
                     <TouchableOpacity onPress={() => setExpanded((v) => !v)}>
-                        <Text style={[styles.link, { color: theme.primary }]}>{expanded ? 'Ver menos' : 'Ver todos →'}</Text>
+                        <Text style={[styles.link, { color: theme.primary }]}>{expanded ? t('showLess') : t('showAllMasc')}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -75,7 +77,7 @@ export const AssignedServices: React.FC<AssignedServicesProps> = ({ services, is
             ) : services.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Ionicons name="briefcase-outline" size={32} color={HC.textLight} />
-                    <Text style={styles.emptyText}>No tienes servicios asignados</Text>
+                    <Text style={styles.emptyText}>{t('noAssignedServices')}</Text>
                 </View>
             ) : (
                 <FlatList

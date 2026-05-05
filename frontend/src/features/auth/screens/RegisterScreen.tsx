@@ -56,6 +56,7 @@ export default function Register() {
   const [colorPrimari, setColorPrimari] = useState(PALETAS[0].value);
   const [tipo, setTipo] = useState<string | null>(null);
   const [fotoUri, setFotoUri] = useState<string | null>(null);
+  const [diasAntesReserva, setDiasAntesReserva] = useState('14');
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -93,6 +94,7 @@ export default function Register() {
         colorPrimari,
         tipo: tipo || "",
         fotoUri: fotoUri || "",
+        diasAntesReserva: diasAntesReserva.trim() || "14",
       },
     });
   };
@@ -162,6 +164,19 @@ export default function Register() {
               />
             </View>
 
+            {/* Dies d'antelació */}
+            <View style={[styles.inputRow, styles.mt12]}>
+              <Ionicons name="calendar-outline" size={18} color="#9ca3af" style={styles.icon} />
+              <TextInput
+                placeholder="Dies d'antelació per reserves (defecte: 14)"
+                placeholderTextColor="#9ca3af"
+                value={diasAntesReserva}
+                onChangeText={setDiasAntesReserva}
+                keyboardType="number-pad"
+                style={styles.input}
+              />
+            </View>
+
             {/* Tipo de negocio */}
             <Text style={styles.sectionLabel}>Tipo de negocio</Text>
             <View style={styles.tipoGrid}>
@@ -192,29 +207,6 @@ export default function Register() {
                 )}
                 <Text style={styles.photoLabel}>Foto de perfil</Text>
               </TouchableOpacity>
-            </View>
-
-            {/* Paleta de colores */}
-            <Text style={styles.sectionLabel}>Color corporativo</Text>
-            <View style={styles.paletaGrid}>
-              {PALETAS.map((p) => (
-                <TouchableOpacity
-                  key={p.value}
-                  onPress={() => setColorPrimari(p.value)}
-                  style={[styles.swatch, { backgroundColor: p.value }]}
-                  activeOpacity={0.8}
-                >
-                  {colorPrimari === p.value && (
-                    <Ionicons name="checkmark" size={16} color="#fff" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.colorPreviewRow}>
-              <View style={[styles.colorPreviewDot, { backgroundColor: colorPrimari }]} />
-              <Text style={styles.colorPreviewText}>
-                {PALETAS.find((p) => p.value === colorPrimari)?.label} · {colorPrimari}
-              </Text>
             </View>
 
             <View style={{ height: 20 }} />

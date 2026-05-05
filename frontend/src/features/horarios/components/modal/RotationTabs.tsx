@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { HC } from '../../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 interface RotationTabsProps {
     rotations: { index: number; nom: string }[];
@@ -17,6 +18,7 @@ export const RotationTabs: React.FC<RotationTabsProps> = ({
     onAdd,
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     return (
         <View style={styles.container}>
             {rotations.map((r) => {
@@ -35,7 +37,7 @@ export const RotationTabs: React.FC<RotationTabsProps> = ({
                 );
             })}
             <TouchableOpacity onPress={onAdd} activeOpacity={0.7} style={styles.addTab}>
-                <Text style={[styles.addText, { color: theme.primary }]}>+ Añadir rotación</Text>
+                <Text style={[styles.addText, { color: theme.primary }]}>{t('addRotation')}</Text>
             </TouchableOpacity>
         </View>
     );

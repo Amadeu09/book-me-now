@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { palette, spacing, typography, radius } from "@/constants/theme";
 import { Feather } from '@expo/vector-icons';
+import { useLanguage } from '@/core/i18n';
 import { ViewMode } from '../types';
 
 interface CalendarHeaderProps {
@@ -15,11 +16,12 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     onChangeViewMode,
     onQuickCreate
 }) => {
+    const { t } = useLanguage();
     return (
         <View style={styles.container}>
             <View>
-                <Text style={styles.title}>Calendar</Text>
-                <Text style={styles.subtitle}>Manage bookings and check availability.</Text>
+                <Text style={styles.title}>{t('calendarTitle')}</Text>
+                <Text style={styles.subtitle}>{t('calendarSubtitle')}</Text>
             </View>
 
             <View style={styles.rightSection}>
@@ -37,7 +39,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                                 styles.switchText,
                                 viewMode === mode && styles.switchTextActive
                             ]}>
-                                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                {mode === 'day' ? t('calendarViewDay') : mode === 'week' ? t('calendarViewWeek') : t('calendarViewMonth')}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -45,7 +47,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
                 <TouchableOpacity style={styles.createButton} onPress={onQuickCreate}>
                     <Feather name="plus" size={18} color="white" style={{ marginRight: 6 }} />
-                    <Text style={styles.createButtonText}>Quick Create</Text>
+                    <Text style={styles.createButtonText}>{t('calendarQuickCreate')}</Text>
                 </TouchableOpacity>
             </View>
         </View>

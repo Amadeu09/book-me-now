@@ -44,7 +44,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
-    const { lang, setLang } = useLanguage();
+    const { lang, setLang, t } = useLanguage();
 
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -92,19 +92,19 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
         if (hasPasswordChange) {
             if (!currentPassword.trim()) {
-                setError('La contraseña actual es obligatoria.');
+                setError(t('currentPasswordRequired'));
                 return;
             }
             if (!newPassword.trim()) {
-                setError('La nueva contraseña es obligatoria.');
+                setError(t('newPasswordRequired'));
                 return;
             }
             if (newPassword !== confirmPassword) {
-                setError('Las contraseñas nuevas no coinciden.');
+                setError(t('passwordMismatch'));
                 return;
             }
             if (newPassword.length < 8) {
-                setError('La nueva contraseña debe tener al menos 8 caracteres.');
+                setError(t('passwordTooShort'));
                 return;
             }
         }
@@ -123,14 +123,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
             theme.setPrimaryColor(newColor);
             setLang(selectedLang);
 
-            Alert.alert('Èxit', 'Perfil actualitzat correctament.');
+            Alert.alert(t('success'), t('profileUpdated'));
             resetForm();
             onClose();
         } catch (err: any) {
             const msg =
                 err?.response?.data?.message ||
                 err?.message ||
-                'No se pudo actualizar el perfil.';
+                t('profileUpdateError');
             setError(Array.isArray(msg) ? msg.join(', ') : msg);
         } finally {
             setLoading(false);
@@ -144,7 +144,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Editar perfil</Text>
+                        <Text style={styles.headerTitle}>{t('editProfile')}</Text>
                         <TouchableOpacity onPress={handleClose} disabled={loading}>
                             <Ionicons name="close" size={24} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -165,7 +165,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                         {/* Color */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Color de l'aplicació</Text>
+                            <Text style={styles.fieldLabel}>{t('appColor')}</Text>
                             <View style={styles.paletaGrid}>
                                 {PALETAS.map((p) => {
                                     const isDefault = p.value === 'default';
@@ -198,7 +198,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                                 )}
                                 <Text style={styles.colorPreviewText}>
                                     {colorPrimari === 'default'
-                                        ? 'Por defecto (sin color personalizado)'
+                                        ? t('colorDefault')
                                         : `${PALETAS.find(p => p.value === colorPrimari)?.label} · ${colorPrimari}`
                                     }
                                 </Text>
@@ -207,7 +207,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                         {/* Idioma */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Idioma</Text>
+                            <Text style={styles.fieldLabel}>{t('language')}</Text>
                             <View style={styles.langRow}>
                                 {(['ca', 'es'] as const).map((l) => (
                                     <TouchableOpacity
@@ -221,7 +221,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                                         activeOpacity={0.8}
                                     >
                                         <Text style={[styles.langBtnText, selectedLang === l && { color: theme.textOnPrimary }]}>
-                                            {l === 'ca' ? 'Català' : 'Castellano'}
+                                            {l === 'ca' ? t('langCa') : t('langEs')}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}
@@ -230,11 +230,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                         {/* Contraseña actual */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Contrasenya actual</Text>
+                            <Text style={styles.fieldLabel}>{t('currentPassword')}</Text>
                             <View style={styles.inputRow}>
                                 <TextInput
                                     style={styles.inputFlex}
-                                    placeholder="Introduce tu contraseña actual"
+                                    placeholder={t('currentPasswordPh')}
                                     placeholderTextColor={HC.textLight}
                                     value={currentPassword}
                                     onChangeText={setCurrentPassword}
@@ -250,11 +250,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                         {/* Nueva contraseña */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Nova contrasenya</Text>
+                            <Text style={styles.fieldLabel}>{t('newPassword')}</Text>
                             <View style={styles.inputRow}>
                                 <TextInput
                                     style={styles.inputFlex}
-                                    placeholder="Mín. 8 caràcters, 1 majúscula, 1 número i 1 especial"
+                                    placeholder={t('newPasswordPh')}
                                     placeholderTextColor={HC.textLight}
                                     value={newPassword}
                                     onChangeText={setNewPassword}
@@ -270,11 +270,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
 
                         {/* Confirmar nueva contraseña */}
                         <View style={styles.fieldBlock}>
-                            <Text style={styles.fieldLabel}>Confirmar nova contrasenya</Text>
+                            <Text style={styles.fieldLabel}>{t('confirmNewPassword')}</Text>
                             <View style={styles.inputRow}>
                                 <TextInput
                                     style={styles.inputFlex}
-                                    placeholder="Repeteix la nova contrasenya"
+                                    placeholder={t('confirmPasswordPh')}
                                     placeholderTextColor={HC.textLight}
                                     value={confirmPassword}
                                     onChangeText={setConfirmPassword}
@@ -292,7 +292,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                     {/* Footer */}
                     <View style={[styles.footer, isDesktop && styles.footerDesktop]}>
                         <TouchableOpacity style={styles.btnCancel} onPress={handleClose} disabled={loading} activeOpacity={0.7}>
-                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -303,7 +303,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                         >
                             {loading
                                 ? <ActivityIndicator color={HC.white} size="small" />
-                                : <Text style={styles.btnSaveText}>Guardar</Text>
+                                : <Text style={styles.btnSaveText}>{t('save')}</Text>
                             }
                         </TouchableOpacity>
                     </View>

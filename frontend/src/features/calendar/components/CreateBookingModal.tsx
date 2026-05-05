@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { palette, spacing, radius, shadow } from "@/constants/theme";
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import type { ApiTreballador, ApiServei, ApiClient } from '../types';
 import { createReserva, fetchClientsByEmpresa } from '../services/calendarApi';
 import { DatePickerField } from '@/features/horarios/components/DatePickerField';
@@ -37,6 +38,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
 
     // Form State
     const [nom, setNom] = useState('');
@@ -112,7 +114,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         setError('');
         
         if (!nom.trim() || !data.trim() || !hora.trim() || !idServei || !idTreballador) {
-            setError('Nom, data, hora, treballador i servei són obligatoris.');
+            setError(t('bookingFieldsRequired'));
             return;
         }
 
@@ -140,8 +142,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             const status = axiosErr?.response?.status;
             const rawMsg = axiosErr?.response?.data?.message || axiosErr?.message || '';
             const msg = status === 409
-                ? 'No hay disponibilidad para este horario. Revisa que el trabajador tenga horario asignado y no tenga ausencias ese día.'
-                : Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg || 'Error al crear la reserva.';
+                ? t('bookingNoAvailability')
+                : Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg || t('bookingCreateError');
             setError(msg);
         } finally {
             setIsSubmitting(false);
@@ -160,7 +162,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 
                     {/* ── Header ────────────────── */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Crear Nueva Reserva</Text>
+                        <Text style={styles.headerTitle}>{t('bookingCreateTitle')}</Text>
                         <TouchableOpacity onPress={handleClose} disabled={isSubmitting}>
                             <Ionicons name="close" size={24} color={palette.textMuted} />
                         </TouchableOpacity>
@@ -176,7 +178,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                         <View style={styles.sectionRow}>
-                            <Text style={styles.sectionTitle}>Datos del Cliente</Text>
+                            <Text style={styles.sectionTitle}>{t('bookingClientData')}</Text>
                             <TouchableOpacity
                                 style={[styles.pickerBtn, showPicker && { backgroundColor: theme.primary }]}
                                 onPress={handleOpenPicker}
@@ -184,7 +186,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             >
                                 <Ionicons name="search" size={13} color={showPicker ? '#fff' : theme.primary} />
                                 <Text style={[styles.pickerBtnText, showPicker && { color: '#fff' }]}>
-                                    Buscar existent
+                                    {t('bookingSearchExisting')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -193,7 +195,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             <View style={styles.pickerPanel}>
                                 <TextInput
                                     style={styles.pickerSearch}
-                                    placeholder="Cercar per nom, email o telèfon..."
+                                    placeholder={t('bookingSearchPh')}
                                     value={clientSearch}
                                     onChangeText={setClientSearch}
                                     autoFocus
@@ -201,7 +203,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                                 {loadingClients ? (
                                     <ActivityIndicator size="small" color={theme.primary} style={{ marginVertical: 12 }} />
                                 ) : filteredClients.length === 0 ? (
-                                    <Text style={styles.pickerEmpty}>Cap client trobat</Text>
+                                    <Text style={styles.pickerEmpty}>{t('bookingNoClient')}</Text>
                                 ) : (
                                     <ScrollView style={styles.pickerList} nestedScrollEnabled keyboardShouldPersistTaps="handled">
                                         {filteredClients.map(c => (
@@ -231,19 +233,19 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             </View>
                         )}
 
-                        <Text style={styles.label}>Nom complet *</Text>
+                        <Text style={styles.label}>{t('bookingFullName')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Ej. Martí Garcia"
+                            placeholder={t('bookingFullNamePh')}
                             value={nom}
                             onChangeText={setNom}
                             editable={!isSubmitting}
                         />
 
-                        <Text style={styles.label}>Email</Text>
+                        <Text style={styles.label}>{t('bookingEmailLabel')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Ej. marti@email.com"
+                            placeholder={t('bookingEmailPh')}
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
@@ -251,40 +253,40 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             editable={!isSubmitting}
                         />
 
-                        <Text style={styles.label}>Teléfono</Text>
+                        <Text style={styles.label}>{t('bookingPhoneLabel')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Ej. 666777888"
+                            placeholder={t('bookingPhonePh')}
                             value={telefon}
                             onChangeText={setTelefon}
                             keyboardType="phone-pad"
                             editable={!isSubmitting}
                         />
 
-                        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Detalles de la Reserva</Text>
+                        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t('bookingDetails')}</Text>
 
                         <View style={styles.row}>
                             <View style={[styles.col, { paddingRight: 8 }]}>
-                                <Text style={styles.label}>Fecha *</Text>
+                                <Text style={styles.label}>{t('bookingDateLabel')}</Text>
                                 <DatePickerField
                                     value={data}
                                     onChange={setData}
-                                    placeholder="Seleccionar fecha"
+                                    placeholder={t('bookingDatePh')}
                                     disabled={isSubmitting}
                                 />
                             </View>
                             <View style={[styles.col, { paddingLeft: 8 }]}>
-                                <Text style={styles.label}>Hora *</Text>
+                                <Text style={styles.label}>{t('bookingHourLabel')}</Text>
                                 <TimePickerField
                                     value={hora}
                                     onChange={setHora}
-                                    placeholder="Seleccionar hora"
+                                    placeholder={t('bookingHourPh')}
                                     disabled={isSubmitting}
                                 />
                             </View>
                         </View>
 
-                        <Text style={styles.label}>Trabajador *</Text>
+                        <Text style={styles.label}>{t('bookingWorkerLabel')}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
                             {workers.map((w: any) => {
                                 const isSelected = idTreballador === w.id;
@@ -302,7 +304,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             })}
                         </ScrollView>
 
-                        <Text style={styles.label}>Servicio *</Text>
+                        <Text style={styles.label}>{t('bookingServiceLabel')}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
                             {services.map((s: any) => {
                                 const isSelected = idServei === s.id;
@@ -320,10 +322,10 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             })}
                         </ScrollView>
 
-                        <Text style={styles.label}>Observaciones</Text>
+                        <Text style={styles.label}>{t('bookingNotesLabel')}</Text>
                         <TextInput
                             style={[styles.input, styles.textArea]}
-                            placeholder="Ej. Alergia al tinte"
+                            placeholder={t('bookingNotesPh')}
                             value={observacions}
                             onChangeText={setObservacions}
                             editable={!isSubmitting}
@@ -340,7 +342,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             activeOpacity={0.7}
                             disabled={isSubmitting}
                         >
-                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -352,7 +354,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             {isSubmitting ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
-                                <Text style={styles.btnSaveText}>Confirmar</Text>
+                                <Text style={styles.btnSaveText}>{t('confirm')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>

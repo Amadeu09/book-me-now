@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, radius, spacing } from '@/constants/theme';
+import { useLanguage } from '@/core/i18n';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);     // 00–23
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);   // 00–59
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function TimePickerField({ value, onChange, placeholder = 'Seleccionar hora', disabled }: Props) {
+    const { t } = useLanguage();
     const [open, setOpen] = useState(false);
     const parsedHour = value ? parseInt(value.split(':')[0], 10) : null;
     const parsedMin = value ? parseInt(value.split(':')[1], 10) : null;
@@ -55,12 +57,12 @@ export function TimePickerField({ value, onChange, placeholder = 'Seleccionar ho
             <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
                 <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setOpen(false)}>
                     <TouchableOpacity activeOpacity={1} style={styles.card}>
-                        <Text style={styles.title}>Seleccionar hora</Text>
+                        <Text style={styles.title}>{t('timePickerTitle')}</Text>
 
                         <View style={styles.columns}>
                             {/* Hours column */}
                             <View style={styles.column}>
-                                <Text style={styles.colLabel}>Hora</Text>
+                                <Text style={styles.colLabel}>{t('timePickerHour')}</Text>
                                 <FlatList
                                     data={HOURS}
                                     keyExtractor={h => String(h)}
@@ -84,7 +86,7 @@ export function TimePickerField({ value, onChange, placeholder = 'Seleccionar ho
 
                             {/* Minutes column */}
                             <View style={styles.column}>
-                                <Text style={styles.colLabel}>Min</Text>
+                                <Text style={styles.colLabel}>{t('timePickerMin')}</Text>
                                 <FlatList
                                     data={MINUTES}
                                     keyExtractor={m => String(m)}
@@ -107,7 +109,7 @@ export function TimePickerField({ value, onChange, placeholder = 'Seleccionar ho
 
                         <View style={styles.footer}>
                             <TouchableOpacity style={styles.btnCancel} onPress={() => setOpen(false)} activeOpacity={0.7}>
-                                <Text style={styles.btnCancelText}>Cancelar</Text>
+                                <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.btnOk, (selHour === null || selMin === null) && styles.btnOkDisabled]}

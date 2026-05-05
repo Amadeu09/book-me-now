@@ -1,0 +1,477 @@
+{
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\app/index.tsx": [
+    "Cargando..."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/auth/screens/LoginScreen.tsx": [
+    "BookMeNow",
+    "Tu aplicación de reservas",
+    "Maneja tus reservas y clientes fácilmente",
+    "¿Olvidaste tu contraseña?",
+    "Entrar",
+    "Probar conexión",
+    "o continúa con",
+    "Crear cuenta",
+    "Email",
+    "Contraseña"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/auth/screens/RegisterScreen.tsx": [
+    "BookMeNow",
+    "Datos de tu empresa",
+    "Paso 1 de 2",
+    "Tipo de negocio",
+    "Foto de perfil",
+    "Continuar",
+    "Nombre de la empresa",
+    "Ubicación (ciudad, dirección)",
+    "Descripción de tu empresa (opcional)",
+    "Dies d",
+    "Permiso requerido",
+    "Necesitamos acceso a tu galería.",
+    "Error",
+    "El nombre de la empresa debe tener al menos 2 caracteres",
+    "La ubicación debe tener al menos 2 caracteres"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/auth/screens/RegisterUserScreen.tsx": [
+    "BookMeNow",
+    "Crea tu cuenta",
+    "Paso 2 de 2",
+    "Foto de perfil (opcional)",
+    "¿Asociar un trabajador a este usuario?",
+    "Crea también el perfil de trabajador vinculado",
+    "Configurar horari d'obertura",
+    "Opcional · Pots modificar-ho més tard",
+    "Tancat",
+    "Crear cuenta",
+    "Email",
+    "Contraseña",
+    "Confirmar contraseña",
+    "Nombre completo del trabajador",
+    "Días de vacaciones anuales",
+    "Permiso requerido",
+    "Necesitamos acceso a tu galería para subir una foto.",
+    "Revisa los datos",
+    "El nombre del trabajador es obligatorio"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/BookingDetailModal.tsx": [
+    "Detalls de la cita",
+    "Client",
+    "Professional",
+    "Observacions",
+    "No Show",
+    "Cancel·lar cita",
+    "No",
+    "Sí, confirmar",
+    "Estat final — no es pot modificar",
+    "Data",
+    "Hora",
+    "Durada",
+    "Preu",
+    "Nom",
+    "Email",
+    "Telèfon",
+    "Treballador"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/CalendarControls.tsx": [
+    "All Employees",
+    "All Services Types"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/CalendarHeader.tsx": [
+    "Reserves",
+    "Gestiona les reserves i la disponibilitat.",
+    "Nova reserva"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/CreateBookingModal.tsx": [
+    "Crear Nueva Reserva",
+    "Datos del Cliente",
+    "Buscar existent",
+    "Cap client trobat",
+    "Nom complet *",
+    "Email",
+    "Teléfono",
+    "Detalles de la Reserva",
+    "Fecha *",
+    "Hora *",
+    "Trabajador *",
+    "Servicio *",
+    "Observaciones",
+    "Cancelar",
+    "Confirmar",
+    "Cercar per nom, email o telèfon...",
+    "Ej. Martí Garcia",
+    "Ej. marti@email.com",
+    "Ej. 666777888",
+    "Seleccionar fecha",
+    "Seleccionar hora",
+    "Ej. Alergia al tinte"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/DayGrid.tsx": [
+    "No hay reservas este día"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/EventCard.tsx": [
+    "Maintenance Day"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/TimePickerField.tsx": [
+    "Seleccionar hora",
+    "Hora",
+    "Min",
+    "Cancelar",
+    "Confirmar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/WeekGrid.tsx": [
+    "No hay reservas esta semana"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/calendar/CalendarControls.tsx": [
+    "All Employees",
+    "All Service Types",
+    "All Rooms"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/calendar/CalendarHeader.tsx": [
+    "Calendar",
+    "Manage bookings and check availability.",
+    "Quick Create"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/components/calendar/WeekGrid.tsx": [
+    "Maintenance Day"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/calendar/screens/TabsBookingsScreen.tsx": [
+    "Reservas",
+    "Gestiona tus reservas"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/empresas/components/modal/EditEmpresaModal.tsx": [
+    "Editar empresa",
+    "Nombre comercial",
+    "Dirección / Ubicación",
+    "Capacidad máxima (Opcional)",
+    "Dies d'antelació per reserves",
+    "Descripción",
+    "Tipus de negoci",
+    "Cancelar",
+    "Guardar",
+    "Ej. Studio Belleza Elegance",
+    "Ciudad, Calle, Número",
+    "Ej. 20",
+    "Ex. 14",
+    "Describe tu empresa, servicios, ambiente..."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/estadisticas/components/ClientRow.tsx": [
+    "Editar",
+    "Eliminar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/estadisticas/components/DetallView.tsx": [
+    "Tornar",
+    "Serveis destacats",
+    "SERVEI",
+    "RESERVES",
+    "INGRESSOS",
+    "Sense reserves aquest mes",
+    "Treballadors destacats",
+    "TREBALLADOR",
+    "NO-SHOWS"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/estadisticas/components/EstadisticasHeader.tsx": [
+    "Estadísticas y Clientes",
+    "Consulta el rendimiento del negocio y analiza tu base de clientes."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/estadisticas/components/modal/CreateClientModal.tsx": [
+    "Correu electrònic",
+    "Telèfon",
+    "Cancelar",
+    "Ex. Anna García",
+    "Ex. anna@email.com",
+    "Ex. 600 111 222"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/estadisticas/screens/EstadisticasScreen.tsx": [
+    "Ingressos del Mes",
+    "Visites Mensuals",
+    "No-Shows Mensuals",
+    "Clients",
+    "Concurrència",
+    "+ Afegir client",
+    "NOM",
+    "EMAIL",
+    "TELÈFON",
+    "Sense resultats",
+    "Estadístiques generals",
+    "Buscar per nom o email..."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/home/components/AbsenciesPendentsCard.tsx": [
+    "Ausencias pendientes",
+    "Sin ausencias por aprobar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/home/components/InicioHeader.tsx": [
+    "Inicio",
+    "Bienvenido al panel de control de tu negocio."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/home/components/LocalDataCard.tsx": [
+    "Nombre de empresa",
+    "Ubicación",
+    "Éxito",
+    "Foto actualizada correctamente",
+    "Banner actualizado correctamente"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/home/components/ScheduleCard.tsx": [
+    "Horario de Apertura"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/EmployeeShiftCard.tsx": [
+    "Editar",
+    "Eliminar",
+    "Vuelve el 15 de Oct."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/ExceptionCard.tsx": [
+    "Excepciones y Festivos",
+    "No hay festivos próximos registrados.",
+    "Añadir ausencia"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/GlobalScheduleCard.tsx": [
+    "Tancat",
+    "Horari Global d'Obertura",
+    "Horari d'obertura de l'establiment",
+    "Editar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/HorariosHeader.tsx": [
+    "Configuración de Horarios",
+    "Gestiona los horarios globales y la disponibilidad de tu equipo."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/PlantillaCard.tsx": [
+    "Inactiva",
+    "Editar",
+    "Eliminar",
+    "Sin plantillas",
+    "Crea tu primera plantilla de jornada",
+    "Cargando plantillas…",
+    "Error",
+    "Reintentar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/AbsenciaEmpresaModal.tsx": [
+    "Título *",
+    "Fecha inicio *",
+    "Fecha fin (opcional)",
+    "Tipo *",
+    "Cancelar",
+    "ex. Sant Joan, Pont Constitució...",
+    "Seleccionar inicio",
+    "Seleccionar fin"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/CreateTemplateModal.tsx": [
+    "Nombre de la plantilla",
+    "Rotaciones",
+    "Cada rotación representa una semana. Las rotaciones se repiten en ciclo.",
+    "Aplicar a varis dies",
+    "Cancelar",
+    "Ej. Jornada Mañana Intensiva"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/CreateTrabajadorModal.tsx": [
+    "Foto de perfil",
+    "Opcional · Toca para seleccionar",
+    "Nombre completo *",
+    "Contraseña *",
+    "Días de vacaciones anuales",
+    "Selecciona los servicios asignados:",
+    "No hay servicios disponibles.",
+    "Asignar una jornada (Opcional):",
+    "Plantilla de Jornada",
+    "No hay plantillas de jornada.",
+    "Cancelar",
+    "Confirmar",
+    "Ej. Juan Pérez",
+    "Ej. worker@bookmenow.com",
+    "Mínimo 8 caracteres",
+    "25",
+    "Permiso requerido",
+    "Necesitamos acceso a tu galería para subir una foto."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/DayRow.tsx": [
+    "Dia de descans"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/EditScheduleModal.tsx": [
+    "Editar horari d'obertura",
+    "Aplicar rang a múltiples dies",
+    "Rang horari",
+    "Aplicar als dies seleccionats",
+    "Dies de la setmana",
+    "Tancat",
+    "nou",
+    "Afegir",
+    "Cancel·lar",
+    "Desar canvis",
+    "09:00",
+    "18:00"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/MultiDayModal.tsx": [
+    "Aplicar a varis dies",
+    "Selecciona els dies",
+    "Defineix el rang horari",
+    "Cancel·lar",
+    "Aplicar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/RotationTabs.tsx": [
+    "+ Añadir rotación"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/TimelinePainter.tsx": [
+    "Pulsa y arrastra para pintar horario"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/components/modal/TramModal.tsx": [
+    "Inici",
+    "Fi",
+    "Format: HH:MM (ex: 09:00 – 18:00)",
+    "Cancel·lar",
+    "Guardar",
+    "09:00",
+    "18:00"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/horarios/screens/HorariosScreen.tsx": [
+    "Plantillas de Jornadas",
+    "+ Crear Nova",
+    "Horarios del Personal",
+    "+ Crear Nou",
+    "EMPLEADO",
+    "ACCIONES",
+    "Cargando empleados...",
+    "Horario General",
+    "Editar",
+    "Personal en Turno",
+    "12 empleados hoy",
+    "Cargando...",
+    "Plantillas de Horario",
+    "Personal",
+    "Buscar por nombre o rol...",
+    "Éxito",
+    "Plantilla eliminada correctamente.",
+    "Trabajador eliminado correctamente."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/profile/components/AssignedServices.tsx": [
+    "Servicios Asignados",
+    "No tienes servicios asignados"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/profile/components/ProfileCard.tsx": [
+    "Editar perfil",
+    "Permiso requerido",
+    "Necesitamos acceso a tu galería."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/profile/components/ProfileHeader.tsx": [
+    "Perfil",
+    "Tu información y citas del día."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/profile/components/TodayAppointments.tsx": [
+    "Citas de Hoy",
+    "No tienes citas para hoy"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/profile/components/modal/EditProfileModal.tsx": [
+    "Editar perfil",
+    "Color de l'aplicació",
+    "Idioma",
+    "Contrasenya actual",
+    "Nova contrasenya",
+    "Confirmar nova contrasenya",
+    "Cancelar",
+    "Guardar",
+    "Introduce tu contraseña actual",
+    "Mín. 8 caràcters, 1 majúscula, 1 número i 1 especial",
+    "Repeteix la nova contrasenya",
+    "Èxit",
+    "Perfil actualitzat correctament."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/services/components/DeleteConfirmModal.tsx": [
+    "Eliminar servicio",
+    "Cancelar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/services/components/ServiceCard.tsx": [
+    "Eliminar",
+    "Editar"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/services/components/ServiceFormModal.tsx": [
+    "+ Añadir foto",
+    "Cambiar foto",
+    "Descripción",
+    "Cancelar",
+    "Ej: Corte de cabello",
+    "30",
+    "0.00",
+    "Describe el servicio...",
+    "Nombre",
+    "Duración (minutos)",
+    "Precio (€)",
+    "Permisos",
+    "Se necesitan permisos para acceder a la galería."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/services/components/ServicesHeader.tsx": [
+    "Servicios",
+    "Gestiona los servicios de tu negocio."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/services/screens/ServicesScreen.tsx": [
+    "Selecciona un servicio para editarlo",
+    "Volver a la lista",
+    "Edita els detalls del servei directament aquí",
+    "NOM DEL SERVEI",
+    "PREU (€)",
+    "DURACIÓ (MIN)",
+    "DESCRIPCIÓ",
+    "Eliminar",
+    "Guardar canvis",
+    "Serveis",
+    "Añadir",
+    "No hay servicios aún",
+    "Nom del servei",
+    "0.00",
+    "30",
+    "Descripció opcional..."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/services/screens/TabsServicesScreen.tsx": [
+    "Selecciona un servicio para editarlo",
+    "Edita els detalls del servei directament aquí",
+    "NOM DEL SERVEI",
+    "PREU (€)",
+    "DURACIÓ (MIN)",
+    "Servei visible al web",
+    "DESCRIPCIÓ",
+    "Eliminar",
+    "Descartar",
+    "Guardar canvis",
+    "SERVICIOS",
+    "+ Añadir",
+    "No hay servicios aún",
+    "Servicios",
+    "Nom del servei",
+    "0.00",
+    "30",
+    "Descripció opcional..."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/vacaciones/components/AbsenciaLegend.tsx": [
+    "Llegenda del Calendari",
+    "Absències Treballador",
+    "Festius Empresa"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/vacaciones/components/AnnualCalendar.tsx": [
+    "AVUI",
+    "SELECCIÓ"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/vacaciones/components/ProximosFestivos.tsx": [
+    "Próximos Festivos",
+    "No hay festivos próximos."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/vacaciones/components/SolicitudesRecientes.tsx": [
+    "Pròximes Absències",
+    "No hi ha absències pròximes."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/vacaciones/components/StatsSection.tsx": [
+    "VACACIONES USADAS",
+    "DIAS ACOMULADOS",
+    "PROXIMOS FESTIVOS",
+    "PRÒXIM FESTIU",
+    "Sense festius propers"
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/vacaciones/components/VacacionesHeader.tsx": [
+    "Gestión de Vacaciones",
+    "Planifica tus descansos y consulta tu saldo de días para el año 2025."
+  ],
+  "C:\\Users\\amaam\\Documents\\GitHub\\android-pds24_4a\\BookMeNow-app\\frontend\\src\\features/vacaciones/components/modal/CreateAbsenciaModal.tsx": [
+    "Sol·licitar absència",
+    "INICI",
+    "FI",
+    "Tipus d'absència *",
+    "Motiu (opcional)",
+    "Cancel·lar",
+    "Sol·licitar",
+    "Descriu el motiu de l"
+  ]
+}

@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import {
     createDefaultRotation,
     type JornadaFormState,
@@ -54,6 +55,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
 
     const [form, setForm] = useState<JornadaFormState>(buildInitialState);
     const [activeRotation, setActiveRotation] = useState(0);
@@ -73,7 +75,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                     rotacions: initialData.rotacions && initialData.rotacions.length > 0
                         ? initialData.rotacions.map(r => ({
                             index: r.index,
-                            nom: r.nom || `Rotación ${r.index + 1}`,
+                            nom: r.nom || `${t('rotationDefault')} ${r.index + 1}`,
                             dies: r.dies ? r.dies : createDefaultRotation(r.index).dies
                         }))
                         : [createDefaultRotation(0)]
@@ -139,8 +141,8 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     /* ── Validación ───────────────────── */
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
-        if (!form.nom.trim()) newErrors.nom = 'El nombre es obligatorio';
-        if (form.rotacions.length === 0) newErrors.rotaciones = 'Debe haber al menos una rotación';
+        if (!form.nom.trim()) newErrors.nom = t('nameRequired');
+        if (form.rotacions.length === 0) newErrors.rotaciones = t('templateRotationRequired');
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -172,16 +174,16 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         try {
             setLoading(true);
             if (initialData?.id) {
-                 await updateJornada(initialData.id, payload);
+                await updateJornada(initialData.id, payload);
             } else {
-                 await createJornada(payload);
+                await createJornada(payload);
             }
             onSuccess?.();
             onClose();
         } catch (err: any) {
             Alert.alert(
-                'Error',
-                err?.response?.data?.message || 'No se pudo guardar la plantilla',
+                t('error'),
+                err?.response?.data?.message || t('templateSaveError'),
             );
         } finally {
             setLoading(false);
@@ -209,7 +211,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
 
                     {/* ── Header ────────────────── */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>{initialData ? 'Editar plantilla' : 'Crear plantilla'}</Text>
+                        <Text style={styles.headerTitle}>{initialData ? t('templateModalTitleEdit') : t('templateModalTitleCreate')}</Text>
                         <TouchableOpacity onPress={handleClose} disabled={loading}>
                             <Ionicons name="close" size={24} color={HC.textMuted} />
                         </TouchableOpacity>
@@ -226,10 +228,10 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                         <View style={[styles.infoCard, isDesktop && styles.infoCardDesktop]}>
                             {/* Nombre */}
                             <View style={isDesktop ? styles.nameBlockDesktop : styles.nameBlock}>
-                                <Text style={styles.fieldLabel}>Nombre de la plantilla</Text>
+                                <Text style={styles.fieldLabel}>{t('templateNameLabel')}</Text>
                                 <TextInput
                                     style={[styles.input, errors.nom ? styles.inputError : null]}
-                                    placeholder="Ej. Jornada Mañana Intensiva"
+                                    placeholder={t('templateNamePh')}
                                     placeholderTextColor={HC.textLight}
                                     value={form.nom}
                                     onChangeText={handleNameChange}
@@ -250,20 +252,14 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                                         <Ionicons name="checkmark" size={14} color={HC.white} />
                                     )}
                                 </View>
-                                <View>
-                                    <Text style={styles.activaTitle}>Activa</Text>
-                                    <Text style={styles.activaSubtitle}>
-                                        Las plantillas activas pueden asignarse al personal.
-                                    </Text>
-                                </View>
                             </TouchableOpacity>
                         </View>
 
                         {/* Sección rotaciones */}
                         <View style={styles.rotationsSection}>
-                            <Text style={styles.sectionTitle}>Rotaciones</Text>
+                            <Text style={styles.sectionTitle}>{t('templateRotationsTitle')}</Text>
                             <Text style={styles.sectionSubtitle}>
-                                Cada rotación representa una semana. Las rotaciones se repiten en ciclo.
+                                {t('templateRotationsSubtitle')}
                             </Text>
 
                             <RotationTabs
@@ -282,7 +278,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                             >
                                 <Ionicons name="copy-outline" size={16} color={theme.primary} />
                                 <Text style={[styles.multiDayBtnText, { color: theme.primary }]}>
-                                    Aplicar a varis dies
+                                    {t('multiDayApply')}
                                 </Text>
                             </TouchableOpacity>
 
@@ -311,7 +307,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                             disabled={loading}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -323,7 +319,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                             {loading ? (
                                 <ActivityIndicator color={HC.white} size="small" />
                             ) : (
-                                <Text style={styles.btnSaveText}>{initialData ? 'Guardar cambios' : 'Guardar plantilla'}</Text>
+                                <Text style={styles.btnSaveText}>{initialData ? t('clientModalSaveEdit') : t('templateSaveCreate')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>

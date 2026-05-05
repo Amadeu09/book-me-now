@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { HC, cardShadow, STATUS_CONFIG, type Employee } from '../constants/horarios.constants';
+import { HC, cardShadow, STATUS_CONFIG, type Employee, type EmployeeStatus } from '../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
+import type { TranslationKeys } from '@/core/i18n/locales/ca';
+
+const STATUS_LABEL_KEYS: Record<EmployeeStatus, TranslationKeys> = {
+    available: 'statusAvailable',
+    break: 'statusBreak',
+    vacation: 'statusVacation',
+};
 
 /* ──────────────────────────────────────────
    EmployeeShiftCard
@@ -37,6 +45,7 @@ const MobileCard: React.FC<{ employee: Employee; sts: typeof STATUS_CONFIG.avail
 }) => {
     const [showMenu, setShowMenu] = useState(false);
     const theme = useTheme();
+    const { t } = useLanguage();
     return (
         <View style={[styles.mCard, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor, zIndex: showMenu ? 100 : 1 }]}>
             <View style={styles.avatarWrap}>
@@ -53,7 +62,7 @@ const MobileCard: React.FC<{ employee: Employee; sts: typeof STATUS_CONFIG.avail
                 <Text style={styles.mName}>{employee.name}</Text>
                 <Text style={styles.mShift}>{employee.shift}</Text>
             </View>
-            <Text style={[styles.mBadge, { color: sts.color }]}>{sts.label}</Text>
+            <Text style={[styles.mBadge, { color: sts.color }]}>{t(STATUS_LABEL_KEYS[employee.status])}</Text>
             <View style={{ position: 'relative', zIndex: 10, marginLeft: 10 }}>
                 <TouchableOpacity onPress={() => setShowMenu(!showMenu)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Ionicons name="ellipsis-vertical" size={18} color={HC.textMuted} />
@@ -61,11 +70,11 @@ const MobileCard: React.FC<{ employee: Employee; sts: typeof STATUS_CONFIG.avail
                 {showMenu && (
                     <View style={styles.menuPopover}>
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onEdit?.(employee); }}>
-                            <Text style={styles.menuItemText}>Editar</Text>
+                            <Text style={styles.menuItemText}>{t('edit')}</Text>
                         </TouchableOpacity>
                         <View style={styles.menuDivider} />
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onDelete?.(employee); }}>
-                            <Text style={[styles.menuItemText, { color: HC.red }]}>Eliminar</Text>
+                            <Text style={[styles.menuItemText, { color: HC.red }]}>{t('delete')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -84,6 +93,7 @@ const DesktopRow: React.FC<{
 }> = ({ employee, sts, onAction, onEdit, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
     const theme = useTheme();
+    const { t } = useLanguage();
     return (
         <View style={[styles.dRow, { zIndex: showMenu ? 100 : 1 }]}>
             {/* Empleado */}
@@ -112,9 +122,9 @@ const DesktopRow: React.FC<{
             {/* Estado */}
             <View style={styles.dCellStatus}>
                 <View style={[styles.statusDotSmall, { backgroundColor: sts.dotColor }]} />
-                <Text style={[styles.dStatusText, { color: sts.color }]}>{sts.label}</Text>
+                <Text style={[styles.dStatusText, { color: sts.color }]}>{t(STATUS_LABEL_KEYS[employee.status])}</Text>
                 {employee.status === 'vacation' && (
-                    <Text style={styles.dStatusSub}>Vuelve el 15 de Oct.</Text>
+                    <Text style={styles.dStatusSub}>{t('statusVacationReturn')}</Text>
                 )}
             </View>
             {/* Acciones */}
@@ -125,11 +135,11 @@ const DesktopRow: React.FC<{
                 {showMenu && (
                     <View style={styles.menuPopover}>
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onEdit?.(employee); }}>
-                            <Text style={styles.menuItemText}>Editar</Text>
+                            <Text style={styles.menuItemText}>{t('edit')}</Text>
                         </TouchableOpacity>
                         <View style={styles.menuDivider} />
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onDelete?.(employee); }}>
-                            <Text style={[styles.menuItemText, { color: HC.red }]}>Eliminar</Text>
+                            <Text style={[styles.menuItemText, { color: HC.red }]}>{t('delete')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}

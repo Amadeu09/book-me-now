@@ -32,6 +32,7 @@ import {
     type Employee,
 } from '../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import type { PlantillaSummary, JornadaPlantillaResponse } from '../types/jornades.types';
 import type { TreballadorBackendItem } from '../types/treballadors.types';
 
@@ -43,6 +44,7 @@ export default function HorariosScreen() {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
 
     const [activeTab, setActiveTab] = useState<TabKey>('global');
     const [searchQuery, setSearchQuery] = useState('');
@@ -61,20 +63,19 @@ export default function HorariosScreen() {
     // Custom hook to fetch workers via new implementation
     const { data: treballadorsData, isLoading: treballadorsLoading, refetch: refetchTreballadors } = useTreballadors(personalPage, PAGE_SIZE);
 
-    const backendEmployees = (treballadorsData?.data || []).map((t: TreballadorBackendItem): Employee => {
-        // Find assigned template if present (we expect one active generally)
-        const activeAssignment = t.jornadesPlantillaAssignacions?.[0];
-        const templateName = activeAssignment?.plantilla?.nom || 'Sin jornada';
+    const backendEmployees = (treballadorsData?.data || []).map((worker: TreballadorBackendItem): Employee => {
+        const activeAssignment = worker.jornadesPlantillaAssignacions?.[0];
+        const templateName = activeAssignment?.plantilla?.nom || t('horariosNoJornada');
         return {
-            id: String(t.id),
-            name: t.nom,
+            id: String(worker.id),
+            name: worker.nom,
             role: 'EMPLEADO',
             shift: templateName,
-            status: 'available', // Petición: "estado actual pon siempre activo"
-            initials: t.nom.substring(0, 2).toUpperCase(),
+            status: 'available',
+            initials: worker.nom.substring(0, 2).toUpperCase(),
             avatarColor: HC.primaryLight,
             templateName: templateName,
-            photoUri: t.Usuari?.fotoPerfil ?? null,
+            photoUri: worker.Usuari?.fotoPerfil ?? null,
         };
     });
 
@@ -93,25 +94,25 @@ export default function HorariosScreen() {
             setTemplateToEdit(fullData);
             setTemplateModalVisible(true);
         } else {
-            const msg = "No se pudo extraer la información de la plantilla.";
-            Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Error", msg);
+            const msg = t('horariosCannotExtractTemplate');
+            Platform.OS === 'web' ? window.alert(msg) : Alert.alert(t('error'), msg);
         }
     };
 
     const handleDeleteTemplate = (template: PlantillaSummary) => {
-        const confirmMsg = `¿Estás seguro de que deseas eliminar la plantilla "${template.nom}"?`;
+        const confirmMsg = t('horariosDeleteTemplateConfirm').replace('{name}', template.nom);
 
         const executeDelete = async () => {
             try {
                 await deleteJornada(template.id);
                 refetchPlantillas(1);
                 Platform.OS === 'web'
-                    ? window.alert("Plantilla eliminada correctamente.")
-                    : Alert.alert("Éxito", "Plantilla eliminada correctamente.");
+                    ? window.alert(t('horariosDeleteTemplateSuccess'))
+                    : Alert.alert(t('success'), t('horariosDeleteTemplateSuccess'));
             } catch (error: unknown) {
                 const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-                const msg = errMsg || 'No se pudo eliminar la plantilla.';
-                Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+                const msg = errMsg || t('horariosDeleteTemplateError');
+                Platform.OS === 'web' ? window.alert(msg) : Alert.alert(t('error'), msg);
             }
         };
 
@@ -121,11 +122,11 @@ export default function HorariosScreen() {
             }
         } else {
             Alert.alert(
-                "Eliminar Plantilla",
+                t('horariosDeleteTemplateTitle'),
                 confirmMsg,
                 [
-                    { text: "Cancelar", style: "cancel" },
-                    { text: "Eliminar", style: "destructive", onPress: executeDelete }
+                    { text: t('cancel'), style: "cancel" },
+                    { text: t('delete'), style: "destructive", onPress: executeDelete }
                 ]
             );
         }
@@ -141,7 +142,7 @@ export default function HorariosScreen() {
     };
 
     const handleDeleteWorker = (employee: Employee) => {
-        const confirmMsg = `¿Estás seguro de que deseas eliminar a "${employee.name}"?`;
+        const confirmMsg = t('horariosDeleteWorkerConfirm').replace('{name}', employee.name);
 
         const executeDelete = async () => {
             try {
@@ -149,12 +150,12 @@ export default function HorariosScreen() {
                 setPersonalPage(1);
                 refetchTreballadors(1);
                 Platform.OS === 'web'
-                    ? window.alert("Trabajador eliminado correctamente.")
-                    : Alert.alert("Éxito", "Trabajador eliminado correctamente.");
+                    ? window.alert(t('horariosDeleteWorkerSuccess'))
+                    : Alert.alert(t('success'), t('horariosDeleteWorkerSuccess'));
             } catch (error: unknown) {
                 const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-                const msg = errMsg || 'No se pudo eliminar el trabajador.';
-                Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+                const msg = errMsg || t('horariosDeleteWorkerError');
+                Platform.OS === 'web' ? window.alert(msg) : Alert.alert(t('error'), msg);
             }
         };
 
@@ -164,11 +165,11 @@ export default function HorariosScreen() {
             }
         } else {
             Alert.alert(
-                "Eliminar Trabajador",
+                t('horariosDeleteWorkerTitle'),
                 confirmMsg,
                 [
-                    { text: "Cancelar", style: "cancel" },
-                    { text: "Eliminar", style: "destructive", onPress: executeDelete }
+                    { text: t('cancel'), style: "cancel" },
+                    { text: t('delete'), style: "destructive", onPress: executeDelete }
                 ]
             );
         }
@@ -195,10 +196,10 @@ export default function HorariosScreen() {
                             <View style={[styles.sectionBox, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
                                 <View style={styles.sectionHeaderRow}>
                                     <View style={styles.sectionTitleRow}>
-                                        <Text style={styles.sectionTitle}>Plantillas de Jornadas</Text>
+                                        <Text style={styles.sectionTitle}>{t('horariosSectionPlantilles')}</Text>
                                     </View>
                                     <TouchableOpacity activeOpacity={0.7} onPress={() => setTemplateModalVisible(true)}>
-                                        <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nova</Text>
+                                        <Text style={[styles.linkText, { color: theme.primary }]}>{t('horariosCreateNova')}</Text>
                                     </TouchableOpacity>
                                 </View>
                                 {plantillasLoading ? (
@@ -225,7 +226,7 @@ export default function HorariosScreen() {
                                                     totalItems={plantillasTotal}
                                                     itemsPerPage={2}
                                                     onPageChange={(p) => refetchPlantillas(p)}
-                                                    labelTemplate={(count, total) => `MOSTRANDO ${count} DE ${total} PLANTILLAS`}
+                                                    labelTemplate={(count, total) => `${t('paginationShowing')} ${count} ${t('paginationOf')} ${total} ${t('paginationPlantilles')}`}
                                                 />
                                             </View>
                                         )}
@@ -243,36 +244,36 @@ export default function HorariosScreen() {
                                 {/* Header + search */}
                                 <View style={styles.sectionHeaderRow}>
                                     <View style={styles.sectionTitleRow}>
-                                        <Text style={styles.sectionTitle}>Horarios del Personal</Text>
+                                        <Text style={styles.sectionTitle}>{t('horariosSectionPersonal')}</Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                                         <View style={styles.searchBox}>
                                             <Ionicons name="search-outline" size={16} color={HC.textLight} />
                                             <TextInput
                                                 style={styles.searchInput}
-                                                placeholder="Buscar por nombre o rol..."
+                                                placeholder={t('horariosSearchPh')}
                                                 placeholderTextColor={HC.textLight}
                                                 value={searchQuery}
                                                 onChangeText={setSearchQuery}
                                             />
                                         </View>
                                         <TouchableOpacity activeOpacity={0.7} onPress={() => setTrabajadorModalVisible(true)}>
-                                            <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nou</Text>
+                                            <Text style={[styles.linkText, { color: theme.primary }]}>{t('horariosCreateNou')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
 
                                 {/* Table header */}
                                 <View style={styles.tableHead}>
-                                    <Text style={[styles.thText, { flex: 2 }]}>EMPLEADO</Text>
-                                    <Text style={[styles.thText, { flex: 1.5 }]}>PLANTILLA{'\n'}ASIGNADA</Text>
-                                    <Text style={[styles.thText, { flex: 1.5 }]}>ESTADO{'\n'}ACTUAL</Text>
-                                    <Text style={[styles.thText, { width: 60, textAlign: 'center' }]}>ACCIONES</Text>
+                                    <Text style={[styles.thText, { flex: 2 }]}>{t('horariosColEmployee')}</Text>
+                                    <Text style={[styles.thText, { flex: 1.5 }]}>{t('horariosColTemplate')}</Text>
+                                    <Text style={[styles.thText, { flex: 1.5 }]}>{t('horariosColStatus')}</Text>
+                                    <Text style={[styles.thText, { width: 60, textAlign: 'center' }]}>{t('horariosColActions')}</Text>
                                 </View>
 
                                 {/* Rows */}
                                 {treballadorsLoading ? (
-                                    <Text style={{ textAlign: 'center', padding: 20 }}>Cargando empleados...</Text>
+                                    <Text style={{ textAlign: 'center', padding: 20 }}>{t('horariosLoadingEmployees')}</Text>
                                 ) : filteredEmployees.map((emp: Employee) => (
                                     <EmployeeShiftCard
                                         key={emp.id}
@@ -291,7 +292,7 @@ export default function HorariosScreen() {
                                         totalItems={totalItems}
                                         itemsPerPage={PAGE_SIZE}
                                         onPageChange={setPersonalPage}
-                                        labelTemplate={(count, total) => `MOSTRANDO PÁGINA ${personalPage} DE ${totalPages}`}
+                                        labelTemplate={(count, total) => `${t('paginationPage')} ${personalPage} ${t('paginationOf')} ${totalPages}`}
                                     />
                                 </View>
                             </View>
@@ -340,10 +341,10 @@ export default function HorariosScreen() {
                     <>
                         {/* Section header */}
                         <View style={styles.mobileSectionHeader}>
-                            <Text style={styles.mobileSectionTitle}>Horario General</Text>
+                            <Text style={styles.mobileSectionTitle}>{t('horariosGeneralTitle')}</Text>
                             <TouchableOpacity style={styles.editBtn} activeOpacity={0.7}>
                                 <Ionicons name="pencil" size={14} color={theme.primary} />
-                                <Text style={[styles.linkText, { color: theme.primary }]}>Editar</Text>
+                                <Text style={[styles.linkText, { color: theme.primary }]}>{t('edit')}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -354,13 +355,13 @@ export default function HorariosScreen() {
 
                         {/* Personal en turno */}
                         <View style={[styles.mobileSectionHeader, { marginTop: 24 }]}>
-                            <Text style={styles.mobileSectionTitle}>Personal en Turno</Text>
+                            <Text style={styles.mobileSectionTitle}>{t('horariosMobilePersonalTitle')}</Text>
                             <Text style={styles.countText}>12 empleados hoy</Text>
                         </View>
 
                         <View style={{ paddingHorizontal: 16 }}>
                             {treballadorsLoading ? (
-                                <Text style={{ padding: 16 }}>Cargando...</Text>
+                                <Text style={{ padding: 16 }}>{t('loading')}</Text>
                             ) : (
                                 filteredEmployees.slice(0, 3).map((emp: Employee) => (
                                     <EmployeeShiftCard
@@ -382,9 +383,9 @@ export default function HorariosScreen() {
                 {activeTab === 'plantillas' && (
                     <>
                         <View style={styles.mobileSectionHeader}>
-                            <Text style={styles.mobileSectionTitle}>Plantillas de Horario</Text>
+                            <Text style={styles.mobileSectionTitle}>{t('horariosMobilePlantillesTitle')}</Text>
                             <TouchableOpacity activeOpacity={0.7} onPress={() => setTemplateModalVisible(true)}>
-                                <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nova</Text>
+                                <Text style={[styles.linkText, { color: theme.primary }]}>{t('horariosCreateNova')}</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={{ paddingHorizontal: 16 }}>
@@ -412,7 +413,7 @@ export default function HorariosScreen() {
                                                 totalItems={plantillasTotal}
                                                 itemsPerPage={2}
                                                 onPageChange={(p) => refetchPlantillas(p)}
-                                                labelTemplate={(count, total) => `MOSTRANDO ${count} DE ${total} PLANTILLAS`}
+                                                labelTemplate={(count, total) => `${t('paginationShowing')} ${count} ${t('paginationOf')} ${total} ${t('paginationPlantilles')}`}
                                             />
                                         </View>
                                     )}
@@ -426,16 +427,16 @@ export default function HorariosScreen() {
                     <>
                         <View style={styles.mobileSectionHeader}>
                             <View>
-                                <Text style={styles.mobileSectionTitle}>Personal</Text>
-                                <Text style={styles.countText}>{totalItems} empleados en total</Text>
+                                <Text style={styles.mobileSectionTitle}>{t('tabPersonal')}</Text>
+                                <Text style={styles.countText}>{totalItems} {t('horariosEmployeesTotal')}</Text>
                             </View>
                             <TouchableOpacity activeOpacity={0.7} onPress={() => setTrabajadorModalVisible(true)}>
-                                <Text style={[styles.linkText, { color: theme.primary }]}>+ Crear Nou</Text>
+                                <Text style={[styles.linkText, { color: theme.primary }]}>{t('horariosCreateNou')}</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={{ paddingHorizontal: 16 }}>
                             {treballadorsLoading ? (
-                                <Text>Cargando empleados...</Text>
+                                <Text>{t('horariosLoadingEmployees')}</Text>
                             ) : (
                                 <>
                                     {filteredEmployees.map((emp: Employee) => (
@@ -455,7 +456,7 @@ export default function HorariosScreen() {
                                                 totalItems={totalItems}
                                                 itemsPerPage={PAGE_SIZE}
                                                 onPageChange={setPersonalPage}
-                                                labelTemplate={(count, total) => `PÁGINA ${personalPage} DE ${totalPages}`}
+                                                labelTemplate={(count, total) => `${t('paginationPage')} ${personalPage} ${t('paginationOf')} ${totalPages}`}
                                             />
                                         </View>
                                     )}

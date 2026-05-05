@@ -10,6 +10,7 @@ import type { AuthUser } from '@/features/auth/services/auth.service';
 import { EditEmpresaModal } from '@/features/empresas/components/modal/EditEmpresaModal';
 import { uploadFotoEmpresa, uploadBannerEmpresa } from '@/features/empresas/services/empresas.service';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 const BANNER_HEIGHT = 260;
 const AVATAR_SIZE = 130;
@@ -26,6 +27,7 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
     const theme = useTheme();
+    const { t } = useLanguage();
 
     const handlePickImage = async () => {
         if (!empresa?.id) return;
@@ -42,10 +44,10 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                 setIsUploadingPhoto(true);
                 await uploadFotoEmpresa(empresa.id, result.assets[0].uri);
                 queryClient.invalidateQueries({ queryKey: ['empresa', empresa.id] });
-                Alert.alert('Éxito', 'Foto actualizada correctamente');
+                Alert.alert(t('success'), t('photoUpdated'));
             }
         } catch (error: any) {
-            Alert.alert('Error', error?.response?.data?.message || 'No se ha podido subir la imagen. Inténtalo de nuevo.');
+            Alert.alert(t('error'), error?.response?.data?.message || t('photoUploadError'));
         } finally {
             setIsUploadingPhoto(false);
         }
@@ -63,10 +65,10 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                 setIsUploadingBanner(true);
                 await uploadBannerEmpresa(empresa.id, result.assets[0].uri);
                 queryClient.invalidateQueries({ queryKey: ['empresa', empresa.id] });
-                Alert.alert('Éxito', 'Banner actualizado correctamente');
+                Alert.alert(t('success'), t('bannerUpdated'));
             }
         } catch (error: any) {
-            Alert.alert('Error', error?.response?.data?.message || 'No se ha podido subir el banner. Inténtalo de nuevo.');
+            Alert.alert(t('error'), error?.response?.data?.message || t('bannerUploadError'));
         } finally {
             setIsUploadingBanner(false);
         }
@@ -137,8 +139,8 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                 {/* Nombre empresa + edit button on the right */}
                 <View style={styles.row}>
                     <View style={styles.infoBlock}>
-                        <Text style={[styles.label, { color: opMuted }]}>Nombre de empresa</Text>
-                        <Text style={[styles.value, { color: op }]}>{empresa?.nom || 'Sin nombre'}</Text>
+                        <Text style={[styles.label, { color: opMuted }]}>{t('empresaNameLabel')}</Text>
+                        <Text style={[styles.value, { color: op }]}>{empresa?.nom || t('noName')}</Text>
                     </View>
                     <TouchableOpacity style={[styles.editBtn, { backgroundColor: opFaint }]} onPress={() => setIsEditModalVisible(true)}>
                         <Ionicons name="pencil" size={16} color={op} />
@@ -150,8 +152,8 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                 <View style={styles.row}>
                     <Ionicons name="location-outline" size={20} color={opMuted} />
                     <View style={styles.infoBlock}>
-                        <Text style={[styles.label, { color: opMuted }]}>Ubicación</Text>
-                        <Text style={[styles.value, { color: op }]}>{empresa?.ubicacio || 'Sin ubicación'}</Text>
+                        <Text style={[styles.label, { color: opMuted }]}>{t('empresaLocationLabel')}</Text>
+                        <Text style={[styles.value, { color: op }]}>{empresa?.ubicacio || t('noLocation')}</Text>
                     </View>
                 </View>
 

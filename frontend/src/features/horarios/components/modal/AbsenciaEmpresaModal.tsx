@@ -6,15 +6,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { DatePickerField } from '../DatePickerField';
 import type { AbsenciaEmpresa, CreateAbsenciaEmpresaDto, TipusAbsenciaEmpresa } from '../../types/absencies-empresa.types';
-
-const TIPUS_OPTIONS: { key: TipusAbsenciaEmpresa; label: string }[] = [
-    { key: 'FESTA_LOCAL',   label: 'Fiesta Local' },
-    { key: 'FESTA_ESTATAL', label: 'Fiesta Estatal' },
-    { key: 'PONT',          label: 'Puente' },
-    { key: 'ALTRE',         label: 'Otro' },
-];
 
 interface Props {
     visible: boolean;
@@ -28,6 +22,14 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
     const isDesktop = width >= 768;
     const isEdit = !!initialData;
     const theme = useTheme();
+    const { t } = useLanguage();
+
+    const TIPUS_OPTIONS: { key: TipusAbsenciaEmpresa; label: string }[] = [
+        { key: 'FESTA_LOCAL',   label: t('tipusFiestaLocal') },
+        { key: 'FESTA_ESTATAL', label: t('tipusFiestaEstatal') },
+        { key: 'PONT',          label: t('tipusPuente') },
+        { key: 'ALTRE',         label: t('absAltre') },
+    ];
 
     const [titol, setTitol] = useState('');
     const [inici, setInici] = useState('');
@@ -57,15 +59,15 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
 
     const handleSubmit = async () => {
         setError('');
-        if (!titol.trim()) return setError('El título es obligatorio.');
-        if (!inici) return setError('La fecha de inicio es obligatoria.');
+        if (!titol.trim()) return setError(t('absenciaTitleRequired'));
+        if (!inici) return setError(t('absenciaDateRequired'));
 
         setIsSubmitting(true);
         try {
             await onSubmit({ titol: titol.trim(), inici, fi: fi || undefined, tipus });
             onClose();
         } catch (e: any) {
-            const msg = e?.response?.data?.message || 'No se ha podido guardar la ausencia.';
+            const msg = e?.response?.data?.message || t('absenciaSaveError');
             setError(Array.isArray(msg) ? msg.join(', ') : msg);
         } finally {
             setIsSubmitting(false);
@@ -80,7 +82,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                     {/* ── Header ── */}
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>
-                            {isEdit ? 'Editar ausencia' : 'Nueva ausencia'}
+                            {isEdit ? t('absenciaModalTitleEdit') : t('absenciaModalTitleNew')}
                         </Text>
                         <TouchableOpacity
                             onPress={handleClose}
@@ -102,10 +104,10 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                             <Text style={styles.errorText}>{error}</Text>
                         )}
 
-                        <Text style={styles.label}>Título *</Text>
+                        <Text style={styles.label}>{t('absenciaTitleLabel')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="ex. Sant Joan, Pont Constitució..."
+                            placeholder={t('absenciaTitlePh')}
                             placeholderTextColor={HC.textMuted}
                             value={titol}
                             onChangeText={setTitol}
@@ -114,26 +116,26 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
 
                         <View style={styles.dateRow}>
                             <View style={styles.dateCol}>
-                                <Text style={styles.label}>Fecha inicio *</Text>
+                                <Text style={styles.label}>{t('absenciaStartLabel')}</Text>
                                 <DatePickerField
                                     value={inici}
                                     onChange={setInici}
-                                    placeholder="Seleccionar inicio"
+                                    placeholder={t('absenciaStartPh')}
                                     disabled={isSubmitting}
                                 />
                             </View>
                             <View style={styles.dateCol}>
-                                <Text style={styles.label}>Fecha fin (opcional)</Text>
+                                <Text style={styles.label}>{t('absenciaEndLabel')}</Text>
                                 <DatePickerField
                                     value={fi}
                                     onChange={setFi}
-                                    placeholder="Seleccionar fin"
+                                    placeholder={t('absenciaEndPh')}
                                     disabled={isSubmitting}
                                 />
                             </View>
                         </View>
 
-                        <Text style={styles.label}>Tipo *</Text>
+                        <Text style={styles.label}>{t('absenciaTipusLabel')}</Text>
                         <View style={styles.chipsRow}>
                             {TIPUS_OPTIONS.map(opt => (
                                 <TouchableOpacity
@@ -158,7 +160,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                             disabled={isSubmitting}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                            <Text style={styles.btnCancelText}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.btnSave, { backgroundColor: theme.primary }, isSubmitting && styles.btnSaveDisabled]}
@@ -168,7 +170,7 @@ export function AbsenciaEmpresaModal({ visible, initialData, onClose, onSubmit }
                         >
                             {isSubmitting
                                 ? <ActivityIndicator color={HC.white} size="small" />
-                                : <Text style={styles.btnSaveText}>{isEdit ? 'Guardar' : 'Crear'}</Text>
+                                : <Text style={styles.btnSaveText}>{isEdit ? t('save') : t('create')}</Text>
                             }
                         </TouchableOpacity>
                     </View>

@@ -6,30 +6,30 @@ import { getEmpresasPublic } from '@/lib/api';
 import type { Empresa } from '@/types/empresa';
 
 const CATEGORIES: { label: string; value: string | null; icon: string }[] = [
-  { label: 'Peluquería',   value: 'PERRUQUERIA',  icon: 'content_cut' },
-  { label: 'Barbería',     value: 'BARBERIA',     icon: 'face_retouching_natural' },
-  { label: 'Estética',     value: 'ESTETICA',     icon: 'auto_awesome' },
-  { label: 'Spa',          value: 'SPA',          icon: 'spa' },
-  { label: 'Dental',       value: 'DENTAL',       icon: 'dentistry' },
+  { label: 'Peluquería', value: 'PERRUQUERIA', icon: 'content_cut' },
+  { label: 'Barbería', value: 'BARBERIA', icon: 'face_retouching_natural' },
+  { label: 'Estética', value: 'ESTETICA', icon: 'auto_awesome' },
+  { label: 'Spa', value: 'SPA', icon: 'spa' },
+  { label: 'Dental', value: 'DENTAL', icon: 'dentistry' },
   { label: 'Fisioterapia', value: 'FISIOTERAPIA', icon: 'accessibility_new' },
-  { label: 'Más',          value: null,           icon: 'grid_view' },
+  { label: 'Más', value: null, icon: 'grid_view' },
 ];
 
 const TIPO_LABELS: Record<string, string> = {
-  PERRUQUERIA:   'Peluquería',
-  BARBERIA:      'Barbería',
-  ESTETICA:      'Estética',
-  SPA:           'Spa',
-  MASSATGES:     'Masajes',
-  FITNESS:       'Fitness',
-  PILATES:       'Pilates',
-  IOGA:          'Yoga',
+  PERRUQUERIA: 'Peluquería',
+  BARBERIA: 'Barbería',
+  ESTETICA: 'Estética',
+  SPA: 'Spa',
+  MASSATGES: 'Masajes',
+  FITNESS: 'Fitness',
+  PILATES: 'Pilates',
+  IOGA: 'Yoga',
   NUTRICIONISTA: 'Nutricionista',
-  FISIOTERAPIA:  'Fisioterapia',
-  DENTAL:        'Dental',
-  VETERINARIA:   'Veterinaria',
-  ALTRES:        'Otros',
-  OTROS:         'Otros',
+  FISIOTERAPIA: 'Fisioterapia',
+  DENTAL: 'Dental',
+  VETERINARIA: 'Veterinaria',
+  ALTRES: 'Otros',
+  OTROS: 'Otros',
 };
 
 const LIMIT = 3;
@@ -45,7 +45,7 @@ function BusinessCard({ empresa }: { empresa: Empresa }) {
       tabIndex={0}
       onClick={() => router.push(`/empresa/${empresa.id}`)}
       onKeyDown={(e) => e.key === 'Enter' && router.push(`/empresa/${empresa.id}`)}
-      className="group bg-white rounded-[2rem] border border-gray-200/80 overflow-hidden hover:border-violet-300 transition-colors duration-200 flex flex-col cursor-pointer"
+      className="group bg-white rounded-[2rem] border border-gray-200/80 overflow-hidden hover:border-primary/30 transition-colors duration-200 flex flex-col cursor-pointer"
     >
       {/* Banner */}
       <div className="relative h-44 shrink-0 overflow-hidden">
@@ -58,13 +58,13 @@ function BusinessCard({ empresa }: { empresa: Empresa }) {
         ) : (
           <div
             className="w-full h-full flex items-center justify-center text-5xl font-black text-white/30 select-none"
-            style={{ background: 'linear-gradient(135deg, #3B0764 0%, #1F2937 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #FF6B6B 0%, #1F2937 100%)' }}
           >
             {initial}
           </div>
         )}
         {tipoLabel && (
-          <span className="absolute top-4 right-4 text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/90 text-violet-700 backdrop-blur-sm">
+          <span className="absolute top-4 right-4 text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/90 text-primary backdrop-blur-sm">
             {tipoLabel}
           </span>
         )}
@@ -84,10 +84,10 @@ function BusinessCard({ empresa }: { empresa: Empresa }) {
         )}
 
         <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-xs font-semibold text-violet-700 group-hover:text-violet-900 transition-colors">
+          <span className="text-xs font-semibold text-primary group-hover:text-primary transition-colors">
             Ver perfil
           </span>
-          <span className="material-symbols-outlined text-violet-300 group-hover:text-violet-600 transition-colors" style={{ fontSize: '18px' }}>
+          <span className="material-symbols-outlined text-primary/30 group-hover:text-primary transition-colors" style={{ fontSize: '18px' }}>
             north_east
           </span>
         </div>
@@ -114,7 +114,7 @@ function NavArrow({
         'shrink-0 w-11 h-11 rounded-full border flex items-center justify-center transition-colors duration-150',
         disabled
           ? 'border-gray-100 text-gray-300 cursor-not-allowed bg-white'
-          : 'border-gray-200 text-gray-600 bg-white hover:border-violet-400 hover:text-violet-700',
+          : 'border-gray-200 text-gray-600 bg-white hover:border-primary hover:text-primary',
       ].join(' ')}
     >
       <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
@@ -174,8 +174,8 @@ export function BusinessDirectorySection() {
                 className={[
                   'flex items-center gap-1.5 px-4 py-2.5 rounded-full whitespace-nowrap text-sm font-medium transition-colors duration-150 shrink-0 border',
                   isSelected
-                    ? 'bg-violet-700 text-white border-violet-700'
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-violet-300 hover:text-violet-700',
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/30 hover:text-primary',
                 ].join(' ')}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
@@ -246,7 +246,7 @@ export function BusinessDirectorySection() {
                 width: i + 1 === currentPage ? '24px' : '8px',
                 height: '8px',
                 borderRadius: '999px',
-                backgroundColor: i + 1 === currentPage ? '#7C3AED' : '#e5e7eb',
+                backgroundColor: i + 1 === currentPage ? '#FF6B6B' : '#e5e7eb',
                 transition: 'all 0.3s ease',
                 border: 'none',
                 cursor: 'pointer',

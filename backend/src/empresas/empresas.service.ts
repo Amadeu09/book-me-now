@@ -24,6 +24,7 @@ export class EmpresasService {
         ubicacio: createEmpresaDto.ubicacio,
         capacitat: createEmpresaDto.capacitat ?? null,
         activa: createEmpresaDto.activa ?? true,
+        ...(createEmpresaDto.diasAntesReserva ? { diasAntesReserva: createEmpresaDto.diasAntesReserva } : {}),
       },
     });
 

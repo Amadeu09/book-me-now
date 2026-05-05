@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC } from '../constants/horarios.constants';
+import { useLanguage } from '@/core/i18n';
 
 interface PaginationRowProps {
     currentPage: number;
@@ -20,8 +21,9 @@ export function PaginationRow({
     onPageChange,
     labelTemplate,
 }: PaginationRowProps) {
+    const { t } = useLanguage();
     const showingCount = Math.min(itemsPerPage, totalItems - (currentPage - 1) * itemsPerPage);
-    const defaultLabelText = `MOSTRANDO ${showingCount > 0 ? showingCount : 0} DE ${totalItems}`;
+    const defaultLabelText = `${t('paginationShowing')} ${showingCount > 0 ? showingCount : 0} ${t('paginationOf')} ${totalItems}`;
     const labelText = labelTemplate ? labelTemplate(showingCount, totalItems) : defaultLabelText;
 
     const isFirstPage = currentPage <= 1;

@@ -12,6 +12,7 @@ export type SignupInput = {
     capacitat?: number;
     descripcio?: string;
     tipo?: string;
+    diasAntesReserva?: number;
   };
   usuari: {
     email: string;
@@ -38,6 +39,7 @@ export type AuthUser = {
     bannerUrl?: string;
     descripcio?: string;
     tipo?: string;
+    diasAntesReserva?: number;
   };
 };
 

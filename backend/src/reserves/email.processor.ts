@@ -27,8 +27,8 @@ export class EmailProcessor {
   async handlePostCita(job: Job<PostCitaJobData>): Promise<void> {
     const { email, nom, serveiNom, dataHoraInici, tokenValoracio } = job.data;
     const data = new Date(dataHoraInici);
-    const dataFormatada = data.toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const horaFormatada = data.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
+    const dataFormatada = data.toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' });
+    const horaFormatada = data.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
 
     const valoracioLink = tokenValoracio ? `${this.portalUrl}/valoracio/${tokenValoracio}` : null;
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { palette, spacing } from "@/constants/theme";
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 import { HOURS, HOUR_HEIGHT, START_HOUR } from './constants';
 import { CalendarEvent } from './types';
 import { EventCard } from './EventCard';
@@ -14,45 +15,87 @@ interface WeekGridProps {
     loading?: boolean;
 }
 
+function computeEventLayouts(
+    events: CalendarEvent[],
+): Array<{ event: CalendarEvent; col: number; totalCols: number }> {
+    if (!events.length) return [];
+
+    const sorted = [...events].sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    // Group events that overlap (transitively: A+B overlap, B+C overlap → same group)
+    const groups: CalendarEvent[][] = [];
+    for (const event of sorted) {
+        const idx = groups.findIndex(g =>
+            g.some(e =>
+                e.start.getTime() < event.end.getTime() &&
+                e.end.getTime() > event.start.getTime()
+            )
+        );
+        if (idx !== -1) {
+            groups[idx].push(event);
+        } else {
+            groups.push([event]);
+        }
+    }
+
+    const result: Array<{ event: CalendarEvent; col: number; totalCols: number }> = [];
+
+    for (const group of groups) {
+        // Greedy column assignment: put each event in the first column that is free
+        const colEnds: number[] = [];
+        const colMap = new Map<string, number>();
+
+        for (const event of group) {
+            const startMs = event.start.getTime();
+            let col = colEnds.findIndex(t => t <= startMs);
+            if (col === -1) {
+                col = colEnds.length;
+                colEnds.push(0);
+            }
+            colEnds[col] = event.end.getTime();
+            colMap.set(event.id, col);
+        }
+
+        const totalCols = colEnds.length;
+        for (const event of group) {
+            result.push({ event, col: colMap.get(event.id)!, totalCols });
+        }
+    }
+
+    return result;
+}
+
 export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEventPress, loading = false }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
 
     // Generate the 7 days of the current week
     const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startOfCurrentWeek, i));
 
     const renderEventsForDay = (dayDate: Date) => {
-        // Filter events that fall on this specific day
         const dayEvents = events.filter(e => isSameDay(e.start, dayDate));
+        const layouts = computeEventLayouts(dayEvents);
 
-        return dayEvents.map((event) => {
-            // Calculate top position relative to START_HOUR
-            // Handle day overflow if needed (e.g. 2 AM next day should be bottom of previous day?)
-            // For now, assuming events start/end within the 7AM-6AM window of the "logical" day.
-
-            // Simple logic: Calculate minutes from START_HOUR
-            let startHour = event.start.getHours();
-            const startMin = event.start.getMinutes();
-
-            // Adjust for 24h wrap-around relative to START_HOUR (7)
-            // If event is 2 AM, and start is 7 AM. 2 < 7, so it's 2+24 = 26. 26-7 = 19h offset.
-            if (startHour < START_HOUR) {
-                startHour += 24;
-            }
-
+        return layouts.map(({ event, col, totalCols }) => {
+            const madridHM = (d: Date) => {
+                const fmt = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: 'numeric', hour12: false, timeZone: 'Europe/Madrid' });
+                const parts = fmt.formatToParts(d);
+                return { h: parseInt(parts.find(p => p.type === 'hour')?.value ?? '0'), m: parseInt(parts.find(p => p.type === 'minute')?.value ?? '0') };
+            };
+            const { h: sh, m: startMin } = madridHM(event.start);
+            let startHour = sh < START_HOUR ? sh + 24 : sh;
             const top = ((startHour - START_HOUR) + startMin / 60) * HOUR_HEIGHT;
 
-            // Calculate height
-            let endHour = event.end.getHours();
-            const endMin = event.end.getMinutes();
-            if (endHour < START_HOUR) {
-                endHour += 24;
-            }
-            // If end hour is smaller than start (crossing midnight), we already adjusted. 
-            // If end matches start but is next day... logic handles it if duration > 0
-
+            const { h: eh, m: endMin } = madridHM(event.end);
+            let endHour = eh < START_HOUR ? eh + 24 : eh;
             const durationHours = (endHour - startHour) + (endMin - startMin) / 60;
             const height = durationHours * HOUR_HEIGHT;
+
+            const overlapStyle = totalCols > 1 ? {
+                left: `${(col / totalCols * 100).toFixed(1)}%`,
+                right: `${((totalCols - col - 1) / totalCols * 100).toFixed(1)}%`,
+            } : {};
 
             return (
                 <EventCard
@@ -60,7 +103,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEvent
                     event={event}
                     onPress={onEventPress}
                     hourHeight={HOUR_HEIGHT}
-                    style={{ top, height }}
+                    style={{ top, height, ...overlapStyle }}
                 />
             );
         });
@@ -125,7 +168,7 @@ export const WeekGrid: React.FC<WeekGridProps> = ({ events, currentDate, onEvent
             {/* Empty state overlay — shown only when no events and not loading */}
             {!loading && events.length === 0 && (
                 <View style={styles.emptyOverlay} pointerEvents="none">
-                    <Text style={styles.emptyText}>No hay reservas esta semana</Text>
+                    <Text style={styles.emptyText}>{t('calendarNoWeekBookings')}</Text>
                 </View>
             )}
         </View>
@@ -184,6 +227,7 @@ const styles = StyleSheet.create({
     },
     gridContainer: {
         flexDirection: 'row',
+        marginTop: -HOUR_HEIGHT,
     },
     timeColumn: {
         width: 60,

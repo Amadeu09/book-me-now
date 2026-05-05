@@ -3,19 +3,20 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
-
-const MOCK_SCHEDULE = [
-    { day: 'Lunes', hours: '09:00 - 18:00', status: 'open' },
-    { day: 'Martes', hours: '09:00 - 18:00', status: 'open' },
-    { day: 'Miércoles', hours: '09:00 - 18:00', status: 'open' },
-    { day: 'Jueves', hours: '09:00 - 18:00', status: 'open' },
-    { day: 'Viernes', hours: '09:00 - 18:00', status: 'open' },
-    { day: 'Sábado', hours: '10:00 - 14:00', status: 'reduced' },
-    { day: 'Domingo', hours: 'Cerrado', status: 'closed' },
-];
+import { useLanguage } from '@/core/i18n';
 
 export const ScheduleCard: React.FC = () => {
     const theme = useTheme();
+    const { t } = useLanguage();
+    const MOCK_SCHEDULE = [
+        { day: t('dayMonday'), hours: '09:00 - 18:00', status: 'open' },
+        { day: t('dayTuesday'), hours: '09:00 - 18:00', status: 'open' },
+        { day: t('dayWednesday'), hours: '09:00 - 18:00', status: 'open' },
+        { day: t('dayThursday'), hours: '09:00 - 18:00', status: 'open' },
+        { day: t('dayFriday'), hours: '09:00 - 18:00', status: 'open' },
+        { day: t('daySaturday'), hours: '10:00 - 14:00', status: 'reduced' },
+        { day: t('daySunday'), hours: t('closed'), status: 'closed' },
+    ];
     return (
         <View style={[styles.card, { backgroundColor: theme.primaryLight, borderWidth: theme.softBorderWidth, borderColor: theme.softBorderColor }]}>
             <View style={styles.headerRow}>
@@ -23,7 +24,7 @@ export const ScheduleCard: React.FC = () => {
                     <Ionicons name="time" size={22} color={theme.primary} />
                 </View>
                 <View style={styles.headerTitleBlock}>
-                    <Text style={styles.title}>Horario de Apertura</Text>
+                    <Text style={styles.title}>{t('scheduleTitle')}</Text>
                 </View>
             </View>
             <View style={styles.content}>
