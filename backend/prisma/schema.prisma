@@ -95,6 +95,7 @@ model Servei {
   actiu        Boolean             @default(true)
   fotoUrl      String?
   descripcio   String?
+  categoria    BusinessType?       @default(ALTRES)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   reserves     Reserva[]

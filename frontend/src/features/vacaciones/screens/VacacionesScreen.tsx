@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
     View, ScrollView, StyleSheet, ActivityIndicator,
     Text, SafeAreaView, StatusBar, useWindowDimensions, TouchableOpacity,
@@ -32,6 +33,12 @@ export default function VacacionesScreen() {
     const theme = useTheme();
 
     const { data, isLoading, error, holidayDates, absenciaDates, refetch } = useVacaciones(YEAR);
+
+    const _isFirstFocus = useRef(true);
+    useFocusEffect(useCallback(() => {
+        if (_isFirstFocus.current) { _isFirstFocus.current = false; return; }
+        refetch();
+    }, [refetch]));
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalInici, setModalInici] = useState('');

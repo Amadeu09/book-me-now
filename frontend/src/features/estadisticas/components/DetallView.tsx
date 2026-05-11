@@ -75,8 +75,8 @@ function ServeisCard({ serveis, isDesktop }: { serveis: DetallServei[]; isDeskto
             {isDesktop && (
                 <View style={dv.tableHead}>
                     <Text style={[dv.th, dv.flex2]}>{t('detallColService')}</Text>
-                    <Text style={[dv.th, dv.w90]}>{t('detallColReserves')}</Text>
-                    <Text style={[dv.th, dv.w110]}>{t('detallColRevenue')}</Text>
+                    <Text style={[dv.th, dv.flex1, dv.center]}>{t('detallColReserves')}</Text>
+                    <Text style={[dv.th, dv.flex1, dv.right]}>{t('detallColRevenue')}</Text>
                 </View>
             )}
             {serveis.length === 0 ? (
@@ -85,8 +85,8 @@ function ServeisCard({ serveis, isDesktop }: { serveis: DetallServei[]; isDeskto
                 isDesktop ? (
                     <View key={sv.id} style={dv.tableRow}>
                         <Text style={[dv.tdPrimary, dv.flex2]} numberOfLines={1}>{sv.nom}</Text>
-                        <Text style={[dv.tdMuted, dv.w90]}>{sv.reserves}</Text>
-                        <Text style={[dv.tdMuted, dv.w110]}>{sv.ingressos.toLocaleString('ca-ES')}€</Text>
+                        <Text style={[dv.tdMuted, dv.flex1, dv.center]}>{sv.reserves}</Text>
+                        <Text style={[dv.tdMuted, dv.flex1, dv.right]}>{sv.ingressos.toLocaleString('ca-ES')}€</Text>
                     </View>
                 ) : (
                     <View key={sv.id} style={dv.mobileRow}>
@@ -107,9 +107,9 @@ function TreballadorsCard({ treballadors, isDesktop }: { treballadors: DetallTre
             {isDesktop && (
                 <View style={dv.tableHead}>
                     <Text style={[dv.th, dv.flex2]}>{t('detallColWorker')}</Text>
-                    <Text style={[dv.th, dv.w90]}>{t('detallColReserves')}</Text>
-                    <Text style={[dv.th, dv.w110]}>{t('detallColRevenue')}</Text>
-                    <Text style={[dv.th, dv.w90]}>{t('detallColNoShows')}</Text>
+                    <Text style={[dv.th, dv.flex1, dv.center]}>{t('detallColReserves')}</Text>
+                    <Text style={[dv.th, dv.flex1, dv.center]}>{t('detallColRevenue')}</Text>
+                    <Text style={[dv.th, dv.flex1, dv.right]}>{t('detallColNoShows')}</Text>
                 </View>
             )}
             {treballadors.length === 0 ? (
@@ -118,9 +118,9 @@ function TreballadorsCard({ treballadors, isDesktop }: { treballadors: DetallTre
                 isDesktop ? (
                     <View key={tr.id} style={dv.tableRow}>
                         <Text style={[dv.tdPrimary, dv.flex2]} numberOfLines={1}>{tr.nom}</Text>
-                        <Text style={[dv.tdMuted, dv.w90]}>{tr.reserves}</Text>
-                        <Text style={[dv.tdMuted, dv.w110]}>{tr.ingressos.toLocaleString('ca-ES')}€</Text>
-                        <Text style={[dv.tdMuted, dv.w90]}>{tr.noShows}</Text>
+                        <Text style={[dv.tdMuted, dv.flex1, dv.center]}>{tr.reserves}</Text>
+                        <Text style={[dv.tdMuted, dv.flex1, dv.center]}>{tr.ingressos.toLocaleString('ca-ES')}€</Text>
+                        <Text style={[dv.tdMuted, dv.flex1, dv.right]}>{tr.noShows}</Text>
                     </View>
                 ) : (
                     <View key={tr.id} style={dv.mobileRow}>
@@ -177,6 +177,8 @@ const dv = StyleSheet.create({
     tdMuted: { fontSize: 13, color: HC.textMuted, marginTop: 1 },
     empty: { fontSize: 13, color: HC.textMuted, textAlign: 'center', paddingVertical: 20 },
 
-    w90: { width: 90 },
-    w110: { width: 110 },
+    flex2: { flex: 2 },
+    flex1: { flex: 1 },
+    center: { textAlign: 'center' },
+    right: { textAlign: 'right' },
 });

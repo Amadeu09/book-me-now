@@ -61,7 +61,7 @@ export default function NeoLogin() {
       const response = await login({ email: email.trim().toLowerCase(), password });
       await AsyncStorage.setItem("token", response.token);
       await AsyncStorage.setItem("user", JSON.stringify(response.user));
-      router.replace({ pathname: "/home" } as any);
+      router.replace({ pathname: "/profile" } as any);
     } catch (error: any) {
       const apiMessage =
         error?.response?.data?.message ||

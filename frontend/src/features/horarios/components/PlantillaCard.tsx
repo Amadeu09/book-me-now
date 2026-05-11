@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+    View, Text, TouchableOpacity, StyleSheet, ActivityIndicator,
+    Modal, Dimensions, StyleSheet as RNStyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '../constants/horarios.constants';
 import type { PlantillaSummary } from '../types/jornades.types';
@@ -8,58 +11,76 @@ import { useLanguage } from '@/core/i18n';
 
 interface PlantillaCardProps {
     template: PlantillaSummary;
-    onOptions?: () => void;
     onEdit?: (template: PlantillaSummary) => void;
     onDelete?: (template: PlantillaSummary) => void;
+    isMenuOpen: boolean;
+    onMenuOpen: () => void;
+    onMenuClose: () => void;
 }
 
-export const PlantillaCard: React.FC<PlantillaCardProps> = ({ template, onOptions, onEdit, onDelete }) => {
-    const [showMenu, setShowMenu] = useState(false);
+export const PlantillaCard: React.FC<PlantillaCardProps> = ({
+    template, onEdit, onDelete, isMenuOpen, onMenuOpen, onMenuClose,
+}) => {
     const theme = useTheme();
     const { t } = useLanguage();
+    const btnRef = useRef<View>(null);
+    const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+
+    const handleOpen = () => {
+        btnRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
+            const screenWidth = Dimensions.get('window').width;
+            setMenuPos({ top: pageY + height + 4, right: screenWidth - pageX - width });
+            onMenuOpen();
+        });
+    };
 
     return (
-        <View style={[styles.card, {
-            backgroundColor: theme.primaryLight,
-            borderWidth: theme.softBorderWidth,
-            borderColor: theme.softBorderColor,
-            borderLeftWidth: 4,
-            borderLeftColor: template.accentColor,
-            zIndex: showMenu ? 100 : 1,
-        }]}>
-            <View style={styles.content}>
-                <View style={styles.nameRow}>
-                    <Text style={styles.name}>{template.nom}</Text>
-                    {!template.activa && (
-                        <View style={styles.inactiveBadge}>
-                            <Text style={styles.inactiveBadgeText}>{t('plantillaInactive')}</Text>
-                        </View>
-                    )}
+        <>
+            <View style={[styles.card, {
+                backgroundColor: theme.primaryLight,
+                borderWidth: theme.softBorderWidth,
+                borderColor: theme.softBorderColor,
+                borderLeftWidth: 4,
+                borderLeftColor: template.accentColor,
+            }]}>
+                <View style={styles.content}>
+                    <View style={styles.nameRow}>
+                        <Text style={styles.name}>{template.nom}</Text>
+                        {!template.activa && (
+                            <View style={styles.inactiveBadge}>
+                                <Text style={styles.inactiveBadgeText}>{t('plantillaInactive')}</Text>
+                            </View>
+                        )}
+                    </View>
+                    <Text style={styles.details}>
+                        <Text style={styles.days}>{template.daysLabel}</Text>
+                        {'   '}
+                        {template.hoursLabel}
+                        {template.rotationsCount > 1 ? ` • ${template.rotationsCount} ${t('plantillaRotations')}` : ''}
+                    </Text>
                 </View>
-                <Text style={styles.details}>
-                    <Text style={styles.days}>{template.daysLabel}</Text>
-                    {'   '}
-                    {template.hoursLabel}
-                    {template.rotationsCount > 1 ? ` • ${template.rotationsCount} ${t('plantillaRotations')}` : ''}
-                </Text>
+                <View ref={btnRef}>
+                    <TouchableOpacity onPress={handleOpen} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name="ellipsis-vertical" size={18} color={HC.textMuted} />
+                    </TouchableOpacity>
+                </View>
             </View>
-            <View style={{ position: 'relative', zIndex: 10 }}>
-                <TouchableOpacity onPress={() => setShowMenu(!showMenu)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Ionicons name="ellipsis-vertical" size={18} color={HC.textMuted} />
-                </TouchableOpacity>
-                {showMenu && (
-                    <View style={styles.menuPopover}>
-                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onEdit?.(template); }}>
+
+            <Modal visible={isMenuOpen} transparent animationType="none" onRequestClose={onMenuClose}>
+                <View style={{ flex: 1 }}>
+                    <TouchableOpacity style={RNStyleSheet.absoluteFillObject} activeOpacity={1} onPress={onMenuClose} />
+                    <View style={[styles.menuPopover, { top: menuPos.top, right: menuPos.right }]}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { onMenuClose(); onEdit?.(template); }}>
                             <Text style={styles.menuItemText}>{t('edit')}</Text>
                         </TouchableOpacity>
                         <View style={styles.menuDivider} />
-                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); onDelete?.(template); }}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { onMenuClose(); onDelete?.(template); }}>
                             <Text style={[styles.menuItemText, { color: HC.red }]}>{t('delete')}</Text>
                         </TouchableOpacity>
                     </View>
-                )}
-            </View>
-        </View>
+                </View>
+            </Modal>
+        </>
     );
 };
 
@@ -144,6 +165,28 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: HC.textSecondary,
     },
+    menuPopover: {
+        position: 'absolute',
+        backgroundColor: HC.white,
+        borderRadius: 8,
+        paddingVertical: 4,
+        minWidth: 130,
+        ...cardShadow,
+        elevation: 10,
+        zIndex: 9999,
+    },
+    menuItem: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+    },
+    menuItemText: {
+        fontSize: 14,
+        color: HC.textPrimary,
+    },
+    menuDivider: {
+        height: 1,
+        backgroundColor: HC.borderSoft,
+    },
 
     /* Empty / Loading / Error */
     emptyContainer: {
@@ -183,29 +226,5 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
         color: HC.white,
-    },
-    menuPopover: {
-        position: 'absolute',
-        top: 24,
-        right: 0,
-        backgroundColor: HC.white,
-        borderRadius: 8,
-        paddingVertical: 4,
-        minWidth: 120,
-        ...cardShadow,
-        elevation: 5,
-        zIndex: 1000,
-    },
-    menuItem: {
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-    },
-    menuItemText: {
-        fontSize: 14,
-        color: HC.textPrimary,
-    },
-    menuDivider: {
-        height: 1,
-        backgroundColor: HC.borderSoft,
     },
 });

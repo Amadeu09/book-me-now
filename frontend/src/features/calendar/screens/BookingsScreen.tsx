@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, StyleSheet, SafeAreaView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { palette, shadow } from "@/constants/theme";
+import { palette } from "@/constants/theme";
 import { Feather } from '@expo/vector-icons';
 
 import { CalendarHeader } from "@/features/calendar/components/CalendarHeader";
@@ -101,6 +102,12 @@ export default function Bookings() {
     // Fetch API data for the current week
     const { events, loading, error, refetch } = useBookings(start, end, userRole, userId, selectedWorkerId, selectedServiceId);
 
+    const _isFirstFocus = useRef(true);
+    useFocusEffect(useCallback(() => {
+        if (_isFirstFocus.current) { _isFirstFocus.current = false; return; }
+        refetch();
+    }, [refetch]));
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <CalendarHeader
@@ -158,10 +165,6 @@ export default function Bookings() {
                     />
                 )}
 
-                {/* Floating Action Button */}
-                <TouchableOpacity style={[styles.fab, { backgroundColor: theme.primary }]} onPress={handleQuickCreate}>
-                    <Feather name="plus" size={24} color={theme.textOnPrimary} />
-                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
@@ -175,17 +178,5 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         backgroundColor: palette.background,
-    },
-    fab: {
-        position: 'absolute',
-        bottom: 24,
-        right: 24,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: palette.accent,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...shadow.card,
     },
 });

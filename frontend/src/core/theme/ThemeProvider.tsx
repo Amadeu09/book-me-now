@@ -102,11 +102,13 @@ function computeTheme(primaryHex: string, setPrimaryColor: (hex: string | null) 
     isUserWhite: isWhite,
 
     // UI Elements
+    // sidebarBg = accentColor for custom themes, so contrast must be derived from accentColor
+    // contrastText === '#ffffff' means the accent is dark → sidebar needs light text
     sidebarBg: isWhite ? '#ffffff' : accentColor,
-    sidebarText: isWhite ? '#0f172a' : contrastText,
-    sidebarTextInactive: isWhite ? '#6b7280' : contrastText + 'b3',
-    sidebarActiveBg: isWhite ? 'rgba(226, 232, 240, 0.8)' : contrastText + '22',
-    sidebarActiveBorder: isWhite ? 'rgba(148, 163, 184, 0.6)' : contrastText + '44',
+    sidebarText: isWhite ? '#0f172a' : (contrastText === '#ffffff' ? '#ffffff' : '#0f172a'),
+    sidebarTextInactive: isWhite ? '#6b7280' : (contrastText === '#ffffff' ? 'rgba(255,255,255,0.65)' : '#6b7280'),
+    sidebarActiveBg: isWhite ? 'rgba(226, 232, 240, 0.8)' : (contrastText === '#ffffff' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)'),
+    sidebarActiveBorder: isWhite ? 'rgba(148, 163, 184, 0.6)' : (contrastText === '#ffffff' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)'),
 
     headerBg: isWhite ? '#ffffff' : accentColor,
     headerText: isWhite ? '#0f172a' : contrastText,

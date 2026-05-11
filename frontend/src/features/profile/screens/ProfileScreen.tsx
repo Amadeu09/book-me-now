@@ -96,10 +96,17 @@ export default function ProfileScreen() {
                 {/* Admin-only: company card + pending absences */}
                 {rol === 'ADMIN_GENERAL' && (
                     <View style={[styles.blocksRow, !isDesktop && styles.blocksColumn]}>
-                        <View style={styles.blockFlex}>
-                            <LocalDataCard empresa={user?.empresa} />
+                        <View style={isDesktop ? styles.blockFlex : styles.blockMobile}>
+                            <LocalDataCard
+                                empresa={user?.empresa}
+                                onEmpresaUpdated={() =>
+                                    AsyncStorage.getItem('user').then(raw => {
+                                        if (raw) setUser(JSON.parse(raw));
+                                    })
+                                }
+                            />
                         </View>
-                        <View style={styles.blockFlex}>
+                        <View style={isDesktop ? styles.blockFlex : styles.blockMobile}>
                             <AbsenciesPendentsCard />
                         </View>
                     </View>
@@ -139,5 +146,8 @@ const styles = StyleSheet.create({
     },
     blockFlex: {
         flex: 1,
+    },
+    blockMobile: {
+        width: '100%',
     },
 });

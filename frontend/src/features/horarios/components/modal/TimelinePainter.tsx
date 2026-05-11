@@ -10,6 +10,8 @@ import {
 import { HC } from '../../constants/horarios.constants';
 import { minutesToTime, type Tram } from '../../types/jornades.types';
 import { mergeTrams, pxToMinutes } from './timelineUtils';
+import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
 /* ══════════════════════════════════════════
    TimelinePainter
@@ -27,7 +29,6 @@ const BAR_HEIGHT = 40;
 const BAR_RADIUS = 10;
 
 const LABEL_HOURS = [0, 6, 12, 18, 24];
-const TICK_HOURS = Array.from({ length: 25 }, (_, i) => i);
 
 interface TimelinePainterProps {
     trams: Tram[];
@@ -45,6 +46,8 @@ export const TimelinePainter: React.FC<TimelinePainterProps> = React.memo(({
     onTramsChange,
     disabled,
 }) => {
+    const theme = useTheme();
+    const { t } = useLanguage();
     const barWidthRef = useRef(0);
     const barRef = useRef<View>(null);
     const dragRef = useRef<DragInfo | null>(null);
@@ -120,16 +123,20 @@ export const TimelinePainter: React.FC<TimelinePainterProps> = React.memo(({
         [disabled, getMinutes, onTramsChange]);
 
     /* ── Render a filled block ───── */
-    const renderBlock = (t: Tram, i: number, isPreview = false) => {
-        const left = (t.iniciMin / TOTAL_MIN) * 100;
-        const w = ((t.fiMin - t.iniciMin) / TOTAL_MIN) * 100;
+    const renderBlock = (tram: Tram, i: number, isPreview = false) => {
+        const left = (tram.iniciMin / TOTAL_MIN) * 100;
+        const w = ((tram.fiMin - tram.iniciMin) / TOTAL_MIN) * 100;
         return (
             <View
                 key={isPreview ? 'preview' : i}
                 style={[
                     styles.filledBlock,
-                    { left: `${left}%`, width: `${w}%` },
-                    isPreview && styles.previewBlock,
+                    {
+                        left: `${left}%`,
+                        width: `${w}%`,
+                        backgroundColor: theme.primary,
+                        opacity: isPreview ? 0.45 : 1,
+                    },
                 ]}
                 pointerEvents="none"
             />
@@ -151,21 +158,24 @@ export const TimelinePainter: React.FC<TimelinePainterProps> = React.memo(({
                 ]}
                 {...panResponder.panHandlers}
             >
-                {/* Hour ticks */}
-                {TICK_HOURS.map((h) => (
-                    <View
-                        key={h}
-                        pointerEvents="none"
-                        style={[
-                            styles.tick,
-                            { left: `${(h / 24) * 100}%` },
-                            LABEL_HOURS.includes(h) && styles.tickMajor,
-                        ]}
-                    />
-                ))}
+                {/* Hour tick lines – flex approach for pixel-perfect rendering */}
+                <View style={styles.ticksRow} pointerEvents="none">
+                    {Array.from({ length: 24 }, (_, i) => {
+                        const isMajor = (i + 1) % 6 === 0;
+                        return (
+                            <View
+                                key={i}
+                                style={[
+                                    styles.tickSection,
+                                    { borderRightColor: isMajor ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.07)' },
+                                ]}
+                            />
+                        );
+                    })}
+                </View>
 
                 {/* Existing filled ranges */}
-                {trams.map((t, i) => renderBlock(t, i))}
+                {trams.map((tram, i) => renderBlock(tram, i))}
 
                 {/* Preview while dragging */}
                 {preview && preview.e - preview.s >= SNAP &&
@@ -205,7 +215,7 @@ export const TimelinePainter: React.FC<TimelinePainterProps> = React.memo(({
             {/* ── Hint text ────────── */}
             {trams.length === 0 && !preview && (
                 <Text style={styles.hintText}>
-                    Pulsa y arrastra para pintar horario
+                    {t('timelinePainterHint')}
                 </Text>
             )}
         </View>
@@ -233,27 +243,25 @@ const styles = StyleSheet.create({
         borderColor: HC.border,
     },
 
-
-    tick: {
+    /* Flex-based tick rows — pixel-perfect, no percentage rounding */
+    ticksRow: {
         position: 'absolute',
         top: 0,
         bottom: 0,
-        width: 1,
-        backgroundColor: 'rgba(0,0,0,0.05)',
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
     },
-    tickMajor: {
-        backgroundColor: 'rgba(0,0,0,0.12)',
+    tickSection: {
+        flex: 1,
+        borderRightWidth: 1,
     },
 
     filledBlock: {
         position: 'absolute',
         top: 3,
         bottom: 3,
-        backgroundColor: HC.primary,
         borderRadius: 6,
-    },
-    previewBlock: {
-        backgroundColor: 'rgba(255, 106, 0, 0.4)',
     },
 
     labelsRow: {

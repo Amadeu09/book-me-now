@@ -19,7 +19,6 @@ import { changePassword, updateMyColor, updateMyIdioma } from '../../services/pr
 import { getUser, patchStoredUser } from '@/utils/session';
 
 const PALETAS = [
-    { label: 'Blanco', value: '#FFFFFF' },
     { label: 'Pizarra', value: '#5B7A96' },
     { label: 'Índigo', value: '#6264A0' },
     { label: 'Lavanda', value: '#7B5E9A' },
@@ -31,7 +30,6 @@ const PALETAS = [
     { label: 'Salvia', value: '#4A7E68' },
     { label: 'Teal', value: '#3E7C7E' },
     { label: 'Marino', value: '#3E587A' },
-    { label: 'Negro', value: '#000000ff' },
     { label: 'Defecto', value: 'default' },
 ];
 

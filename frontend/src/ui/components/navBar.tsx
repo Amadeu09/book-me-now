@@ -191,7 +191,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 50,
     borderColor: 'rgba(148, 163, 184, 0.25)',
-    backgroundColor: '#ffffff',
   },
 
   // MOBILE (bottom bar)
@@ -329,7 +328,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
   },
   profileContainerCollapsed: {
     justifyContent: 'center',

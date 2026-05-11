@@ -1,6 +1,7 @@
 import { ApiProperty, PartialType } from "@nestjs/swagger";
 import { ValoracioTipus } from "@prisma/client";
 import { IsInt, IsString, Min, Max, IsEnum, IsNotEmpty, IsOptional, IsNumber, IsPositive } from "class-validator";
+import { Type } from "class-transformer";
 
 export class CreateValoracioDto {
     @ApiProperty({ description: 'ID de la entidad a valorar (Trabajador o Empresa/Sala)', example: 1 })
@@ -35,6 +36,23 @@ export class CreateValoracioDto {
 }
 
 export class UpdateValoracioDto extends PartialType(CreateValoracioDto) { }
+
+export class PaginacioValoracionsDto {
+    @ApiProperty({ required: false, default: 1 })
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    page?: number = 1;
+
+    @ApiProperty({ required: false, default: 10 })
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @Max(50)
+    limit?: number = 10;
+}
 
 export class CreateValoracioByTokenDto {
     @ApiProperty({ description: 'Puntuació empresa (1–5, mitges permeses)', example: 4.5 })

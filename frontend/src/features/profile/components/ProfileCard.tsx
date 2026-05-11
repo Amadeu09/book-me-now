@@ -230,7 +230,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                                 onPress={() => setEditVisible(true)}
                                 activeOpacity={0.8}
                             >
-                                <Ionicons name="key-outline" size={15} color={theme.textOnPrimary} />
+                                <Ionicons name="pencil-outline" size={15} color={theme.textOnPrimary} />
                                 <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>{t('editProfile')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -296,7 +296,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 onPress={() => setEditVisible(true)}
                 activeOpacity={0.8}
             >
-                <Ionicons name="key-outline" size={16} color={theme.textOnPrimary} />
                 <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>{t('editProfile')}</Text>
             </TouchableOpacity>
 

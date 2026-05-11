@@ -15,6 +15,7 @@ import {
     Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '@/core/i18n';
 import ServiceCard from "@/features/services/components/ServiceCard";
 import ServiceFormModal, { ServiceFormValues } from "@/features/services/components/ServiceFormModal";
 import DeleteConfirmModal from "@/features/services/components/DeleteConfirmModal";
@@ -29,6 +30,7 @@ import type { Servei } from "@/types/servei.types";
 export default function Services() {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
+    const { t } = useLanguage();
 
     const [loadingList, setLoadingList] = useState(false);
     const [mutating, setMutating] = useState(false);
@@ -63,7 +65,7 @@ export default function Services() {
                 setSelectedItem(res.data[0]);
             }
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'No se pudieron cargar los servicios');
+            Alert.alert(t('error'), err?.response?.data?.message || t('servLoadError'));
         } finally {
             setLoadingList(false);
         }
@@ -111,7 +113,7 @@ export default function Services() {
             setFormMode('create');
             await loadPage(editing ? page : 1);
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'No se pudo guardar el servicio');
+            Alert.alert(t('error'), err?.response?.data?.message || t('servSaveError'));
         } finally {
             setMutating(false);
         }
@@ -125,7 +127,7 @@ export default function Services() {
             await loadPage(page);
             setInlineDirty(false);
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'No se pudo guardar');
+            Alert.alert(t('error'), err?.response?.data?.message || t('servSaveError'));
         } finally {
             setMutating(false);
         }
@@ -145,7 +147,7 @@ export default function Services() {
             if (selectedItem?.id === deleteTarget.id) setSelectedItem(null);
             setDeleteTarget(null);
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'No se pudo eliminar');
+            Alert.alert(t('error'), err?.response?.data?.message || t('servDeleteError'));
         } finally {
             setMutating(false);
         }
@@ -223,7 +225,7 @@ export default function Services() {
             return (
                 <View style={styles.detailPlaceholder}>
                     <Text style={styles.detailPlaceholderText}>
-                        Selecciona un servicio para editarlo
+                        {t('servSelectPh')}
                     </Text>
                 </View>
             );
@@ -272,22 +274,22 @@ export default function Services() {
                     bounces={false}
                 >
                     <Text style={styles.detailTitle}>{selectedItem.nom}</Text>
-                    <Text style={styles.detailSubtitle}>Edita els detalls del servei directament aquí</Text>
+                    <Text style={styles.detailSubtitle}>{t('servEditSubtitle')}</Text>
 
                     {/* Nom */}
-                    <Text style={styles.inlineLabel}>NOM DEL SERVEI</Text>
+                    <Text style={styles.inlineLabel}>{t('servLabelNom')}</Text>
                     <TextInput
                         style={styles.inlineInput}
                         value={inlineForm.nom}
                         onChangeText={(v) => { setInlineForm({ ...inlineForm, nom: v }); setInlineDirty(true); }}
-                        placeholder="Nom del servei"
+                        placeholder={t('servNomPh')}
                         placeholderTextColor="#CCCCCC"
                     />
 
                     {/* Preu + Durada */}
                     <View style={styles.inlineRow}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.inlineLabel}>PREU (€)</Text>
+                            <Text style={styles.inlineLabel}>{t('servLabelPreu')}</Text>
                             <TextInput
                                 style={styles.inlineInput}
                                 value={String(inlineForm.preu)}
@@ -298,7 +300,7 @@ export default function Services() {
                             />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.inlineLabel}>DURACIÓ (MIN)</Text>
+                            <Text style={styles.inlineLabel}>{t('servLabelDuracio')}</Text>
                             <TextInput
                                 style={styles.inlineInput}
                                 value={String(inlineForm.duradaMin)}
@@ -318,18 +320,18 @@ export default function Services() {
                             trackColor={{ false: '#E0E0E0', true: '#111111' }}
                             thumbColor="#FFFFFF"
                         />
-                        <Text style={styles.switchLabel}>Servei visible al web</Text>
+                        <Text style={styles.switchLabel}>{t('servVisible')}</Text>
                     </View>
 
                     {/* Descripció */}
-                    <Text style={styles.inlineLabel}>DESCRIPCIÓ</Text>
+                    <Text style={styles.inlineLabel}>{t('servLabelDescripcio')}</Text>
                     <TextInput
                         style={[styles.inlineInput, styles.inlineTextarea]}
                         value={inlineForm.descripcio}
                         onChangeText={(v) => { setInlineForm({ ...inlineForm, descripcio: v }); setInlineDirty(true); }}
                         multiline
                         numberOfLines={4}
-                        placeholder="Descripció opcional..."
+                        placeholder={t('servDescPh')}
                         placeholderTextColor="#CCCCCC"
                         textAlignVertical="top"
                     />
@@ -343,7 +345,7 @@ export default function Services() {
                         activeOpacity={0.75}
                     >
                         <Ionicons name="trash-outline" size={14} color="#E5352A" />
-                        <Text style={styles.deleteBtnText}>Eliminar</Text>
+                        <Text style={styles.deleteBtnText}>{t('delete')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.discardBtn, !inlineDirty && { opacity: 0.4 }]}
@@ -351,7 +353,7 @@ export default function Services() {
                         disabled={!inlineDirty}
                         activeOpacity={0.75}
                     >
-                        <Text style={styles.discardBtnText}>Descartar</Text>
+                        <Text style={styles.discardBtnText}>{t('servDiscard')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.saveBtn, saveDisabled && { opacity: 0.4 }]}
@@ -359,7 +361,7 @@ export default function Services() {
                         disabled={saveDisabled}
                         activeOpacity={0.75}
                     >
-                        <Text style={styles.saveBtnText}>Guardar canvis</Text>
+                        <Text style={styles.saveBtnText}>{t('servSaveChanges')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -370,14 +372,14 @@ export default function Services() {
     const LeftPanel = () => (
         <View style={styles.listSection}>
             <View style={styles.panelHeader}>
-                <Text style={styles.panelTitle}>SERVICIOS</Text>
+                <Text style={styles.panelTitle}>{t('servTitle').toUpperCase()}</Text>
                 <TouchableOpacity
                     style={[styles.btnPrimary, (loadingList || mutating) && { opacity: 0.45 }]}
                     onPress={openCreate}
                     disabled={loadingList || mutating}
                     activeOpacity={0.8}
                 >
-                    <Text style={styles.btnPrimaryText}>+ Añadir</Text>
+                    <Text style={styles.btnPrimaryText}>+ {t('add')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -394,7 +396,7 @@ export default function Services() {
                     contentContainerStyle={styles.listContent}
                     ListEmptyComponent={
                         !loadingList ? (
-                            <Text style={styles.emptyText}>No hay servicios aún</Text>
+                            <Text style={styles.emptyText}>{t('servEmpty')}</Text>
                         ) : null
                     }
                 />
@@ -426,14 +428,14 @@ export default function Services() {
                         activeOpacity={0.8}
                     >
                         <Ionicons name="chevron-back" size={15} color="#111111" />
-                        <Text style={styles.backButtonText}>Servicios</Text>
+                        <Text style={styles.backButtonText}>{t('servTitle')}</Text>
                     </TouchableOpacity>
                     <DetailPanel />
                 </View>
             ) : (
                 <View style={styles.mobileContainer}>
                     <View style={styles.mobileHeader}>
-                        <Text style={styles.mobileTitle}>Servicios</Text>
+                        <Text style={styles.mobileTitle}>{t('servTitle')}</Text>
                         <View style={styles.mobileHeaderRight}>
                             <PaginationRow />
                             <TouchableOpacity
@@ -442,7 +444,7 @@ export default function Services() {
                                 disabled={loadingList || mutating}
                                 activeOpacity={0.8}
                             >
-                                <Text style={styles.btnPrimaryText}>+ Añadir</Text>
+                                <Text style={styles.btnPrimaryText}>+ {t('add')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -460,7 +462,7 @@ export default function Services() {
                             ListEmptyComponent={
                                 !loadingList ? (
                                     <View style={styles.emptyContainer}>
-                                        <Text style={styles.emptyText}>No hay servicios aún</Text>
+                                        <Text style={styles.emptyText}>{t('servEmpty')}</Text>
                                     </View>
                                 ) : null
                             }
@@ -480,8 +482,8 @@ export default function Services() {
                 onSubmit={handleSave}
                 onClose={() => { setFormVisible(false); setEditing(null); }}
                 loading={mutating}
-                title={formMode === 'edit' ? 'Editar servicio' : 'Nuevo servicio'}
-                submitLabel={formMode === 'edit' ? 'Guardar' : 'Crear'}
+                title={formMode === 'edit' ? t('servEditTitle') : t('servNewTitle')}
+                submitLabel={formMode === 'edit' ? t('save') : t('create')}
             />
 
             <DeleteConfirmModal

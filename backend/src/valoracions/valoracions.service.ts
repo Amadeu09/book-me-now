@@ -1,7 +1,8 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateValoracioDto, CreateValoracioByTokenDto, UpdateValoracioDto } from './dto/valoracions.dto';
+import { CreateValoracioDto, CreateValoracioByTokenDto, PaginacioValoracionsDto, UpdateValoracioDto } from './dto/valoracions.dto';
 import { ValoracioTipus } from '@prisma/client';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 @Injectable()
 export class ValoracionsService {
@@ -115,6 +116,81 @@ export class ValoracionsService {
         });
 
         return { ok: true };
+    }
+
+    async getValoracionsEmpresa(user: CurrentUserData, query: PaginacioValoracionsDto) {
+        if (user.rol !== 'ADMIN_GENERAL') throw new ForbiddenException();
+        const page = query.page ?? 1;
+        const limit = query.limit ?? 10;
+        const skip = (page - 1) * limit;
+        const where = { empresaId: user.empresaId, treballadorId: null };
+
+        const [data, total, agg] = await Promise.all([
+            this.prisma.valoracio.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { dataValoracio: 'desc' },
+                select: {
+                    id: true,
+                    puntuacio: true,
+                    comentari: true,
+                    nomClient: true,
+                    dataValoracio: true,
+                    servei: { select: { nom: true } },
+                },
+            }),
+            this.prisma.valoracio.count({ where }),
+            this.prisma.valoracio.aggregate({ where, _avg: { puntuacio: true }, _count: { puntuacio: true } }),
+        ]);
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            mitjanaTotal: agg._count.puntuacio > 0 ? Math.round((agg._avg.puntuacio ?? 0) * 10) / 10 : null,
+        };
+    }
+
+    async getValoraciónsTreballador(user: CurrentUserData, treballadorId: number, query: PaginacioValoracionsDto) {
+        if (user.rol !== 'ADMIN_GENERAL') throw new ForbiddenException();
+        const treballador = await this.prisma.treballador.findUnique({ where: { id: treballadorId } });
+        if (!treballador || treballador.empresaId !== user.empresaId) throw new NotFoundException('Treballador no trobat');
+
+        const page = query.page ?? 1;
+        const limit = query.limit ?? 10;
+        const skip = (page - 1) * limit;
+        const where = { treballadorId };
+
+        const [data, total, agg] = await Promise.all([
+            this.prisma.valoracio.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { dataValoracio: 'desc' },
+                select: {
+                    id: true,
+                    puntuacio: true,
+                    comentari: true,
+                    nomClient: true,
+                    dataValoracio: true,
+                    servei: { select: { nom: true } },
+                },
+            }),
+            this.prisma.valoracio.count({ where }),
+            this.prisma.valoracio.aggregate({ where, _avg: { puntuacio: true }, _count: { puntuacio: true } }),
+        ]);
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            mitjanaTotal: agg._count.puntuacio > 0 ? Math.round((agg._avg.puntuacio ?? 0) * 10) / 10 : null,
+        };
     }
 
     findAll() {

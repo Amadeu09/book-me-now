@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
     Text,
@@ -52,6 +53,7 @@ export default function HorariosScreen() {
 
     // Modal & Edit states
     const [templateModalVisible, setTemplateModalVisible] = useState(false);
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     const [trabajadorModalVisible, setTrabajadorModalVisible] = useState(false);
     const [workerToEdit, setWorkerToEdit] = useState<TreballadorBackendItem | null>(null);
     const [templateToEdit, setTemplateToEdit] = useState<JornadaPlantillaResponse | undefined>(undefined);
@@ -64,8 +66,7 @@ export default function HorariosScreen() {
     const { data: treballadorsData, isLoading: treballadorsLoading, refetch: refetchTreballadors } = useTreballadors(personalPage, PAGE_SIZE);
 
     const backendEmployees = (treballadorsData?.data || []).map((worker: TreballadorBackendItem): Employee => {
-        const activeAssignment = worker.jornadesPlantillaAssignacions?.[0];
-        const templateName = activeAssignment?.plantilla?.nom || t('horariosNoJornada');
+        const templateName = worker.plantilla?.nom || t('horariosNoJornada');
         return {
             id: String(worker.id),
             name: worker.nom,
@@ -86,6 +87,13 @@ export default function HorariosScreen() {
 
     const totalPages = treballadorsData?.totalPages || 1;
     const totalItems = treballadorsData?.total || 0;
+
+    const _isFirstFocus = useRef(true);
+    useFocusEffect(useCallback(() => {
+        if (_isFirstFocus.current) { _isFirstFocus.current = false; return; }
+        refetchPlantillas(1);
+        refetchTreballadors(1);
+    }, [refetchPlantillas, refetchTreballadors]));
 
     /* ── Handlers ── */
     const handleEditTemplate = (template: PlantillaSummary) => {
@@ -216,6 +224,9 @@ export default function HorariosScreen() {
                                                 template={t}
                                                 onEdit={handleEditTemplate}
                                                 onDelete={handleDeleteTemplate}
+                                                isMenuOpen={openMenuId === t.id}
+                                                onMenuOpen={() => setOpenMenuId(t.id)}
+                                                onMenuClose={() => setOpenMenuId(null)}
                                             />
                                         ))}
                                         {plantillasTotalPages > 1 && (

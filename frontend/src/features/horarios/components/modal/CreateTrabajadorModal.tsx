@@ -22,7 +22,7 @@ import { RotationTabs } from './RotationTabs';
 // Hooks & Services
 import { useCreateUsuari, useCreateTreballador } from '../../hooks/useTreballadors';
 import { updateTreballador, uploadFotoUsuari } from '../../services/treballadors.service';
-import { useAllServices } from '../../../services/hooks/useServices';
+import { getServeis } from '../../../services/services/services.service';
 import { getJornades } from '../../services/jornades.service';
 
 interface CreateTrabajadorModalProps {
@@ -74,23 +74,27 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
     const [isUpdating, setIsUpdating] = useState(false);
     const isSubmitting = isCreatingUsuari || isCreatingTreballador || isUpdating;
 
-    // Queries
-    const { data: serveisData, isLoading: isLoadingServeis } = useAllServices();
-    const serveisList = serveisData?.data || [];
+    // Both fetched on modal open, not on screen mount
+    const [serveisList, setServeisList] = useState<any[]>([]);
+    const [isLoadingServeis, setIsLoadingServeis] = useState(false);
 
     const [jornadesData, setJornadesData] = useState<any[]>([]);
-    const [isLoadingJornades, setIsLoadingJornades] = useState(true);
+    const [isLoadingJornades, setIsLoadingJornades] = useState(false);
 
     useEffect(() => {
+        if (!visible) return;
+        setIsLoadingServeis(true);
+        getServeis(1).then(res => {
+            setServeisList(res.data || []);
+            setIsLoadingServeis(false);
+        }).catch(() => setIsLoadingServeis(false));
+
+        setIsLoadingJornades(true);
         getJornades().then(res => {
             setJornadesData(Array.isArray(res) ? res : (res.data || []));
             setIsLoadingJornades(false);
-        }).catch(err => {
-            console.error('Error fetching jornades:', err);
-            setIsLoadingJornades(false);
-        });
-    }, []);
-    const jornadesList = jornadesData || [];
+        }).catch(() => setIsLoadingJornades(false));
+    }, [visible]);
 
     // Pre-fill form if editing
     useEffect(() => {
@@ -355,10 +359,10 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
                 {isLoadingJornades ? (
                     <ActivityIndicator size="small" color={HC.primary} />
-                ) : jornadesList.length === 0 ? (
+                ) : jornadesData.length === 0 ? (
                     <Text style={styles.emptyText}>{t('workerNoJornades')}</Text>
                 ) : (
-                    jornadesList.map((j: any) => {
+                    jornadesData.map((j: any) => {
                         const isSelected = plantillaJornadaId === j.id;
                         return (
                             <TouchableOpacity

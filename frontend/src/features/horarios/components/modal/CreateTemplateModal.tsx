@@ -239,20 +239,6 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                                 />
                                 {errors.nom ? <Text style={styles.errorText}>{errors.nom}</Text> : null}
                             </View>
-
-                            {/* Activa toggle */}
-                            <TouchableOpacity
-                                style={styles.activaBlock}
-                                onPress={handleToggleActiva}
-                                disabled={loading}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[styles.checkbox, form.activa && { backgroundColor: theme.primary, borderColor: theme.primary }]}>
-                                    {form.activa && (
-                                        <Ionicons name="checkmark" size={14} color={HC.white} />
-                                    )}
-                                </View>
-                            </TouchableOpacity>
                         </View>
 
                         {/* Sección rotaciones */}

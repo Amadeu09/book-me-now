@@ -41,23 +41,27 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
             <View style={styles.actions}>
                 <View style={styles.segmentControl}>
-                    {availableModes.map((mode) => (
-                        <TouchableOpacity
-                            key={mode}
-                            style={[
-                                styles.segmentButton,
-                                viewMode === mode && styles.segmentButtonActive
-                            ]}
-                            onPress={() => onViewChange(mode)}
-                        >
-                            <Text style={[
-                                styles.segmentText,
-                                viewMode === mode && styles.segmentTextActive
-                            ]}>
-                                {MODE_LABELS[mode]}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {availableModes.map((mode) => {
+                        const isActive = viewMode === mode;
+                        return (
+                            <TouchableOpacity
+                                key={mode}
+                                style={[
+                                    styles.segmentButton,
+                                    isActive && { backgroundColor: theme.primary },
+                                ]}
+                                onPress={() => onViewChange(mode)}
+                            >
+                                <Text style={[
+                                    styles.segmentText,
+                                    { color: isActive ? '#ffffff' : palette.textMuted,
+                                      fontWeight: isActive ? '600' : '500' },
+                                ]}>
+                                    {MODE_LABELS[mode]}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
 
                 <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={onQuickCreate}>
@@ -105,22 +109,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: radius.sm,
     },
-    segmentButtonActive: {
-        backgroundColor: '#ffffff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 1,
-    },
     segmentText: {
         fontSize: 14,
-        fontWeight: '500',
-        color: palette.textMuted,
-    },
-    segmentTextActive: {
-        color: palette.textPrimary,
-        fontWeight: '600',
     },
     createButton: {
         flexDirection: 'row',

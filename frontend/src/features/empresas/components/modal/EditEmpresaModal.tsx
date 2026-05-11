@@ -40,6 +40,7 @@ interface EditEmpresaModalProps {
     visible: boolean;
     initialData?: AuthUser['empresa'];
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
 interface EmpresaFormState {
@@ -57,6 +58,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
     visible,
     initialData,
     onClose,
+    onSuccess,
 }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
@@ -125,6 +127,7 @@ export const EditEmpresaModal: React.FC<EditEmpresaModalProps> = ({
             await updateEmpresa(initialData.id, payload);
             await patchStoredEmpresa(payload);
             queryClient.invalidateQueries({ queryKey: ['empresa', initialData.id] });
+            onSuccess?.();
             onClose();
         } catch (err: any) {
             Alert.alert(t('error'), err?.response?.data?.message || t('empresaUpdateError'));

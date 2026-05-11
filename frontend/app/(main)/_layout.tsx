@@ -54,6 +54,7 @@ export default function MainLayout() {
                     <Tabs.Screen name="horarios" />
                     <Tabs.Screen name="vacaciones" />
                     <Tabs.Screen name="estadisticas" />
+                    <Tabs.Screen name="valoracions-empresa" options={{ href: null }} />
                 </Tabs>
             </View>
 

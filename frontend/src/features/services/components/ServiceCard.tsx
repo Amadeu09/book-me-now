@@ -1,50 +1,80 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/core/theme/ThemeProvider';
 import { Servei } from "@/types/servei.types";
+
+const CATEGORY_ICONS: Record<string, string> = {
+    PERRUQUERIA: 'cut-outline',
+    BARBERIA: 'man-outline',
+    ESTETICA: 'sparkles-outline',
+    SPA: 'leaf-outline',
+    MASSATGES: 'hand-left-outline',
+    FITNESS: 'barbell-outline',
+    PILATES: 'body-outline',
+    IOGA: 'leaf-outline',
+    NUTRICIONISTA: 'nutrition-outline',
+    FISIOTERAPIA: 'medkit-outline',
+    DENTAL: 'happy-outline',
+    VETERINARIA: 'paw-outline',
+    ALTRES: 'grid-outline',
+    OTROS: 'grid-outline',
+};
+
+function getCategoryIcon(categoria?: string | null): string {
+    return CATEGORY_ICONS[categoria ?? ''] ?? 'grid-outline';
+}
 
 type Props = {
     service: Servei;
-    onEdit?: (service: Servei) => void;
-    onDelete?: (service: Servei) => void;
-    onPress?: (service: Servei) => void;
+    onPress: (service: Servei) => void;
+    isSelected?: boolean;
     style?: ViewStyle;
 };
 
-export default function ServiceCard({ service, onEdit, onDelete, onPress, style }: Props) {
+export default function ServiceCard({ service, onPress, isSelected, style }: Props) {
+    const theme = useTheme();
+
     return (
         <TouchableOpacity
-            style={[styles.card, style]}
-            onPress={() => onPress?.(service)}
-            activeOpacity={onPress ? 0.75 : 1}
+            style={[
+                styles.card,
+                isSelected
+                    ? { borderWidth: 2, borderColor: theme.primary }
+                    : styles.cardDefault,
+                style,
+            ]}
+            onPress={() => onPress(service)}
+            activeOpacity={0.85}
         >
             {service.fotoUrl ? (
-                <Image source={{ uri: service.fotoUrl }} style={styles.cardImage} resizeMode="cover" />
+                <Image
+                    source={{ uri: service.fotoUrl }}
+                    style={styles.thumb}
+                    resizeMode="cover"
+                />
             ) : (
-                <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
-                    <View style={styles.placeholderIcon}>
-                        <Ionicons name="cut-outline" size={28} color="#CCCCCC" />
-                    </View>
+                <View
+                    style={[
+                        styles.thumbPlaceholder,
+                        isSelected && { backgroundColor: theme.primary + '18' },
+                    ]}
+                >
+                    <Ionicons name={getCategoryIcon(service.categoria) as any} size={32} color="#bbb" />
                 </View>
             )}
-            <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>{service.nom}</Text>
-                <Text style={styles.cardMeta}>{service.duradaMin} min · {Number(service.preu).toFixed(2)} €</Text>
-                <View style={styles.cardActions}>
-                    <TouchableOpacity
-                        style={styles.actionBtnDanger}
-                        onPress={() => onDelete?.(service)}
-                        activeOpacity={0.75}
-                    >
-                        <Text style={styles.actionBtnDangerText}>Eliminar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.actionBtn}
-                        onPress={() => onEdit?.(service)}
-                        activeOpacity={0.75}
-                    >
-                        <Text style={styles.actionBtnText}>Editar</Text>
-                    </TouchableOpacity>
+
+            <View style={styles.body}>
+                <Text style={styles.name} numberOfLines={2}>{service.nom}</Text>
+                <View style={styles.pillRow}>
+                    <View style={styles.pill}>
+                        <Ionicons name="time-outline" size={12} color="#64748b" />
+                        <Text style={styles.pillText}>{service.duradaMin} min</Text>
+                    </View>
+                    <View style={styles.pill}>
+                        <Ionicons name="pricetag-outline" size={12} color="#64748b" />
+                        <Text style={styles.pillText}>{Number(service.preu).toFixed(2)} €</Text>
+                    </View>
                 </View>
             </View>
         </TouchableOpacity>
@@ -53,81 +83,56 @@ export default function ServiceCard({ service, onEdit, onDelete, onPress, style 
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#EBEBEB',
+        backgroundColor: '#ffffff',
+        borderRadius: 14,
         overflow: 'hidden',
         shadowColor: '#000',
-        shadowOpacity: 0.03,
+        shadowOpacity: 0.06,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 2 },
-        elevation: 1,
+        elevation: 2,
     },
-    cardImage: {
+    cardDefault: {
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+    },
+    thumb: {
         width: '100%',
-        aspectRatio: 16 / 9,
-        backgroundColor: '#F5F5F5',
+        height: 140,
     },
-    cardImagePlaceholder: {
-        backgroundColor: '#F5F5F5',
+    thumbPlaceholder: {
+        width: '100%',
+        height: 140,
+        backgroundColor: '#f8f5f5',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    placeholderIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#EEEEEE',
-        alignItems: 'center',
-        justifyContent: 'center',
+    body: {
+        paddingHorizontal: 14,
+        paddingVertical: 12,
     },
-    cardBody: {
-        padding: 14,
-        gap: 4,
+    name: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#0f172a',
+        marginBottom: 8,
     },
-    cardTitle: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#111111',
-    },
-    cardMeta: {
-        fontSize: 12,
-        color: '#AAAAAA',
-    },
-    cardActions: {
+    pillRow: {
         flexDirection: 'row',
-        gap: 8,
-        marginTop: 10,
+        flexWrap: 'wrap',
+        gap: 6,
     },
-    actionBtn: {
-        flex: 1,
-        height: 36,
-        borderRadius: 7,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.5,
-        borderColor: '#111111',
+    pill: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: 4,
+        backgroundColor: '#f1f5f9',
+        borderRadius: 20,
+        paddingVertical: 3,
+        paddingHorizontal: 8,
     },
-    actionBtnText: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: '#111111',
-    },
-    actionBtnDanger: {
-        flex: 1,
-        height: 36,
-        borderRadius: 7,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.5,
-        borderColor: '#E5352A',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    actionBtnDangerText: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: '#E5352A',
+    pillText: {
+        fontSize: 12,
+        color: '#64748b',
     },
 });

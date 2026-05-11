@@ -11,10 +11,7 @@ export const ProfileHeader: React.FC = () => {
         <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
             <View style={styles.leftBlock}>
                 <Text style={[styles.title, { color: theme.headerText }]}>{t('profileTitle')}</Text>
-                <View style={styles.subtitleRow}>
-                    <View style={[styles.subtitleDot, { backgroundColor: theme.primary }]} />
-                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>{t('profileHeaderSubtitle')}</Text>
-                </View>
+                <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>{t('profileHeaderSubtitle')}</Text>
             </View>
         </View>
     );
@@ -38,16 +35,6 @@ const styles = StyleSheet.create({
         ...typography.h1,
         color: palette.textPrimary,
         marginBottom: 6,
-    },
-    subtitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    subtitleDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
     },
     subtitle: {
         fontSize: 14,

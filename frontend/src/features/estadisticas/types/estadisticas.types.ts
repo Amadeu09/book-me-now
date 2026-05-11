@@ -32,3 +32,21 @@ export interface EstadisticasResumResponse {
     };
     valoracioMitjana: number | null;
 }
+
+export interface ValoracioItem {
+    id: number;
+    puntuacio: number;
+    comentari: string;
+    nomClient: string | null;
+    dataValoracio: string;
+    servei: { nom: string } | null;
+}
+
+export interface ValoracionsEmpresaResponse {
+    data: ValoracioItem[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    mitjanaTotal: number | null;
+}

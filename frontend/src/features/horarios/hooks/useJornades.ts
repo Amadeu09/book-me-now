@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getJornadesPaginadas } from '../services/jornades.service';
 import {
     summarizePlantilla,
@@ -31,7 +31,9 @@ export function useJornades(initialPage = 1, rows = 2): UseJornadesReturn {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchData = useCallback(async (targetPage = page) => {
+    const pageRef = useRef(initialPage);
+
+    const fetchData = useCallback(async (targetPage: number = pageRef.current) => {
         try {
             setLoading(true);
             setError(null);
@@ -40,6 +42,7 @@ export function useJornades(initialPage = 1, rows = 2): UseJornadesReturn {
             setRawPlantillas(data);
             setPlantillas(summaries);
             setTotal(totalItems);
+            pageRef.current = currentPage;
             setPage(currentPage);
             setTotalPages(tPages);
         } catch (err: any) {
@@ -55,11 +58,11 @@ export function useJornades(initialPage = 1, rows = 2): UseJornadesReturn {
         } finally {
             setLoading(false);
         }
-    }, [page, rows]);
+    }, [rows]);
 
     useEffect(() => {
         fetchData(initialPage);
-    }, [initialPage, rows]); // Refetch if initial settings change (optional)
+    }, [initialPage, rows]);
 
     return { plantillas, rawPlantillas, total, page, totalPages, loading, error, refetch: fetchData };
 }

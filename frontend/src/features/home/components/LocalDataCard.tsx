@@ -17,9 +17,10 @@ const AVATAR_SIZE = 130;
 
 interface LocalDataCardProps {
     empresa?: AuthUser['empresa'];
+    onEmpresaUpdated?: () => void;
 }
 
-export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
+export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa, onEmpresaUpdated }) => {
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [isUploadingBanner, setIsUploadingBanner] = useState(false);
@@ -81,8 +82,9 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
     const cardBg = isWhiteCard ? '#ffffff' : theme.primary;
 
     return (
-        <View style={[styles.container, { backgroundColor: cardBg, borderWidth: isWhiteCard ? 1 : 0, borderColor: '#e2e8f0' }]}>
-            {/* Banner — avatar lives inside here */}
+        <View style={styles.container}>
+            {/* Banner card */}
+            <View style={styles.bannerCard}>
             <View style={styles.bannerWrapper}>
                 {empresa?.bannerUrl ? (
                     <ImageBackground
@@ -133,8 +135,10 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                     }
                 </TouchableOpacity>
             </View>
+            </View>
 
-            {/* Content */}
+            {/* Info card */}
+            <View style={[styles.infoCard, { backgroundColor: cardBg, borderWidth: isWhiteCard ? 1 : 0, borderColor: '#e2e8f0' }]}>
             <View style={styles.content}>
                 {/* Nombre empresa + edit button on the right */}
                 <View style={styles.row}>
@@ -158,11 +162,13 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
                 </View>
 
             </View>
+            </View>
 
             <EditEmpresaModal
                 visible={isEditModalVisible}
                 initialData={empresa}
                 onClose={() => setIsEditModalVisible(false)}
+                onSuccess={onEmpresaUpdated}
             />
         </View>
     );
@@ -170,11 +176,17 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa }) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: HC.white,
+        width: '100%',
+        gap: 12,
+    },
+    bannerCard: {
         borderRadius: 16,
         ...cardShadow,
-        width: '100%',
         overflow: 'hidden',
+    },
+    infoCard: {
+        borderRadius: 16,
+        ...cardShadow,
     },
     bannerWrapper: {
         height: BANNER_HEIGHT,
@@ -257,7 +269,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     label: {
-        fontSize: 12,
+        fontSize: 11,
         color: HC.textMuted,
         marginBottom: 2,
         textTransform: 'uppercase',

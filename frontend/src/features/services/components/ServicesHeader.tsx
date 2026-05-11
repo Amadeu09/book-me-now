@@ -1,21 +1,35 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { palette, spacing, typography } from "@/constants/theme";
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
 
-export const ServicesHeader: React.FC = () => {
+interface ServicesHeaderProps {
+    onNew?: () => void;
+    loading?: boolean;
+}
+
+export const ServicesHeader: React.FC<ServicesHeaderProps> = ({ onNew, loading }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     return (
         <View style={[styles.container, { backgroundColor: theme.headerBg, borderBottomColor: theme.primary + '22' }]}>
             <View style={styles.leftBlock}>
-                <Text style={[styles.title, { color: theme.headerText }]}>Servicios</Text>
-                <View style={styles.subtitleRow}>
-                    <View style={[styles.subtitleDot, { backgroundColor: theme.primary }]} />
-                    <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>
-                        Gestiona los servicios de tu negocio.
-                    </Text>
-                </View>
+                <Text style={[styles.title, { color: theme.headerText }]}>{t('servTitle')}</Text>
+                <Text style={[styles.subtitle, { color: theme.headerSubtitle }]}>{t('servSubtitle')}</Text>
             </View>
+            {onNew && (
+                <TouchableOpacity
+                    style={[styles.newBtn, { backgroundColor: theme.primary }, loading && styles.btnDisabled]}
+                    onPress={onNew}
+                    disabled={loading}
+                    activeOpacity={0.8}
+                >
+                    <Ionicons name="add-outline" size={20} color={theme.textOnPrimary} />
+                    <Text style={[styles.newBtnText, { color: theme.textOnPrimary }]}>{t('servNewTitle')}</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -39,19 +53,23 @@ const styles = StyleSheet.create({
         color: palette.textPrimary,
         marginBottom: 6,
     },
-    subtitleRow: {
+    subtitle: {
+        fontSize: 14,
+        color: palette.textMuted,
+    },
+    newBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 10,
     },
-    subtitleDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-    },
-    subtitle: {
-        ...typography.body,
-        color: palette.textMuted,
+    newBtnText: {
         fontSize: 14,
+        fontWeight: '600',
+    },
+    btnDisabled: {
+        opacity: 0.5,
     },
 });

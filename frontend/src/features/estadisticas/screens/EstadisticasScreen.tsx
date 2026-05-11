@@ -14,6 +14,7 @@ import { CreateClientModal } from '../components/modal/CreateClientModal';
 import { ClientRow } from '../components/ClientRow';
 import { MonthSegmentControl } from '../components/MonthSegmentControl';
 import { DetallView } from '../components/DetallView';
+import { ValoracionsView } from '../components/ValoracionsView';
 import { useClientsEmpresa } from '../hooks/useClientsEmpresa';
 import { useEstadisticasResum } from '../hooks/useEstadisticasResum';
 import { deleteClient } from '../services/clients.service';
@@ -54,14 +55,14 @@ function Bars({ vals, labels, color }: { vals: number[]; labels: string[]; color
 }
 
 // ── Cards ─────────────────────────────────────────────────────────────────
-function RatingCard({ valoracio, style }: { valoracio: number | null; style?: any }) {
+function RatingCard({ valoracio, style, onSeeMore }: { valoracio: number | null; style?: any; onSeeMore: () => void }) {
     const theme = useTheme();
     const { t } = useLanguage();
     return (
         <View style={[s.card, style]}>
             <View style={s.cardTitleRow}>
                 <Text style={s.cardTitle}>{t('statsRating')}</Text>
-                <TouchableOpacity activeOpacity={0.7}>
+                <TouchableOpacity activeOpacity={0.7} onPress={onSeeMore}>
                     <Text style={[s.addLink, { color: theme.primary }]}>{t('statsRatingSeeMore')}</Text>
                 </TouchableOpacity>
             </View>
@@ -69,7 +70,7 @@ function RatingCard({ valoracio, style }: { valoracio: number | null; style?: an
                 <Text style={[s.cardSub, { marginTop: 16, marginBottom: 8 }]}>{t('statsNoRating')}</Text>
             ) : (
                 <View style={s.ratingRow}>
-                    <Text style={[s.revNum, { color: theme.primary }]}>{valoracio}</Text>
+                    <Text style={[s.revNum, { color: theme.primary }]}>{Number(valoracio).toFixed(1)}</Text>
                     <Ionicons name="star" size={32} color="#F59E0B" />
                 </View>
             )}
@@ -161,8 +162,9 @@ export default function EstadisticasScreen() {
     const [orderByConc, setOrderByConc] = useState(false);
     const { data: clientsData, isLoading: clientsLoading, refetch: refetchClients } = useClientsEmpresa(1, orderByConc ? 'concurrencia' : 'nom');
 
-    // Detall
+    // Detall / Valoracions
     const [showDetall, setShowDetall] = useState(false);
+    const [showValoracionsView, setShowValoracionsView] = useState(false);
 
     // Stats
     const [mesVisites, setMesVisites] = useState(6);
@@ -284,47 +286,59 @@ export default function EstadisticasScreen() {
                     <>
                         {showDetall
                             ? <DetallView onBack={() => setShowDetall(false)} isDesktop={isDesktop} />
-                            : <View style={s.row}>
-                                {clientsCard}
-                                <View style={[s.w280, s.col]}>
-                                    <RevenueCard mesActual={resumData?.ingresosMes.mesActual ?? 0} mesPassat={resumData?.ingresosMes.mesPassat ?? 0} />
-                                    <RatingCard valoracio={resumData?.valoracioMitjana ?? null} />
+                            : showValoracionsView
+                                ? <ValoracionsView onBack={() => setShowValoracionsView(false)} isDesktop={isDesktop} />
+                                : <View style={s.row}>
+                                    {clientsCard}
+                                    <View style={[s.w280, s.col]}>
+                                        <RevenueCard mesActual={resumData?.ingresosMes.mesActual ?? 0} mesPassat={resumData?.ingresosMes.mesPassat ?? 0} />
+                                        <RatingCard valoracio={resumData?.valoracioMitjana ?? null} onSeeMore={() => setShowValoracionsView(true)} />
+                                    </View>
                                 </View>
-                            </View>
                         }
-                        <View style={s.sectionHeader}>
-                            <Text style={s.sectionTitle}>{t('statsGeneralTitle')}</Text>
-                            <TouchableOpacity activeOpacity={0.7} onPress={() => setShowDetall(v => !v)}>
-                                <Text style={[s.sectionBtn, { color: theme.primary }]}>
-                                    {showDetall ? t('statsHideMore') : t('statsShowMore')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={s.row}>
-                            <VisitsCard vals={visitesVals} labels={visitesLabels} mesos={mesVisites} onMesosChange={setMesVisites} isLoading={resumLoading} style={s.flex1} />
-                            <NoShowsCard vals={noShowsVals} labels={noShowsLabels} mesos={mesNoShow} onMesosChange={setMesNoShow} noShowPct={noShowPct} isLoading={resumLoading} style={s.flex1} />
-                        </View>
+                        {!showValoracionsView && (
+                            <>
+                                <View style={s.sectionHeader}>
+                                    <Text style={s.sectionTitle}>{t('statsGeneralTitle')}</Text>
+                                    <TouchableOpacity activeOpacity={0.7} onPress={() => setShowDetall(v => !v)}>
+                                        <Text style={[s.sectionBtn, { color: theme.primary }]}>
+                                            {showDetall ? t('statsHideMore') : t('statsShowMore')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={s.row}>
+                                    <VisitsCard vals={visitesVals} labels={visitesLabels} mesos={mesVisites} onMesosChange={setMesVisites} isLoading={resumLoading} style={s.flex1} />
+                                    <NoShowsCard vals={noShowsVals} labels={noShowsLabels} mesos={mesNoShow} onMesosChange={setMesNoShow} noShowPct={noShowPct} isLoading={resumLoading} style={s.flex1} />
+                                </View>
+                            </>
+                        )}
                     </>
                 ) : (
                     <>
                         {showDetall
                             ? <DetallView onBack={() => setShowDetall(false)} isDesktop={isDesktop} />
-                            : <>
-                                {clientsCard}
-                                <RevenueCard mesActual={resumData?.ingresosMes.mesActual ?? 0} mesPassat={resumData?.ingresosMes.mesPassat ?? 0} />
-                                <RatingCard valoracio={resumData?.valoracioMitjana ?? null} />
-                            </>
+                            : showValoracionsView
+                                ? <ValoracionsView onBack={() => setShowValoracionsView(false)} isDesktop={isDesktop} />
+                                : <>
+                                    {clientsCard}
+                                    <RevenueCard mesActual={resumData?.ingresosMes.mesActual ?? 0} mesPassat={resumData?.ingresosMes.mesPassat ?? 0} />
+                                    <RatingCard valoracio={resumData?.valoracioMitjana ?? null} onSeeMore={() => setShowValoracionsView(true)} />
+                                </>
                         }
-                        <View style={s.sectionHeader}>
-                            <Text style={s.sectionTitle}>{t('statsGeneralTitle')}</Text>
-                            <TouchableOpacity activeOpacity={0.7} onPress={() => setShowDetall(v => !v)}>
-                                <Text style={[s.sectionBtn, { color: theme.primary }]}>
-                                    {showDetall ? t('statsHideMore') : t('statsShowMore')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        <VisitsCard vals={visitesVals} labels={visitesLabels} mesos={mesVisites} onMesosChange={setMesVisites} isLoading={resumLoading} />
-                        <NoShowsCard vals={noShowsVals} labels={noShowsLabels} mesos={mesNoShow} onMesosChange={setMesNoShow} noShowPct={noShowPct} isLoading={resumLoading} />
+                        {!showValoracionsView && (
+                            <>
+                                <View style={s.sectionHeader}>
+                                    <Text style={s.sectionTitle}>{t('statsGeneralTitle')}</Text>
+                                    <TouchableOpacity activeOpacity={0.7} onPress={() => setShowDetall(v => !v)}>
+                                        <Text style={[s.sectionBtn, { color: theme.primary }]}>
+                                            {showDetall ? t('statsHideMore') : t('statsShowMore')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <VisitsCard vals={visitesVals} labels={visitesLabels} mesos={mesVisites} onMesosChange={setMesVisites} isLoading={resumLoading} />
+                                <NoShowsCard vals={noShowsVals} labels={noShowsLabels} mesos={mesNoShow} onMesosChange={setMesNoShow} noShowPct={noShowPct} isLoading={resumLoading} />
+                            </>
+                        )}
                     </>
                 )}
             </ScrollView>
@@ -336,7 +350,15 @@ export default function EstadisticasScreen() {
 const s = StyleSheet.create({
     safe: { flex: 1 },
     content: { padding: spacing.gutter, gap: 16, paddingBottom: 32 },
-    contentWeb: { paddingHorizontal: spacing.gutterWeb, paddingTop: 24, paddingBottom: 40, gap: 20 },
+    contentWeb: {
+        paddingTop: 70,
+        paddingHorizontal: 30,
+        paddingBottom: 30,
+        gap: 20,
+        maxWidth: 1600,
+        alignSelf: 'center',
+        width: '100%'
+    },
     row: { flexDirection: 'row', gap: 16 },
     flex1: { flex: 1 },
     w280: { width: 280 },

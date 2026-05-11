@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUrl, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUrl, Min } from 'class-validator';
+import { BusinessType } from '@prisma/client';
 
 export class CreateServeiDto {
   @ApiProperty({ example: 'Corte de cabello', description: 'Nombre del servicio' })
@@ -32,6 +33,11 @@ export class CreateServeiDto {
   @IsOptional()
   @IsString()
   descripcio?: string;
+
+  @ApiPropertyOptional({ enum: BusinessType, example: BusinessType.PERRUQUERIA })
+  @IsOptional()
+  @IsEnum(BusinessType)
+  categoria?: BusinessType;
 }
 
 export class UpdateServeiDto {
@@ -68,4 +74,9 @@ export class UpdateServeiDto {
   @IsOptional()
   @IsString()
   descripcio?: string;
+
+  @ApiPropertyOptional({ enum: BusinessType, example: BusinessType.PERRUQUERIA })
+  @IsOptional()
+  @IsEnum(BusinessType)
+  categoria?: BusinessType;
 }

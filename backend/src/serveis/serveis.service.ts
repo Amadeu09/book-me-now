@@ -15,6 +15,7 @@ export class ServeisService {
         preu: dto.preu,
         actiu: dto.actiu ?? true,
         descripcio: dto.descripcio ?? null,
+        categoria: dto.categoria ?? 'ALTRES',
         empresaId,
       },
     });
@@ -85,6 +86,7 @@ export class ServeisService {
         preu: dto.preu ?? existing.preu,
         actiu: dto.actiu ?? existing.actiu,
         descripcio: dto.descripcio !== undefined ? dto.descripcio : existing.descripcio,
+        categoria: dto.categoria !== undefined ? dto.categoria : existing.categoria,
       },
     });
   }
@@ -142,6 +144,7 @@ export class ServeisService {
         duradaMin: true,
         preu: true,
         fotoUrl: true,
+        categoria: true,
         treballadors: {
           select: {
             treballador: {
