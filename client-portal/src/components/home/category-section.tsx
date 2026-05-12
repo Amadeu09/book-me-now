@@ -1,70 +1,111 @@
+import Image from "next/image";
+
+const STEPS = [
+  {
+    number: "01",
+    icon: "store",
+    title: "Configura tu negocio",
+    description:
+      "Añade tus servicios, define precios y duración, crea las plantillas de horarios de tus empleados y personaliza tu perfil de empresa.",
+    tags: ["Servicios", "Horarios", "Empleados"],
+    image: "/images/horaris-escriptori.png",
+    imageAlt: "Pantalla de configuración de horarios",
+  },
+  {
+    number: "02",
+    icon: "smartphone",
+    title: "Los clientes reservan online",
+    description:
+      "Tus clientes acceden a tu portal, eligen el servicio, el empleado y el horario disponible. Reserva confirmada en segundos, sin llamadas.",
+    tags: ["Portal cliente", "Disponibilidad", "24/7"],
+    image: "/images/calendari-escriptori.png",
+    imageAlt: "Calendario de reservas",
+  },
+  {
+    number: "03",
+    icon: "dashboard",
+    title: "Tú gestionas todo desde un lugar",
+    description:
+      "Consulta el calendario de reservas, aprueba ausencias, revisa estadísticas de ingresos y lee las valoraciones de tus clientes.",
+    tags: ["Calendario", "Estadísticas", "Valoraciones"],
+    image: "/images/estadistiques-escriptori.png",
+    imageAlt: "Panel de estadísticas y clientes",
+  },
+];
+
 export function CategorySection() {
   return (
     <section className="bg-surface-container-low py-32 px-6 md:px-12 mb-40 rounded-[4rem]">
       <div className="max-w-[1920px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
-          <div className="relative">
-            <div className="absolute -top-12 -left-12 w-64 h-64 bg-primary-fixed rounded-full blur-3xl opacity-30"></div>
-            <div className="relative z-10 space-y-8">
-              <h2 className="text-5xl md:text-7xl font-black editorial-kern leading-[0.8]">
-                Domina <br /> tu <br />{" "}
-                <span className="text-primary italic">Rutina.</span>
-              </h2>
-              <p className="text-on-surface-variant text-lg max-w-md">
-                Cada viaje es personal. Ya sea que busques la calma del spa o
-                el rigor del entrenamiento, solo seleccionamos lo mejor.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <span className="px-8 py-3 bg-white rounded-full border border-outline-variant/20 font-bold text-sm hover:border-primary transition-colors cursor-pointer">
-                  Salones de Estilo
-                </span>
-                <span className="px-8 py-3 bg-white rounded-full border border-outline-variant/20 font-bold text-sm hover:border-primary transition-colors cursor-pointer">
-                  Retiros de Bienestar
-                </span>
-                <span className="px-8 py-3 bg-white rounded-full border border-outline-variant/20 font-bold text-sm hover:border-primary transition-colors cursor-pointer">
-                  Centros de Rendimiento
-                </span>
+        {/* Header */}
+        <div className="text-center mb-20 max-w-2xl mx-auto">
+          <p className="text-primary font-bold tracking-widest uppercase text-sm mb-4">
+            Cómo funciona
+          </p>
+          <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.85] mb-6">
+            De cero a{" "}
+            <span className="text-primary italic font-light">reservas</span>
+            <br />
+            en minutos.
+          </h2>
+          <p className="text-on-surface-variant text-lg">
+            Sin instalaciones complicadas. Sin formación técnica.
+            Solo configura y empieza.
+          </p>
+        </div>
+
+        {/* Steps grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {STEPS.map((step) => (
+            <div
+              key={step.number}
+              className="bg-white rounded-[2.5rem] overflow-hidden flex flex-col shadow-sm hover:shadow-md transition-shadow duration-300"
+            >
+              {/* Screenshot */}
+              <div className="relative h-48 overflow-hidden bg-surface-container-low">
+                <Image
+                  src={step.image}
+                  alt={step.imageAlt}
+                  fill
+                  className="object-cover object-top"
+                />
+              </div>
+
+              <div className="p-10 flex flex-col gap-6 flex-1">
+                {/* Number + icon */}
+                <div className="flex items-center justify-between">
+                  <span className="text-7xl font-black text-primary/10 leading-none select-none">
+                    {step.number}
+                  </span>
+                  <div className="w-14 h-14 rounded-2xl bg-primary-fixed flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-3xl">
+                      {step.icon}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-bold tracking-tight mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-on-surface-variant leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-auto pt-2">
+                  {step.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-4 py-1.5 bg-surface-container-low rounded-full text-xs font-bold text-on-surface-variant tracking-wide"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="relative grid grid-cols-2 gap-4">
-            <div className="space-y-4 pt-12">
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
-                <img
-                  alt="Salon"
-                  className="w-full h-full object-cover"
-                  data-alt="Elegant hair salon with arched mirrors, velvet chairs, and soft warm lighting"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfaRKbmaTb4XidvMAo994zNzvhsjT6Mllqkk6zR6lpUVyDFKpKVPDw5v7C1tyAH8I266BTMXeZKdQjViuocnuOPWkq2CNrpDk7HyQ0OrqR3g995AlQcWviGBpaAjydsiDaaGJ6ZD9df9IsCvjRpFPxGl6ejv-r_L1CYucDYcIlVCwHsmIFYNHecAIoq3J_zDC58snZp1HYJPv7BksCoTw09epou3ghQkETymFbVuByT8smKL1NqsrVm_JTC4mTtKWG_V4BI_amkyyZ"
-                />
-              </div>
-              <div className="aspect-square rounded-2xl overflow-hidden shadow-xl">
-                <img
-                  alt="Yoga"
-                  className="w-full h-full object-cover"
-                  data-alt="Woman practicing yoga in a high-ceilinged white studio with light oak floors and large plants"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMUBeAXWcR_t3EIjl_ii45tbcRePfboa0Rjeo96NodkhiOqJ86Hf9xr_23qg2CuSz7oDpo0vClXnXQrIN1QFzvxMeec7e7xmd9aQw81CRODL31WyGxc-olLW_40bj9IwgCKiCgoXERMQWaSNGzWd3IRVGIB2h9j1CVPSNNKBLGaP_gUoaafFXq5VAGlXJTkSgxMy0t04Cna5q6I82-nA8i2Qz47w-8uK_KMNSSg5irvOVRcBb05Bx_btoaVzqO0xonLMPIENm3DWzw"
-                />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="aspect-square rounded-2xl overflow-hidden shadow-xl">
-                <img
-                  alt="Pilates"
-                  className="w-full h-full object-cover"
-                  data-alt="Close-up of a high-end pilates reformer machine in a bright studio with soft morning light"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_Z8Rfv8FwZ_8cV8G3E-rxfENGamijKr5k4WyRK_KEnebYa_QeoD8tdhsLci-yikevCJ8ljAXJ4fs7jwkf0vcDG4rosW4jouDFy87p_mkCM6939T2LkQtAY1GSR1EjAFVneM0b7JbX_pJ19HsLtLjaZkNfiLOavIs0AkVCpB8fJWqUaLDTmuOHvi4JdoIvCAE0JHhagMDSWYc8SkHBd_j6czq3cb1NGTrc6RmVJ9xiAvOwGarE04-kTulWi8kfyEf5p7jUhN78Cv7I"
-                />
-              </div>
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
-                <img
-                  alt="Massage"
-                  className="w-full h-full object-cover"
-                  data-alt="Minimalist therapy room with a wooden table, warm linens, and a singular spotlight"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAC0-Rf2vX35fdlLST2FPQNxaOSiBztu7r34gqsD4o5g8DW-zONz7DYQdPhAc9jYMQ9HEfmGAa_z-SlxEqzRKcPwm5KWkd1EPjoQVqHdgQj-MugQqdPEH2kz-o7WqOaUsvGqID-Nsxxwv7B_3y8a7kD9mFrHaaY1Q3K3buz23eUygY5Ab0T-qwAL_tokyqkmuMUUAPCfyMrUxb2telxR-KjV3bmwBBZhIKc7pVYz1lamkIkKqbiTklYF6nag1X3SlDlCyabDRTgMZOT"
-                />
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

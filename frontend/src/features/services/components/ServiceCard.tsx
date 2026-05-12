@@ -30,9 +30,10 @@ type Props = {
     onPress: (service: Servei) => void;
     isSelected?: boolean;
     style?: ViewStyle;
+    imageHeight?: number;
 };
 
-export default function ServiceCard({ service, onPress, isSelected, style }: Props) {
+export default function ServiceCard({ service, onPress, isSelected, style, imageHeight = 140 }: Props) {
     const theme = useTheme();
 
     return (
@@ -50,13 +51,14 @@ export default function ServiceCard({ service, onPress, isSelected, style }: Pro
             {service.fotoUrl ? (
                 <Image
                     source={{ uri: service.fotoUrl }}
-                    style={styles.thumb}
+                    style={[styles.thumb, { height: imageHeight }]}
                     resizeMode="cover"
                 />
             ) : (
                 <View
                     style={[
                         styles.thumbPlaceholder,
+                        { height: imageHeight },
                         isSelected && { backgroundColor: theme.primary + '18' },
                     ]}
                 >

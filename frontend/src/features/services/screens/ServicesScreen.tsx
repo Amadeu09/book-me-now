@@ -32,7 +32,7 @@ export default function Services() {
     const [items, setItems] = useState<Servei[]>([]);
     const [loadingList, setLoadingList] = useState(false);
     const [page, setPage] = useState(1);
-    const [meta, setMeta] = useState({ page: 1, pageSize: 4, total: 0, pageCount: 1 });
+    const [meta, setMeta] = useState({ page: 1, pageSize: 6, total: 0, pageCount: 1 });
     const [mutating, setMutating] = useState(false);
     const [formVisible, setFormVisible] = useState(false);
     const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -42,7 +42,7 @@ export default function Services() {
     const loadPage = async (targetPage = page) => {
         try {
             setLoadingList(true);
-            const res = await getServeis(targetPage);
+            const res = await getServeis(targetPage, 6);
             setItems(res.data);
             setMeta(res.meta);
             setPage(res.meta.page);
@@ -118,8 +118,10 @@ export default function Services() {
     // Responsive grid layout
     const isDesktop = Platform.OS === 'web' && width >= 1024;
     const availableWidth = width - (isDesktop ? 240 : 0);
-    const cols = availableWidth < 500 ? 1 : availableWidth <= 900 ? 2 : 3;
-    const cardWidth = Math.min(280, (availableWidth - PADDING * 2 - GAP * (cols - 1)) / cols);
+    const cols = !isDesktop ? 1 : availableWidth <= 900 ? 2 : 3;
+    const cardWidth = isDesktop
+        ? Math.min(280, (availableWidth - PADDING * 2 - GAP * (cols - 1)) / cols)
+        : undefined;
 
     const disablePrev = page <= 1 || loadingList || mutating;
     const disableNext = page >= meta.pageCount || loadingList || mutating;
@@ -128,7 +130,8 @@ export default function Services() {
         <ServiceCard
             service={item}
             onPress={handleEdit}
-            style={{ width: cardWidth }}
+            style={isDesktop ? { width: cardWidth } : styles.cardMobile}
+            imageHeight={isDesktop ? 140 : 160}
         />
     );
 
@@ -167,11 +170,14 @@ export default function Services() {
                     numColumns={cols}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderCard}
-                    contentContainerStyle={styles.gridContent}
+                    contentContainerStyle={[styles.gridContent, !isDesktop && styles.gridContentMobile]}
                     columnWrapperStyle={cols > 1 ? styles.columnWrapper : undefined}
                     showsVerticalScrollIndicator={false}
                     ListHeaderComponent={
-                        <Text style={styles.sectionTitle}>Els teus serveis</Text>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Els teus serveis</Text>
+                            {isDesktop && meta.pageCount > 1 && <PaginationRow />}
+                        </View>
                     }
                     ListEmptyComponent={
                         !loadingList ? (
@@ -181,7 +187,7 @@ export default function Services() {
                             </View>
                         ) : null
                     }
-                    ListFooterComponent={meta.pageCount > 1 ? <PaginationRow /> : null}
+                    ListFooterComponent={!isDesktop && meta.pageCount > 1 ? <PaginationRow /> : null}
                 />
             )}
 
@@ -234,16 +240,30 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         gap: GAP,
     },
+    gridContentMobile: {
+        paddingTop: 16,
+        paddingBottom: 40,
+        paddingLeft: 16,
+        paddingRight: 16,
+    },
+    cardMobile: {
+        width: '100%',
+    },
     columnWrapper: {
         gap: GAP,
         justifyContent: 'center',
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+        marginTop: 4,
     },
     sectionTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: '#0f172a',
-        marginBottom: 16,
-        marginTop: 4,
     },
     emptyState: {
         alignItems: 'center',

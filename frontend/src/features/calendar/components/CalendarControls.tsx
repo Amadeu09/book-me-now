@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { palette, spacing, radius, shadow } from "@/constants/theme";
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '@/core/i18n';
@@ -39,6 +39,8 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
     showWorkerFilter = true
 }) => {
     const { t } = useLanguage();
+    const { width } = useWindowDimensions();
+    const isDesktop = Platform.OS === 'web' && width >= 1024;
     const [isWorkerMenuOpen, setIsWorkerMenuOpen] = useState(false);
     const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false);
 
@@ -63,7 +65,7 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, !isDesktop && styles.containerMobile]}>
             <View style={styles.filters}>
                 {showWorkerFilter && (
                     <View style={{ zIndex: 100 }}>
@@ -132,10 +134,9 @@ export const CalendarControls: React.FC<CalendarControlsProps> = ({
                         </View>
                     )}
                 </View>
-
             </View>
 
-            <View style={styles.navigation}>
+            <View style={[styles.navigation, !isDesktop && styles.navigationMobile]}>
                 <TouchableOpacity onPress={onPrev} style={styles.navButton}>
                     <Ionicons name="chevron-back" size={20} color={palette.textPrimary} />
                 </TouchableOpacity>
@@ -161,6 +162,10 @@ const styles = StyleSheet.create({
         borderBottomColor: palette.borderSoft,
         backgroundColor: palette.background,
         zIndex: 50,
+    },
+    containerMobile: {
+        flexDirection: 'column',
+        alignItems: 'stretch',
     },
     filters: {
         flexDirection: 'row',
@@ -209,6 +214,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
+    },
+    navigationMobile: {
+        justifyContent: 'center',
+        marginTop: 8,
     },
     navButton: {
         padding: 4,

@@ -40,29 +40,31 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             </View>
 
             <View style={styles.actions}>
-                <View style={styles.segmentControl}>
-                    {availableModes.map((mode) => {
-                        const isActive = viewMode === mode;
-                        return (
-                            <TouchableOpacity
-                                key={mode}
-                                style={[
-                                    styles.segmentButton,
-                                    isActive && { backgroundColor: theme.primary },
-                                ]}
-                                onPress={() => onViewChange(mode)}
-                            >
-                                <Text style={[
-                                    styles.segmentText,
-                                    { color: isActive ? '#ffffff' : palette.textMuted,
-                                      fontWeight: isActive ? '600' : '500' },
-                                ]}>
-                                    {MODE_LABELS[mode]}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
+                {isDesktop && (
+                    <View style={styles.segmentControl}>
+                        {availableModes.map((mode) => {
+                            const isActive = viewMode === mode;
+                            return (
+                                <TouchableOpacity
+                                    key={mode}
+                                    style={[
+                                        styles.segmentButton,
+                                        isActive && { backgroundColor: theme.primary },
+                                    ]}
+                                    onPress={() => onViewChange(mode)}
+                                >
+                                    <Text style={[
+                                        styles.segmentText,
+                                        { color: isActive ? '#ffffff' : palette.textMuted,
+                                          fontWeight: isActive ? '600' : '500' },
+                                    ]}>
+                                        {MODE_LABELS[mode]}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                )}
 
                 <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={onQuickCreate}>
                     <Ionicons name="add" size={20} color={theme.textOnPrimary} />

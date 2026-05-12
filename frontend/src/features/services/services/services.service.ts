@@ -2,8 +2,8 @@ import api from "@/core/api/api";
 import { Servei, ServeiPage } from "@/types/servei.types";
 import { Platform } from 'react-native';
 
-export async function getServeis(page = 1): Promise<ServeiPage> {
-  const res = await api.get('/serveis', { params: { page } });
+export async function getServeis(page = 1, rows = 6): Promise<ServeiPage> {
+  const res = await api.get('/serveis', { params: { page, rows } });
   return res.data;
 }
 
