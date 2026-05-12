@@ -158,12 +158,14 @@ app/
 │   ├── bookings.tsx    → TabsBookingsScreen
 │   ├── services.tsx    → TabsServicesScreen
 │   └── profile.tsx     → TabsProfileScreen
-├── (main)/                                        → Layout principal per a EMPLEATS
-│   ├── bookings.tsx    → BookingsScreen (calendari)
-│   ├── services.tsx    → ServicesScreen
-│   ├── horarios.tsx    → HorariosScreen (gestió de torns)
-│   ├── vacaciones.tsx  → VacacionesScreen (gestió d'absències)
-│   └── profile.tsx     → ProfileScreen
+├── (main)/                                        → Layout principal (admins i empleats)
+│   ├── bookings.tsx         → BookingsScreen (calendari setmanal)
+│   ├── services.tsx         → ServicesScreen (gestió de serveis)
+│   ├── horarios.tsx         → HorariosScreen (gestió de torns)
+│   ├── vacaciones.tsx       → VacacionesScreen (gestió d'absències)
+│   ├── estadisticas.tsx     → EstadisticasScreen (analítica)
+│   ├── valoracions-empresa.tsx → Valoracions rebudes per l'empresa
+│   └── profile.tsx          → ProfileScreen
 ```
 
 La navegació s'adapta a la mida de pantalla: **pestanyes inferiors** en mòbil, **barra lateral** en pantalles ≥ 768px (tauleta/web).
@@ -174,11 +176,12 @@ La navegació s'adapta a la mida de pantalla: **pestanyes inferiors** en mòbil,
 |-------|-----------|---------------|
 | `auth` | Login, Register, RegisterUser | Autenticació i registre d'empresa i usuari |
 | `home` | HomeScreen | Dashboard principal amb resum de reserves |
-| `calendar` | BookingsScreen | Calendari de reserves, creació i gestió |
+| `calendar` | BookingsScreen | Calendari setmanal de reserves, codificació per estat |
 | `horarios` | HorariosScreen | Configuració de plantilles de torns i rotacions |
-| `services` | ServicesScreen | Llistat i gestió de serveis de l'empresa |
+| `services` | ServicesScreen | Llistat i gestió de serveis (CRUD + imatge + categoria) |
 | `profile` | ProfileScreen | Perfil d'usuari i configuració de l'empresa |
 | `vacaciones` | VacacionesScreen | Sol·licitud i gestió d'absències i vacances |
+| `estadisticas` | EstadisticasScreen | Estadístiques d'ingressos, reserves i valoracions |
 | `empresa` | CompanyDataProvider | Proveïdor de context amb dades i branding de l'empresa |
 
 ### 4.4 Tematització dinàmica
@@ -309,15 +312,18 @@ EXPO_PUBLIC_API_URL → URL de l'API per al frontend
 |---------------|------|
 | Registre i login d'empresa | Backend + Frontend |
 | Gestió d'empleats (CRUD) | Backend + Frontend |
-| Gestió de serveis (CRUD) | Backend + Frontend |
+| Gestió de serveis (CRUD + imatge + categoria) | Backend + Frontend |
 | Gestió de clients | Backend + Frontend |
 | Motor de disponibilitat | Backend |
 | Reserves (crear, confirmar, cancel·lar, finalitzar) | Backend + Frontend |
+| Calendari setmanal de reserves amb codificació per estat | Frontend |
 | Plantilles de torns amb rotació A/B | Backend + Frontend |
 | Gestió d'absències individuals | Backend + Frontend |
 | Tancaments d'empresa | Backend + Frontend |
 | Pujada d'imatges a Cloudinary | Backend + Frontend |
 | Tematització dinàmica per empresa | Frontend |
+| Valoracions i ressenyes de serveis/treballadors | Backend + Frontend + Client Portal |
+| Estadístiques i analítica (ingressos, reserves, valoracions) | Backend + Frontend |
 | Portal públic de descoberta | Client Portal |
 | Reserva pública sense login (token únic) | Backend + Client Portal |
 | Emails transaccionals (confirmació, valoració) | Backend |
@@ -331,12 +337,11 @@ EXPO_PUBLIC_API_URL → URL de l'API per al frontend
 | Funcionalitat | Motiu |
 |---------------|-------|
 | Facturació (UI) | Backend implementat, frontend pendent |
-| Valoracions (UI) | Backend implementat, frontend pendent |
 | Refresh tokens | Seguretat millorada (ara els JWT expiren i cal fer login de nou) |
 | 2FA / Verificació d'email al registre | Seguretat addicional |
 | App Store / Play Store deployment | Expo build i publicació |
 | Notificacions push | Per avisar de noves reserves |
-| Estadístiques i reportes | Dashboard analític per a l'empresa |
+| Tests del frontend | No hi ha runner de tests configurat al frontend |
 
 ---
 

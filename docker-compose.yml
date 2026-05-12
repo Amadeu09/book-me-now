@@ -42,8 +42,8 @@ services:
 
     environment:
       DATABASE_URL: postgresql://dev:dev123@postgres:5432/bookmenow_dev?schema=public
-      JWT_SECRET: BmNwQf9uKfC7zF8tL2xR3pV6aY9eT4wH1jM0sD5cN8rU2bG7
-      SESSION_SECRET: session-secret-dev
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-replace-before-any-real-deployment}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-only-session-secret}
       NODE_ENV: development
       PORT: 3000
       ALLOWED_ORIGINS: http://localhost:3001,http://127.0.0.1:3001,http://localhost:8081,http://localhost:19000,http://localhost:19002,http://localhost:3002

@@ -41,3 +41,14 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Temp screenshots and generated file lists
+canvisNabar.png
+capuraREmodelacio.png
+frontend_files.json
+frontend_files.txt
+fix-imports.js
+skills-lock.json
+
+# Local env files (without .local suffix)
+.env
