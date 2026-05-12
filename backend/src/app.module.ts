@@ -14,6 +14,10 @@ import { ValoracionsModule } from './valoracions/valoracions.module';
 import { FacturesModule } from './factures/factures.module';
 import { HorarisModule } from './horaris/horaris.module';
 import { JornadesModule } from './jornades/jornades.module';
+import { AbsenciesModule } from './absencies/absencies.module';
+import { AbsenciesEmpresaModule } from './absencies-empresa/absencies-empresa.module';
+import { HorariEmpresaModule } from './horari-empresa/horari-empresa.module';
+import { EstadisticasModule } from './estadisticas/estadisticas.module';
 import { validateEnv } from './config/env.validation';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -54,6 +58,10 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     FacturesModule,
     HorarisModule,
     JornadesModule,
+    AbsenciesModule,
+    AbsenciesEmpresaModule,
+    HorariEmpresaModule,
+    EstadisticasModule,
   ],
   providers: [
     // Global exception filter - catch and format all errors

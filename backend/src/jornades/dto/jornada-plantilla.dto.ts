@@ -12,28 +12,28 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateJornadaTramDto {
-    @ApiProperty({ description: 'Minuts des de 00:00 per l\'inici del tram', example: 480 })
+    @ApiProperty({ description: 'Minutos desde 00:00 para el inicio del tramo', example: 480 })
     @IsInt()
     @Min(0)
     iniciMin: number;
 
-    @ApiProperty({ description: 'Minuts des de 00:00 pel final del tram', example: 720 })
+    @ApiProperty({ description: 'Minutos desde 00:00 para el final del tramo', example: 720 })
     @IsInt()
     @Min(0)
     fiMin: number;
 }
 
 export class CreateJornadaDiaRotacioDto {
-    @ApiProperty({ description: 'Dia de la setmana (1=Dilluns, ... 7=Diumenge)', example: 1 })
+    @ApiProperty({ description: 'Día de la semana (1=Lunes, ... 7=Domingo)', example: 1 })
     @IsInt()
     @Min(1)
     dow: number;
 
-    @ApiProperty({ description: 'Indica si és dia de descans', example: false })
+    @ApiProperty({ description: 'Indica si es día de descanso', example: false })
     @IsBoolean()
     esDescans: boolean;
 
-    @ApiProperty({ type: [CreateJornadaTramDto], description: 'Llistat de trams horaris' })
+    @ApiProperty({ type: [CreateJornadaTramDto], description: 'Listado de tramos horarios' })
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateJornadaTramDto)
@@ -41,17 +41,17 @@ export class CreateJornadaDiaRotacioDto {
 }
 
 export class CreateJornadaRotacioDto {
-    @ApiProperty({ description: 'Índex de la rotació (0, 1, ...)', example: 0 })
+    @ApiProperty({ description: 'Índice de la rotación (0, 1, ...)', example: 0 })
     @IsInt()
     @Min(0)
     index: number;
 
-    @ApiProperty({ description: 'Nom de la rotació', example: 'Setmana A' })
+    @ApiProperty({ description: 'Nombre de la rotación', example: 'Semana A' })
     @IsString()
     @IsNotEmpty()
     nom: string;
 
-    @ApiProperty({ type: [CreateJornadaDiaRotacioDto], description: 'Dies de la rotació' })
+    @ApiProperty({ type: [CreateJornadaDiaRotacioDto], description: 'Días de la rotación' })
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateJornadaDiaRotacioDto)
@@ -59,21 +59,21 @@ export class CreateJornadaRotacioDto {
 }
 
 export class CreateJornadaPlantillaDto {
-    @ApiProperty({ description: 'ID de l\'empresa', example: 10 })
+    @ApiProperty({ description: 'ID de la empresa', example: 10 })
     @IsInt()
     empresaId: number;
 
-    @ApiProperty({ description: 'Nom de la plantilla', example: 'Jornada matí/tarda' })
+    @ApiProperty({ description: 'Nombre de la plantilla', example: 'Jornada mañana/tarde' })
     @IsString()
     @IsNotEmpty()
     nom: string;
 
-    @ApiProperty({ description: 'Si la plantilla està activa', example: true })
+    @ApiProperty({ description: 'Si la plantilla está activa', example: true, required: false })
     @IsBoolean()
     @IsOptional()
     activa?: boolean;
 
-    @ApiProperty({ type: [CreateJornadaRotacioDto], description: 'Llistat de rotacions' })
+    @ApiProperty({ type: [CreateJornadaRotacioDto], description: 'Listado de rotaciones' })
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateJornadaRotacioDto)

@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AbsenciesService } from './absencies.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Rol } from '@prisma/client';
+import { mockCurrentUser } from '../common/test-helpers/mock-user';
 
 const mockPrismaService = {
     usuari: {
@@ -9,6 +11,7 @@ const mockPrismaService = {
     },
     treballador: {
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
     },
     absencia: {
         create: jest.fn(),
@@ -44,51 +47,53 @@ describe('AbsenciesService', () => {
     });
 
     describe('create', () => {
-        it('should create an absencia regarding user permissions and business logic', async () => {
-            const empresaId = 1;
-            const userId = 1;
+        it('should create an absencia when admin specifies a treballador', async () => {
             const dto = {
                 treballadorId: 10,
                 inici: '2023-01-01',
                 fi: '2023-01-02',
+                tipus: 'VACANCES' as any,
                 motiu: 'Vacances',
             };
+            const user = mockCurrentUser();
 
-            // Mock user (admin logic found in service)
-            mockPrismaService.usuari.findUnique.mockResolvedValue({ id: userId, rol: 'ADMIN_GENERAL' });
-            // Mock treballador
             mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 10, empresaId: 1 });
-            // Mock create
             mockPrismaService.absencia.create.mockResolvedValue({ id: 100, ...dto });
 
-            const result = await service.create(empresaId, dto, userId);
+            const result = await service.create(dto, user);
 
             expect(result).toBeDefined();
-            expect(mockPrismaService.usuari.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
             expect(mockPrismaService.treballador.findUnique).toHaveBeenCalledWith({ where: { id: dto.treballadorId } });
             expect(mockPrismaService.absencia.create).toHaveBeenCalled();
         });
 
-        it('should throw ForbiddenException if user is not ADMIN_GENERAL', async () => {
-            mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, rol: 'USER' });
+        it('should create an absencia for own treballador when EMPLEAT', async () => {
+            const dto = { inici: '2023-01-01', fi: '2023-01-02', tipus: 'VACANCES' as any };
+            const user = mockCurrentUser({ userId: 2, rol: Rol.EMPLEAT });
 
-            await expect(service.create(1, { treballadorId: 1, inici: 'd', fi: 'd' }, 1))
-                .rejects.toThrow(ForbiddenException);
+            mockPrismaService.treballador.findFirst.mockResolvedValue({ id: 5, empresaId: 1 });
+            mockPrismaService.absencia.create.mockResolvedValue({ id: 101, ...dto });
+
+            const result = await service.create(dto, user);
+
+            expect(result).toBeDefined();
+            expect(mockPrismaService.treballador.findFirst).toHaveBeenCalledWith({ where: { idUsuari: user.userId } });
+            expect(mockPrismaService.absencia.create).toHaveBeenCalled();
         });
 
         it('should throw NotFoundException if treballador does not exist', async () => {
-            mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, rol: 'ADMIN_GENERAL' });
+            const user = mockCurrentUser();
             mockPrismaService.treballador.findUnique.mockResolvedValue(null);
 
-            await expect(service.create(1, { treballadorId: 1, inici: 'd', fi: 'd' }, 1))
+            await expect(service.create({ treballadorId: 1, tipus: 'VACANCES' as any, inici: 'd', fi: 'd' }, user))
                 .rejects.toThrow(NotFoundException);
         });
 
         it('should throw ForbiddenException if treballador is from another empresa', async () => {
-            mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, rol: 'ADMIN_GENERAL' });
+            const user = mockCurrentUser();
             mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 1, empresaId: 999 });
 
-            await expect(service.create(1, { treballadorId: 1, inici: 'd', fi: 'd' }, 1))
+            await expect(service.create({ treballadorId: 1, tipus: 'VACANCES' as any, inici: 'd', fi: 'd' }, user))
                 .rejects.toThrow(ForbiddenException);
         });
     });

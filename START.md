@@ -1,200 +1,111 @@
-# 🚀 Guía de Inicio - BookMeNow
+# Guia d'inici ràpid — BookMeNow
 
-## 📋 Requisitos Previos
+## Requisits previs
 
-- **Docker Desktop** instalado y corriendo
-- **Node.js 20+** instalado
-- **PowerShell** (Windows)
+- **Docker Desktop** instal·lat i en execució
+- **Node.js 20+**
 
 ---
 
-## 🎯 INICIO RÁPIDO (Windows)
-
-### **1. Iniciar Backend**
+## Backend (NestJS + PostgreSQL + Redis)
 
 ```powershell
 cd backend
-.\start-dev.ps1
-```
+copy .env.example .env
+# Edita .env amb les teves credencials
 
-**O manualmente:**
-```powershell
-cd backend
 docker-compose up -d --build
 ```
 
-**Verifica que funcione:**
+Verifica que funcioni:
 - API: http://localhost:3000/api
 - Swagger: http://localhost:3000/api/docs
 
-### **2. Iniciar Frontend**
+---
+
+## Frontend (React Native + Expo)
 
 ```powershell
 cd frontend
-npm install        # Solo la primera vez
+copy .env.example .env
+npm install        # Només la primera vegada
 npm start
 ```
 
-Presiona **`w`** para abrir en navegador web.
+Prem **`w`** per obrir al navegador web, **`a`** per Android.
+
+- Web: http://localhost:8081
 
 ---
 
-## 🔧 Solución de Problemas
+## Client Portal (Next.js)
 
-### **❌ "Docker no está corriendo"**
-1. Abre **Docker Desktop**
-2. Espera a que el ícono de Docker aparezca en la barra de tareas
-3. Vuelve a ejecutar el script
-
-### **❌ "Puerto 3000 en uso"**
 ```powershell
-# Detener contenedores
-docker-compose down
-
-# O forzar detención
-docker stop bookmenow-backend bookmenow-db
-docker rm bookmenow-backend bookmenow-db
+cd client-portal
+copy .env.example .env.local
+npm install        # Només la primera vegada
+npm run dev
 ```
 
-### **❌ "Database connection error"**
-```powershell
-# Reiniciar solo PostgreSQL
-docker-compose restart postgres
+- Portal: http://localhost:3002
 
-# O reiniciar todo
+---
+
+## Resolució de problemes
+
+### Docker no s'executa
+1. Obre **Docker Desktop**
+2. Espera que aparegui la icona a la barra de tasques
+3. Torna a executar `docker-compose up -d`
+
+### Port 3000 en ús
+```powershell
 docker-compose down
 docker-compose up -d
 ```
 
-### **❌ Ver logs del backend**
+### Error de connexió a la base de dades
 ```powershell
+docker-compose restart postgres
 docker-compose logs -f backend
 ```
 
----
-
-## 📊 Comandos Útiles
-
-### **Backend**
-```powershell
-# Ver contenedores corriendo
-docker ps
-
-# Ver logs
-docker-compose logs -f backend
-
-# Acceder al contenedor
-docker exec -it bookmenow-backend sh
-
-# Detener todo
-docker-compose down
-
-# Reiniciar backend
-docker-compose restart backend
-
-# Limpiar todo (CUIDADO: borra la base de datos)
-docker-compose down -v
+### Frontend no connecta al backend (dispositiu físic)
+Canvia `EXPO_PUBLIC_API_URL` al `frontend/.env` per la teva IP local:
 ```
-
-### **Frontend**
-```powershell
-# Reiniciar servidor
-# Ctrl+C para detener, luego:
-npm start
-
-# Limpiar caché
-npm start -- --clear
-
-# Abrir en navegador específico
-npm run web
-```
-
-### **Base de Datos**
-```powershell
-# Acceder a PostgreSQL
-docker exec -it bookmenow-db psql -U postgres -d bookmenow
-
-# Dentro de psql:
-\dt          # Listar tablas
-\d usuari    # Ver estructura de tabla
-SELECT * FROM usuari;  # Query de ejemplo
-\q           # Salir
+# Obté la teva IP amb: ipconfig
+EXPO_PUBLIC_API_URL=http://192.168.1.x:3000
 ```
 
 ---
 
-## 🏗️ Estructura del Proyecto
-
-```
-BookMeNow-app/
-├── backend/
-│   ├── docker-compose.yml    # Configuración Docker
-│   ├── Dockerfile.dev         # Imagen de desarrollo
-│   ├── start-dev.ps1         # Script de inicio
-│   └── src/                  # Código fuente NestJS
-│
-├── frontend/
-│   ├── app/                  # Rutas Expo Router
-│   ├── src/                  # Componentes/Hooks
-│   └── package.json
-│
-└── START.md                  # Esta guía
-```
-
----
-
-## 🔐 URLs y Credenciales
-
-### **Backend**
-- **API Base:** http://localhost:3000/api
-- **Swagger Docs:** http://localhost:3000/api/docs
-- **Health Check:** http://localhost:3000/api
-
-### **Base de Datos**
-- **Host:** localhost:5432
-- **Usuario:** postgres
-- **Password:** postgres
-- **Database:** bookmenow
-
-### **Frontend**
-- **Web:** http://localhost:8081
-- **Metro:** http://localhost:8081
-
----
-
-## ✅ Verificación Completa
-
-Ejecuta estos comandos para verificar que todo funciona:
+## Comandes útils
 
 ```powershell
-# 1. Backend health
-curl http://localhost:3000/api
+# Backend
+docker-compose logs -f backend    # Logs en directe
+docker-compose restart backend    # Reiniciar backend
+docker-compose down               # Aturar tot
+docker-compose down -v            # Aturar i esborrar dades (COMPTE)
 
-# 2. PostgreSQL
-docker exec bookmenow-db psql -U postgres -d bookmenow -c "SELECT 1"
+# Base de dades (Prisma)
+cd backend
+npx prisma studio                 # GUI per veure/editar dades
+npx prisma migrate dev            # Crear nova migració
 
-# 3. Ver contenedores
-docker ps
+# Frontend
+npm start -- --clear              # Netejar caché Expo
 ```
 
-**Deberías ver:**
-- ✅ `bookmenow-backend` (healthy)
-- ✅ `bookmenow-db` (healthy)
-
 ---
 
-## 🎓 Próximos Pasos
+## URLs de referència
 
-1. ✅ Backend corriendo
-2. ✅ Frontend corriendo
-3. 📱 Abre http://localhost:8081 en el navegador
-4. 🔐 Registra un usuario en `/register`
-5. 🎯 Prueba el CRUD de servicios en `/services`
-
----
-
-## 📞 Necesitas Ayuda?
-
-- Ver logs: `docker-compose logs -f`
-- Reiniciar: `docker-compose restart`
-- Limpiar: `docker-compose down -v` (⚠️ borra datos)
+| Servei | URL |
+|--------|-----|
+| API | http://localhost:3000/api |
+| Swagger | http://localhost:3000/api/docs |
+| Frontend web | http://localhost:8081 |
+| Client Portal | http://localhost:3002 |
+| PostgreSQL | localhost:5433 |
+| Redis | localhost:6379 |

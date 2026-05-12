@@ -1,384 +1,272 @@
-# 📱 BookMeNow - Sistema de Gestión de Reservas
+# BookMeNow — Sistema de Gestió de Reserves
 
-**Aplicación full-stack** para gestión de reservas empresariales con backend NestJS y frontend React Native (Expo).
+Plataforma SaaS per a la gestió empresarial amb cites prèvies. Dissenyada per a petites i mitjanes empreses de serveis (perruqueries, estètica, clíniques, gimnasos, etc.).
 
 ---
 
-## 📁 Estructura del Proyecto
+## Arquitectura — Monorepo de tres capes
 
 ```
 BookMeNow-app/
-├── backend/          # Backend NestJS con Prisma + PostgreSQL
-│   ├── src/
-│   │   ├── auth/           # Autenticación JWT
-│   │   ├── usuaris/        # Gestión de usuarios
-│   │   ├── empresas/       # Gestión de empresas
-│   │   ├── treballadors/   # Trabajadores
-│   │   ├── serveis/        # Servicios
-│   │   ├── clients/        # Clientes
-│   │   ├── reserves/       # Reservas
-│   │   └── ...
-│   ├── prisma/
-│   │   └── schema.prisma   # Modelo de base de datos
-│   ├── docker-compose.yml  # PostgreSQL + Backend
-│   └── package.json
-│
-└── frontend/         # Frontend React Native (Expo)
-    ├── app/                # Pantallas (login, home, etc.)
-    ├── src/
-    │   ├── components/     # Componentes reutilizables
-    │   ├── lib/            # Cliente API
-    │   └── services/       # Servicios (auth, empresa, etc.)
-    ├── app.config.ts       # Configuración de Expo
-    └── package.json
+├── backend/          → API REST (NestJS + PostgreSQL + Redis)
+├── frontend/         → App mòbil i web (React Native + Expo)
+├── client-portal/    → Portal públic (Next.js)
+└── docker-compose.yml
 ```
+
+| Capa | Tecnologia | Responsabilitat |
+|------|-----------|-----------------|
+| **backend** | NestJS 10 · Prisma · PostgreSQL 15 | Lògica de negoci, API REST, autenticació |
+| **frontend** | React Native 0.81 · Expo SDK · Expo Router | App empresa/empleats (mòbil i web) |
+| **client-portal** | Next.js · Tailwind CSS 4 | Portal públic de descoberta i reserva |
 
 ---
 
-## 🚀 Quick Start
+## Requisits previs
 
-### **1. Requisitos**
-- **Node.js** 18+ ([descargar](https://nodejs.org/))
-- **Docker Desktop** ([descargar](https://www.docker.com/products/docker-desktop/))
-- **Git** ([descargar](https://git-scm.com/))
+- **Node.js 20+**
+- **Docker Desktop**
+- **Git**
 
-### **2. Clonar el Repositorio**
+---
+
+## Inici ràpid
+
+### 1. Clonar
+
 ```bash
 git clone https://github.com/u1980982-create/BookMeNow-app.git
 cd BookMeNow-app
 ```
 
-### **3. Configurar Backend**
+### 2. Backend
+
 ```bash
 cd backend
-
-# Instalar dependencias
-npm install
-
-# Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus credenciales
+# Edita .env amb les teves credencials
 
-# Levantar PostgreSQL + Backend con Docker
-docker-compose up -d
-
-# O solo PostgreSQL (backend en host para desarrollo)
-docker-compose up postgres -d
-
-# Aplicar migraciones de base de datos
+docker-compose up -d          # Aixeca PostgreSQL + Redis + backend
+# O per a desenvolupament en host:
+docker-compose up postgres redis -d
+npm install
 npx prisma migrate deploy
-
-# Generar Prisma Client
 npx prisma generate
-
-# Iniciar backend en desarrollo
 npm run start:dev
 ```
 
-**Backend disponible en:** http://localhost:3000  
-**Swagger Docs:** http://localhost:3000/api/docs
+- API: http://localhost:3000/api
+- Swagger: http://localhost:3000/api/docs
 
-### **4. Configurar Frontend**
-```bash
-cd ../frontend
+### 3. Frontend
 
-# Instalar dependencias
-npm install
-
-# Iniciar Expo
-npx expo start
-
-# Opciones:
-# - Presiona 'a' para abrir en Android
-# - Presiona 'i' para abrir en iOS
-# - Escanea el QR con Expo Go app
-```
-
----
-
-## 📚 Documentación
-
-### **Backend (NestJS)**
-- [README del Backend](backend/README.md) - Setup completo y comandos
-- [API Documentation (Swagger)](http://localhost:3000/api/docs) - Documentación interactiva
-- [Guía de Tests](backend/TESTS_SWAGGER_COMPLETE.md) - Tests unitarios y E2E
-- [Seguridad](backend/SECURITY.md) - Checklist de seguridad
-- [Migraciones](backend/MIGRATION_COMPLETE.md) - Historial de migraciones
-
-### **Frontend (React Native)**
-- [README del Frontend](frontend/README.md) - Configuración de Expo
-- Servicios: Ver [`frontend/src/services/`](frontend/src/services/)
-
----
-
-## 🛠️ Stack Tecnológico
-
-### **Backend**
-- **Framework:** NestJS 10.4.20
-- **Base de datos:** PostgreSQL 15 (Neon Cloud / Docker)
-- **ORM:** Prisma 6.18.0
-- **Autenticación:** Passport JWT + bcrypt
-- **Documentación:** Swagger/OpenAPI 3.0
-- **Testing:** Jest + Supertest (23 tests, 85%+ coverage)
-- **Seguridad:** Rate limiting, CORS, Zod validation
-
-### **Frontend**
-- **Framework:** React Native (Expo SDK 52)
-- **Lenguaje:** TypeScript
-- **HTTP Client:** Axios
-- **Storage:** AsyncStorage
-- **Navigation:** Expo Router
-
----
-
-## 🔑 Variables de Entorno
-
-### **Backend (`.env`)**
-```env
-# Base de datos (Neon Cloud o Docker local)
-DATABASE_URL="postgresql://user:password@host:5432/bookmenow"
-
-# Seguridad
-JWT_SECRET="tu-secret-key-seguro-minimo-32-caracteres"
-SESSION_SECRET="otro-secret-para-sesiones"
-
-# CORS (orígenes permitidos)
-ALLOWED_ORIGINS="http://localhost:19000,http://localhost:8081"
-
-# Ambiente
-NODE_ENV="development"
-PORT=3000
-```
-
-### **Frontend (`.env`)**
-```env
-# URL del backend
-EXPO_PUBLIC_API_URL="http://localhost:3000"
-
-# O usar IP local para dispositivos físicos
-# EXPO_PUBLIC_API_URL="http://192.168.1.x:3000"
-```
-
----
-
-## 🧪 Testing
-
-### **Backend**
-```bash
-cd backend
-
-# Tests unitarios
-npm test
-
-# Tests con cobertura
-npm run test:cov
-
-# Tests E2E
-npm run test:e2e
-
-# Tests específicos
-npm test -- --testPathPattern="auth.service.spec"
-```
-
-**Cobertura actual:**
-- AuthService: **100%**
-- UsuarisService: **87.75%**
-- EmpresasService: **91.17%**
-
-### **Frontend**
 ```bash
 cd frontend
-# Tests por implementar
+cp .env.example .env
+npm install
+npm start          # Expo DevTools
+# Prem 'w' per obrir al navegador, 'a' per Android
+```
+
+- Web: http://localhost:8081
+
+### 4. Client Portal
+
+```bash
+cd client-portal
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+- Portal: http://localhost:3002
+
+---
+
+## Variables d'entorn
+
+### backend/.env
+
+| Variable | Descripció |
+|----------|-----------|
+| `DATABASE_URL` | Connexió PostgreSQL |
+| `JWT_SECRET` | Clau JWT (mínim 32 caràcters) |
+| `JWT_EXPIRES_IN` | Durada del token (ex: `7d`) |
+| `NODE_ENV` | `development` / `production` |
+| `PORT` | Port del servidor (defecte 3000) |
+| `ALLOWED_ORIGINS` | Orígens CORS separats per comes |
+| `RESEND_API_KEY` | Clau per a emails transaccionals |
+| `EMAIL_FROM` | Adreça emisora dels emails |
+| `REDIS_HOST` / `REDIS_PORT` | Connexió Redis per a BullMQ |
+| `CLOUDINARY_CLOUD_NAME` | Credencials Cloudinary (imatges) |
+| `CLOUDINARY_API_KEY` | Credencials Cloudinary |
+| `CLOUDINARY_API_SECRET` | Credencials Cloudinary |
+
+Vegeu `backend/.env.example` per als valors per defecte.
+
+### frontend/.env
+
+```env
+EXPO_PUBLIC_API_URL=http://localhost:3000
+```
+
+Per a dispositius físics, usa la IP local en lloc de `localhost`.
+
+### client-portal/.env.local
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
 ---
 
-## 📦 Comandos Útiles
+## Docker Compose
 
-### **Backend**
 ```bash
-# Desarrollo con hot-reload
-npm run start:dev
+# Aixecar tot (Postgres + Redis + backend + frontend)
+docker-compose up -d
 
-# Build para producción
-npm run build
-npm run start:prod
+# Logs
+docker-compose logs -f backend
 
-# Prisma
-npx prisma studio              # UI para ver/editar datos
-npx prisma migrate dev         # Crear nueva migración
-npx prisma generate            # Regenerar cliente
+# Aturar
+docker-compose down
 
-# Docker
-docker-compose up -d           # Levantar todo
-docker-compose logs -f         # Ver logs
-docker-compose down            # Detener todo
-docker-compose down -v         # Detener y eliminar datos
-```
-
-### **Frontend**
-```bash
-# Desarrollo
-npx expo start                 # Iniciar con QR
-npx expo start --android       # Abrir en Android
-npx expo start --ios           # Abrir en iOS
-npx expo start --web           # Abrir en navegador
-
-# Build
-npx expo prebuild              # Generar carpetas nativas
-eas build --platform android   # Build para Android (requiere EAS)
+# Aturar i eliminar dades
+docker-compose down -v
 ```
 
 ---
 
-## 🌐 Endpoints Principales
+## Comandes de desenvolupament
 
-### **Autenticación**
-- `POST /api/auth/signup` - Registrar empresa + admin
-- `POST /api/auth/login` - Login de usuario
-- `GET /api/auth/me` - Perfil actual (requiere JWT)
+### Backend
 
-### **Usuarios**
-- `GET /api/usuaris` - Listar usuarios
-- `POST /api/usuaris` - Crear usuario
-- `PATCH /api/usuaris/:id` - Actualizar usuario
-- `DELETE /api/usuaris/:id` - Eliminar usuario
-
-### **Empresas**
-- `GET /api/empreses` - Listar empresas
-- `POST /api/empreses` - Crear empresa
-- `PATCH /api/empreses/:id` - Actualizar empresa
-- `DELETE /api/empreses/:id` - Desactivar empresa
-
-**Ver todos los endpoints:** http://localhost:3000/api/docs
-
----
-
-## 🔒 Seguridad
-
-✅ **Implementado:**
-- JWT con tokens seguros (32+ caracteres)
-- Passwords hasheados con bcrypt
-- Rate limiting (3-5 req/min en auth)
-- CORS con whitelist
-- Validación de env con Zod
-- Guards de roles (Admin vs Empleat)
-- Exception filters globales
-
-⚠️ **Recomendaciones adicionales:**
-- Helmet para headers HTTP
-- HTTPS en producción
-- Refresh tokens
-- Logs de auditoría
-
-Ver [SECURITY.md](backend/SECURITY.md) para más detalles.
-
----
-
-## 🐛 Troubleshooting
-
-### **"Cannot connect to database"**
 ```bash
-# Verificar PostgreSQL corriendo
+npm run start:dev       # Hot-reload
+npm run build           # Compilar TypeScript
+npm test                # Tests unitaris
+npm run test:cov        # Cobertura
+npm run test:e2e        # Tests E2E
+npx prisma studio       # GUI de base de dades
+npx prisma migrate dev  # Nova migració
+```
+
+### Frontend
+
+```bash
+npm start               # Expo DevTools
+npm run web             # Obrir directament al navegador
+npm run android         # Android
+npm run lint            # ESLint
+```
+
+### Client Portal
+
+```bash
+npm run dev             # Servidor de desenvolupament
+npm run build           # Build de producció
+npm run lint            # ESLint
+```
+
+---
+
+## Stack tecnològic
+
+### Backend
+- NestJS 10 · TypeScript
+- Prisma 6 + PostgreSQL 15
+- JWT (Passport) + token blacklist per logout
+- BullMQ + Redis per a tasques asíncrones (emails post-cita)
+- Cloudinary per a imatges
+- Resend per a emails transaccionals
+- Swagger/OpenAPI 3.0
+- Rate limiting en 3 nivells (Throttler)
+- Zod per a validació de variables d'entorn
+
+### Frontend
+- React Native 0.81 · Expo SDK
+- Expo Router (navegació basada en fitxers)
+- React Query (TanStack) per a gestió d'estat del servidor
+- Axios amb interceptors JWT
+- AsyncStorage
+- Tematització dinàmica per empresa (ThemeProvider)
+
+### Client Portal
+- Next.js · React Server Components
+- Tailwind CSS 4
+- Plus Jakarta Sans
+
+---
+
+## Funcionalitats
+
+| Funcionalitat | Backend | Frontend | Portal |
+|---------------|---------|----------|--------|
+| Registre i login d'empresa | ✅ | ✅ | — |
+| Gestió d'empleats (CRUD) | ✅ | ✅ | — |
+| Gestió de serveis (CRUD + imatge + categoria) | ✅ | ✅ | ✅ |
+| Base de clients | ✅ | ✅ | — |
+| Motor de disponibilitat | ✅ | — | ✅ |
+| Reserves (crear/confirmar/cancel·lar/finalitzar) | ✅ | ✅ | ✅ |
+| Plantilles de torns amb rotació A/B | ✅ | ✅ | — |
+| Absències individuals + tancaments empresa | ✅ | ✅ | — |
+| Pujada d'imatges (Cloudinary) | ✅ | ✅ | — |
+| Tematització dinàmica per empresa | — | ✅ | — |
+| Valoracions i ressenyes | ✅ | ✅ | ✅ |
+| Estadístiques i analítica | ✅ | ✅ | — |
+| Directori públic d'empreses | — | — | ✅ |
+| Reserva pública sense login (token únic) | ✅ | — | ✅ |
+| Emails transaccionals (confirmació, valoració) | ✅ | — | — |
+| Cua de tasques asíncrones (BullMQ) | ✅ | — | — |
+| Documentació API (Swagger) | ✅ | — | — |
+
+---
+
+## Seguretat
+
+- Passwords amb bcrypt
+- JWT amb llista negra per a logout segur
+- Rate limiting en 3 nivells
+- CORS amb whitelist d'orígens
+- Validació de variables d'entorn amb Zod
+- Guards de rols (`ADMIN_GENERAL` / `EMPLEAT`)
+- Exception filters globals
+
+---
+
+## Resolució de problemes
+
+### "Cannot connect to database"
+```bash
 docker ps | grep postgres
-
-# Ver logs
-docker logs bookmenow-db-local
-
-# Reiniciar
 docker-compose restart postgres
 ```
 
-### **"Port 3000 already in use"**
-```bash
-# Windows (PowerShell)
+### "Port 3000 already in use" (Windows)
+```powershell
 Get-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess | Stop-Process
-
-# Linux/Mac
-lsof -ti:3000 | xargs kill -9
 ```
 
-### **"Prisma Client not initialized"**
+### "Prisma Client not initialized"
 ```bash
 npx prisma generate
-npm install
 ```
 
-### **Frontend no conecta al backend**
-```bash
-# Usar IP local en lugar de localhost
-# En backend/.env:
-# ALLOWED_ORIGINS="http://192.168.1.x:19000"
-
-# En frontend/.env:
-# EXPO_PUBLIC_API_URL="http://192.168.1.x:3000"
-
-# Obtener tu IP
-ipconfig  # Windows
-ifconfig  # Mac/Linux
-```
+### Frontend no connecta al backend (dispositiu físic)
+Usa la IP local (`ipconfig` a Windows) en lloc de `localhost` al `EXPO_PUBLIC_API_URL`.
 
 ---
 
-## 📈 Estado del Proyecto
+## Documentació addicional
 
-### ✅ **Completado**
-- ✅ Backend NestJS con arquitectura modular
-- ✅ Autenticación JWT + Guards de roles
-- ✅ CRUD completo: Usuarios, Empresas
-- ✅ Base de datos con Prisma + PostgreSQL
-- ✅ Swagger/OpenAPI documentación
-- ✅ 23 tests unitarios + E2E (85%+ coverage)
-- ✅ Docker Compose para desarrollo
-- ✅ Frontend React Native con Expo
-- ✅ Integración frontend-backend básica
-
-### 🚧 **En Desarrollo**
-- ⚠️ Validación compleja de reservas (solapamiento, disponibilidad)
-- ⚠️ Cálculo automático de facturación
-- ⚠️ Tests del frontend
-- ⚠️ Notificaciones push
-
-### 📋 **Planificado**
-- ❌ Dashboard de administración
-- ❌ Reportes y estadísticas
-- ❌ Sistema de valoraciones
-- ❌ Integración de pagos
+- [Descripció completa del projecte](PROJECTE.md) — Arquitectura, decisions tècniques, model de dades
+- [Guia d'inici ràpid](START.md) — Setup pas a pas per a Windows
+- [Seguretat del backend](backend/SECURITY.md)
+- [Swagger interactiu](http://localhost:3000/api/docs) — Tots els endpoints documentats
 
 ---
 
-## 👥 Contribuir
+## Llicència
 
-1. Fork el repositorio
-2. Crea una rama: `git checkout -b feature/nueva-funcionalidad`
-3. Commit: `git commit -am 'Añadir nueva funcionalidad'`
-4. Push: `git push origin feature/nueva-funcionalidad`
-5. Abre un Pull Request
-
----
-
-## 📄 Licencia
-
-Este proyecto es de uso educativo. Ver archivo LICENSE para más detalles.
-
----
-
-## 🔗 Enlaces Útiles
-
-- [Documentación NestJS](https://docs.nestjs.com/)
-- [Documentación Prisma](https://www.prisma.io/docs)
-- [Documentación Expo](https://docs.expo.dev/)
-- [PostgreSQL Docker](https://hub.docker.com/_/postgres)
-- [Swagger UI](https://swagger.io/tools/swagger-ui/)
-
----
-
-## 📞 Soporte
-
-- **Swagger Docs:** http://localhost:3000/api/docs
-- **Healthcheck:** http://localhost:3000/health
-- **Issues:** [GitHub Issues](https://github.com/u1980982-create/BookMeNow-app/issues)
-
----
-
-**¡Happy Coding!** 🚀
+Projecte d'ús educatiu (PDS — Producció i Disseny de Software, 2024-25).

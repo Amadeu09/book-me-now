@@ -49,6 +49,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = HttpStatus.BAD_REQUEST;
       message = 'Validation error in database operation';
       error = 'ValidationError';
+      this.logger.error('PrismaClientValidationError details:', exception.message);
     }
     // Generic Errors
     else if (exception instanceof Error) {
@@ -120,7 +121,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       default:
         return {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Database operation failed',
+          message: `Database operation failed [${error.code}] ${JSON.stringify(error.meta ?? {})}`,
           error: 'DatabaseError',
         };
     }

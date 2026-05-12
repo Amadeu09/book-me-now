@@ -42,3 +42,11 @@ lerna-debug.log*
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
+
+# Test & build artifacts
+build_output.txt
+test-out*.txt
+test-results.*
+
+# File uploads (stored externally via Cloudinary in production)
+uploads/

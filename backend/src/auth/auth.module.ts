@@ -6,22 +6,29 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { UsuarisService } from '../usuaris/usuaris.service';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default-secret-change-me',
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '7d',
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET environment variable is not set. Cannot start application.');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '7d',
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TokenBlacklistService],
+  providers: [AuthService, JwtStrategy, TokenBlacklistService, UsuarisService],
   exports: [AuthService, JwtStrategy, PassportModule, TokenBlacklistService],
 })
 export class AuthModule {}

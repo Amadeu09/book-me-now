@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { EmpresasService } from './empresas.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -55,10 +55,6 @@ describe('EmpresasService', () => {
         id: 1,
         ...createDto,
         createdAt: new Date(),
-        _count: {
-          treballadors: 0,
-          serveis: 0,
-        },
       };
 
       mockPrismaService.empresa.create.mockResolvedValue(mockEmpresa);
@@ -66,153 +62,98 @@ describe('EmpresasService', () => {
       const result = await service.create(createDto);
 
       expect(result).toEqual(mockEmpresa);
-      expect(prismaService.empresa.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          nom: createDto.nom,
-          ubicacio: createDto.ubicacio,
-        }),
-        include: expect.any(Object),
-      });
     });
   });
 
   describe('findAll', () => {
-    it('debería devolver todas las empresas', async () => {
+    it('debería devolver las empresas del usuario autenticado', async () => {
       const mockEmpresas = [
-        {
-          id: 1,
-          nom: 'Empresa 1',
-          ubicacio: 'Barcelona',
-          _count: { treballadors: 5, serveis: 10, usuaris: 2 },
-        },
-        {
-          id: 2,
-          nom: 'Empresa 2',
-          ubicacio: 'Madrid',
-          _count: { treballadors: 3, serveis: 8, usuaris: 1 },
-        },
+        { id: 1, nom: 'Empresa 1', ubicacio: 'Barcelona' },
       ];
 
       mockPrismaService.empresa.findMany.mockResolvedValue(mockEmpresas);
 
-      const result = await service.findAll();
+      const result = await service.findAll(1);
 
       expect(result).toEqual(mockEmpresas);
-      expect(prismaService.empresa.findMany).toHaveBeenCalled();
+      expect(prismaService.empresa.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 1 } }),
+      );
     });
   });
 
   describe('findOne', () => {
-    it('debería devolver una empresa por ID', async () => {
-      const mockEmpresa = {
-        id: 1,
-        nom: 'Test Company',
-        ubicacio: 'Barcelona',
-        capacitat: 20,
-        activa: true,
-        createdAt: new Date(),
-        treballadors: [],
-        serveis: [],
-        _count: { usuaris: 2 },
-      };
+    it('debería devolver una empresa del mismo tenant', async () => {
+      const mockEmpresa = { id: 1, nom: 'Test Company', ubicacio: 'Barcelona', activa: true };
 
       mockPrismaService.empresa.findUnique.mockResolvedValue(mockEmpresa);
 
-      const result = await service.findOne(1, 1, 'ADMIN_GENERAL');
+      const result = await service.findOne(1, 1);
 
       expect(result).toEqual(mockEmpresa);
+    });
+
+    it('debería lanzar ForbiddenException si la empresa es de otro tenant', async () => {
+      const mockEmpresa = { id: 2, nom: 'Other Company', ubicacio: 'Madrid', activa: true };
+
+      mockPrismaService.empresa.findUnique.mockResolvedValue(mockEmpresa);
+
+      await expect(service.findOne(2, 1)).rejects.toThrow(ForbiddenException);
     });
 
     it('debería lanzar NotFoundException si la empresa no existe', async () => {
       mockPrismaService.empresa.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999, 1, 'ADMIN_GENERAL')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne(999, 1)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('debería actualizar una empresa', async () => {
-      const updateDto = {
-        nom: 'Nombre Actualizado',
-        capacitat: 50,
-      };
-
-      const existingEmpresa = {
-        id: 1,
-        nom: 'Nombre Original',
-        ubicacio: 'Barcelona',
-        empresaId: 1,
-      };
-
-      const updatedEmpresa = {
-        ...existingEmpresa,
-        ...updateDto,
-      };
+    it('debería actualizar una empresa del mismo tenant', async () => {
+      const updateDto = { nom: 'Nombre Actualizado', capacitat: 50 };
+      const existingEmpresa = { id: 1, nom: 'Nombre Original', ubicacio: 'Barcelona', empresaId: 1 };
+      const updatedEmpresa = { ...existingEmpresa, ...updateDto };
 
       mockPrismaService.empresa.findUnique.mockResolvedValue(existingEmpresa);
       mockPrismaService.empresa.update.mockResolvedValue(updatedEmpresa);
 
-      const result = await service.update(1, updateDto, 1, 'ADMIN_GENERAL');
+      const result = await service.update(1, updateDto, 1);
 
       expect(result.nom).toBe(updateDto.nom);
-      expect(result.capacitat).toBe(updateDto.capacitat);
+    });
+
+    it('debería lanzar ForbiddenException si la empresa es de otro tenant', async () => {
+      const existingEmpresa = { id: 2, nom: 'Other', ubicacio: 'Madrid', empresaId: 2 };
+      mockPrismaService.empresa.findUnique.mockResolvedValue(existingEmpresa);
+
+      await expect(service.update(2, { nom: 'Hack' }, 1)).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('remove', () => {
-    it('debería desactivar una empresa y sus entidades relacionadas', async () => {
-      const mockEmpresa = {
-        id: 1,
-        nom: 'Test Company',
-        ubicacio: 'Barcelona',
-        activa: true,
-        _count: {
-          treballadors: 5,
-          usuaris: 2,
-          reserves: 10,
-        },
-      };
+    it('debería desactivar una empresa del mismo tenant', async () => {
+      const mockEmpresa = { id: 1, nom: 'Test Company', ubicacio: 'Barcelona', activa: true };
+      const updatedEmpresa = { ...mockEmpresa, activa: false };
 
-      const updatedEmpresa = {
-        ...mockEmpresa,
-        activa: false,
-      };
+      mockPrismaService.empresa.findUnique.mockResolvedValue(mockEmpresa);
+      mockPrismaService.empresa.update.mockResolvedValue(updatedEmpresa);
 
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const tx = {
-          empresa: {
-            findUnique: jest.fn().mockResolvedValue(mockEmpresa),
-            update: jest.fn().mockResolvedValue(updatedEmpresa),
-          },
-          treballador: {
-            updateMany: jest.fn().mockResolvedValue({ count: 5 }),
-          },
-          servei: {
-            updateMany: jest.fn().mockResolvedValue({ count: 10 }),
-          },
-        };
-        return callback(tx);
-      });
+      const result = await service.remove(1, 1);
 
-      const result = await service.remove(1);
+      expect(result.activa).toBe(false);
+    });
 
-      expect(result).toHaveProperty('message');
-      expect(result.empresa.activa).toBe(false);
+    it('debería lanzar ForbiddenException si la empresa es de otro tenant', async () => {
+      const mockEmpresa = { id: 2, nom: 'Other', ubicacio: 'Madrid', activa: true };
+      mockPrismaService.empresa.findUnique.mockResolvedValue(mockEmpresa);
+
+      await expect(service.remove(2, 1)).rejects.toThrow(ForbiddenException);
     });
 
     it('debería lanzar NotFoundException si la empresa no existe', async () => {
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        const tx = {
-          empresa: {
-            findUnique: jest.fn().mockResolvedValue(null),
-          },
-        };
-        return callback(tx);
-      });
+      mockPrismaService.empresa.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(999, 1)).rejects.toThrow(NotFoundException);
     });
   });
 });

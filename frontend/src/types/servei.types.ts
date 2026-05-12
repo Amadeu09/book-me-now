@@ -4,6 +4,9 @@ export type Servei = {
   duradaMin: number;
   preu: number;
   actiu: boolean;
+  fotoUrl?: string | null;
+  descripcio?: string | null;
+  categoria?: string | null;
 };
 
 export type ServeiPage = {

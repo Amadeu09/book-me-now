@@ -1,48 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TokenBlacklistService {
   private readonly logger = new Logger(TokenBlacklistService.name);
-  private blacklistedTokens: Set<string> = new Set();
 
-  /**
-   * Add token to blacklist
-   */
-  addToBlacklist(token: string, expiresAt: Date): void {
-    this.blacklistedTokens.add(token);
-    this.logger.debug(`Token added to blacklist. Total blacklisted: ${this.blacklistedTokens.size}`);
+  constructor(private readonly prisma: PrismaService) {}
 
-    // Set timeout to remove token from blacklist when it expires
-    const now = new Date();
-    const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+  async addToBlacklist(token: string, expiresAt: Date): Promise<void> {
+    await this.prisma.tokenBlacklist.upsert({
+      where: { token },
+      create: { token, expiresAt },
+      update: { expiresAt },
+    });
+    this.logger.debug('Token added to blacklist');
+  }
 
-    if (timeUntilExpiry > 0) {
-      setTimeout(() => {
-        this.removeFromBlacklist(token);
-      }, timeUntilExpiry);
+  async isBlacklisted(token: string): Promise<boolean> {
+    const entry = await this.prisma.tokenBlacklist.findUnique({
+      where: { token },
+    });
+    if (!entry) return false;
+    // Treat expired blacklist entries as if they don't exist
+    if (entry.expiresAt < new Date()) {
+      return false;
     }
+    return true;
   }
 
-  /**
-   * Check if token is blacklisted
-   */
-  isBlacklisted(token: string): boolean {
-    return this.blacklistedTokens.has(token);
-  }
-
-  /**
-   * Remove token from blacklist
-   */
-  private removeFromBlacklist(token: string): void {
-    this.blacklistedTokens.delete(token);
-    this.logger.debug(`Token removed from blacklist. Total blacklisted: ${this.blacklistedTokens.size}`);
-  }
-
-  /**
-   * Clear all blacklisted tokens (useful for testing)
-   */
-  clearBlacklist(): void {
-    this.blacklistedTokens.clear();
-    this.logger.debug('Blacklist cleared');
+  /** Purge expired entries — call periodically (e.g. from a cron job). */
+  async purgeExpired(): Promise<void> {
+    const { count } = await this.prisma.tokenBlacklist.deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    });
+    this.logger.debug(`Purged ${count} expired blacklist entries`);
   }
 }

@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, Matches, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Rol } from '@prisma/client';
 
@@ -8,9 +8,13 @@ export class LoginDto {
   @IsNotEmpty({ message: 'Email requerit' })
   email: string;
 
-  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña del usuario', minLength: 6 })
+  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña del usuario', minLength: 8 })
   @IsString()
   @IsNotEmpty({ message: 'Contrasenya requerida' })
+  @MinLength(8, { message: 'La contrasenya ha de tenir mínim 8 caràcters' })
+  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message: 'La contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
+  })
   password: string;
 }
 
@@ -19,10 +23,18 @@ export class SignupUsuariDto {
   @IsEmail({}, { message: 'Email invàlid' })
   email: string;
 
-  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña (mínimo 6 caracteres)', minLength: 6 })
+  @ApiProperty({ example: 'SecurePass123!', description: 'Contraseña (mínimo 8 caracteres, majúscula, número i especial)', minLength: 8 })
   @IsString()
-  @MinLength(6, { message: 'La contrasenya ha de tenir mínim 6 caràcters' })
+  @MinLength(8, { message: 'La contrasenya ha de tenir mínim 8 caràcters' })
+  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message: 'La contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
+  })
   password: string;
+
+  @ApiProperty({ example: '#FF6A00', required: false, description: 'Color primario del usuario (hex)' })
+  @IsOptional()
+  @IsString()
+  colorPrimari?: string;
 }
 
 export class SignupEmpresaDto {
@@ -41,6 +53,18 @@ export class SignupEmpresaDto {
   @IsNumber()
   @Min(1)
   capacitat?: number;
+
+  @ApiProperty({ example: 'Somos un salón de belleza premium...', required: false })
+  @IsOptional()
+  @IsString()
+  descripcio?: string;
+
+  @ApiProperty({ example: 14, description: 'Dies d\'antelació màxima per fer reserves', required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  diasAntesReserva?: number;
+
 }
 
 export class SignupDto {
@@ -66,7 +90,49 @@ export class LoginResponseDto {
     email: string;
     rol: Rol;
     empresaId: number;
+    fotoPerfil?: string;
+    nom?: string;
+    colorPrimari?: string;
+    idioma?: string;
+    empresa?: {
+      id: number;
+      nom: string;
+      ubicacio: string;
+      capacitat: number | null;
+      fotoPerfil?: string;
+      bannerUrl?: string;
+      descripcio?: string;
+    };
   };
+}
+
+export class ChangePasswordDto {
+  @ApiProperty({ description: 'Contrasenya actual del usuari' })
+  @IsString()
+  @IsNotEmpty({ message: 'La contrasenya actual és obligatòria' })
+  currentPassword: string;
+
+  @ApiProperty({ description: 'Nova contrasenya (mínim 8, majúscula, número i especial)', minLength: 8 })
+  @IsString()
+  @MinLength(8, { message: 'La nova contrasenya ha de tenir mínim 8 caràcters' })
+  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message: 'La nova contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
+  })
+  newPassword: string;
+}
+
+export class UpdateIdiomaDto {
+  @ApiProperty({ example: 'ca', enum: ['ca', 'es'], description: 'Idioma de la interfície' })
+  @IsString()
+  @IsNotEmpty()
+  idioma: 'ca' | 'es';
+}
+
+export class UpdateColorDto {
+  @ApiProperty({ example: '#FF6A00', required: false, nullable: true, description: 'Color primario del usuario (hex) o null per eliminar' })
+  @IsOptional()
+  @IsString()
+  colorPrimari?: string | null;
 }
 
 export interface JwtPayload {

@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TreballadorsController } from './treballadors.controller';
 import { TreballadorsService } from './treballadors.service';
-import { CreateTreballadorDto, CreateJornadaTreballadorExistDto } from './dto/CreateTreballadorDto';
+import { CreateTreballadorDto } from './dto/CreateTreballadorDto';
 import { AssignarServeisDto } from './dto/AssignarServeisDto';
 import { Rol } from '@prisma/client';
 
 const mockTreballadorsService = {
     create: jest.fn(),
-    assignJornadaTreballador: jest.fn(),
     assignarServeis: jest.fn(),
 };
 
@@ -46,24 +45,6 @@ describe('TreballadorsController', () => {
 
             expect(service.create).toHaveBeenCalledWith(user.empresaId, dto, user.userId);
             expect(result).toBe('created');
-        });
-    });
-
-    describe('assignarJornada', () => {
-        it('should call service.assignJornadaTreballador', async () => {
-            const dto: CreateJornadaTreballadorExistDto = {
-                treballadorId: 1,
-                plantillaJornadaId: 1,
-                dataInici: new Date().toISOString(),
-                dataFi: undefined
-            };
-            const user = { userId: 1, empresaId: 1, email: 't@t', rol: 'ADMIN_GENERAL' as Rol };
-            mockTreballadorsService.assignJornadaTreballador.mockResolvedValue('assigned');
-
-            const result = await controller.assignarJornada(dto, user);
-
-            expect(service.assignJornadaTreballador).toHaveBeenCalledWith(user.empresaId, dto, user.userId);
-            expect(result).toBe('assigned');
         });
     });
 

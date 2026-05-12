@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
 model Empresa {
@@ -22,38 +22,56 @@ model Empresa {
   usuaris      Usuari[]
   valoracions  Valoracio[]
   reserves     Reserva[]
+  fotoPerfil   String?
+  bannerUrl    String?
+  descripcio   String?
+  tipo             BusinessType @default(OTROS)
+  diasAntesReserva Int          @default(14)
 
   // --- AFEGIT (additiu, no canvia res existent) ---
   jornadesPlantilla JornadaPlantilla[]
+  absenciesEmpresa  AbsenciaEmpresa[]
+  horarisEmpresa    HorariEmpresa[]
+}
 
-  // (opcional) si vols accés directe a assignacions des d’empresa:
-  // treballadorJornadesPlantilla TreballadorJornadaPlantilla[]
+model HorariEmpresa {
+  id        Int     @id @default(autoincrement())
+  empresaId Int
+  dow       Int     // 0=Dilluns … 6=Diumenge
+  iniciMin  Int     // minuts des de 00:00  (ex: 540 = 09:00)
+  fiMin     Int     // minuts des de 00:00  (ex: 840 = 14:00)
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, dow])
 }
 
 model Usuari {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  hash      String
-  rol       Rol
-  empresaId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  hash         String
+  rol          Rol
+  empresaId    Int
+  fotoPerfil   String?
+  colorPrimari String?
+  idioma       String   @default("ca")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
   treballador Treballador?
-
 
   @@index([empresaId])
 }
 
 model Treballador {
-  id          Int                 @id @default(autoincrement())
-  Usuari      Usuari              @relation(fields: [idUsuari], references: [id])
-  idUsuari    Int                 @unique
-  nom         String
-  empresaId   Int
-  actiu       Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id                  Int                 @id @default(autoincrement())
+  Usuari              Usuari              @relation(fields: [idUsuari], references: [id])
+  idUsuari            Int                 @unique
+  nom                 String
+  empresaId           Int
+  actiu               Boolean             @default(true)
+  diesVacancesAnuals  Int                 @default(25)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
   absencies   Absencia[]
   jornades    Jornada[]
   reserves    Reserva[]           @relation("ReservaTreballador")
@@ -61,10 +79,8 @@ model Treballador {
   serveis     TreballadorServei[]
   valoracions Valoracio[]
 
-  // --- AFEGIT (additiu, no canvia res existent) ---
-  jornadesPlantillaAssignacions TreballadorJornadaPlantilla[]
-  // (opcional) per excepcions futures:
-  // jornadesExcepcions JornadaExcepcio[]
+  plantillaId Int?
+  plantilla   JornadaPlantilla? @relation(fields: [plantillaId], references: [id])
 
   @@index([empresaId])
   @@index([actiu])
@@ -77,9 +93,13 @@ model Servei {
   preu         Decimal             @db.Decimal(10, 2)
   empresaId    Int
   actiu        Boolean             @default(true)
+  fotoUrl      String?
+  descripcio   String?
+  categoria    BusinessType?       @default(ALTRES)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   reserves     Reserva[]
+  valoracions  Valoracio[]
   empresa      Empresa             @relation(fields: [empresaId], references: [id])
   treballadors TreballadorServei[]
 
@@ -90,7 +110,7 @@ model Servei {
 model Client {
   id          Int         @id @default(autoincrement())
   nom         String
-  email       String?     @unique
+  email       String?
   telefon     String?
   empresaId   Int
   createdAt   DateTime    @default(now())
@@ -100,6 +120,7 @@ model Client {
   valoracions Valoracio[]
 
   @@index([empresaId])
+  @@unique([email, empresaId])
 }
 
 model TreballadorServei {
@@ -114,23 +135,27 @@ model TreballadorServei {
 }
 
 model Reserva {
-  id            Int             @id @default(autoincrement())
-  dataHora      DateTime
-  estat         ReservaEstat    @default(PENDENT)
-  empresaId     Int
-  treballadorId Int?
-  clientId      Int?
-  clientNom     String?
-  clientEmail   String?
-  observacions  String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  factura       Factura?
-  client        Client?         @relation(fields: [clientId], references: [id])
-  empresa       Empresa         @relation(fields: [empresaId], references: [id])
-  treballador   Treballador?    @relation("ReservaTreballador", fields: [treballadorId], references: [id])
-  serveiId      Int
-  servei        Servei          @relation(fields: [serveiId], references: [id])
+  id                 Int             @id @default(autoincrement())
+  dataHora           DateTime
+  estat              ReservaEstat    @default(PENDENT)
+  empresaId          Int
+  treballadorId      Int?
+  clientId           Int?
+  clientNom          String?
+  clientEmail        String?
+  observacions       String?
+  tokenGestio        String?         @unique
+  tokenValoracio     String?         @unique
+  tokenValoracioUsat Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  factura            Factura?
+  valoracions        Valoracio[]
+  client             Client?         @relation(fields: [clientId], references: [id])
+  empresa            Empresa         @relation(fields: [empresaId], references: [id])
+  treballador        Treballador?    @relation("ReservaTreballador", fields: [treballadorId], references: [id])
+  serveiId           Int
+  servei             Servei          @relation(fields: [serveiId], references: [id])
 
   @@index([empresaId, dataHora])
   @@index([treballadorId, dataHora])
@@ -139,21 +164,26 @@ model Reserva {
   @@index([serveiId])
 }
 
-
-
 model Valoracio {
   id            Int            @id @default(autoincrement())
   empresaId     Int
   clientId      Int?
+  nomClient     String?
   tipus         ValoracioTipus
   treballadorId Int?
-  puntuacio     Int
+  serveiId      Int?
+  puntuacio     Float
   comentari     String?
+  reservaId     Int?
   dataValoracio DateTime       @default(now())
+
   client        Client?        @relation(fields: [clientId], references: [id])
   empresa       Empresa        @relation(fields: [empresaId], references: [id])
   treballador   Treballador?   @relation(fields: [treballadorId], references: [id])
+  servei        Servei?        @relation(fields: [serveiId], references: [id])
+  reserva       Reserva?       @relation(fields: [reservaId], references: [id])
 
+  @@unique([reservaId, tipus])
   @@index([empresaId])
   @@index([tipus, treballadorId])
 }
@@ -194,15 +224,19 @@ model Jornada {
 }
 
 model Absencia {
-  id            Int         @id @default(autoincrement())
+  id            Int              @id @default(autoincrement())
   treballadorId Int
   inici         DateTime
   fi            DateTime
   motiu         String?
-  createdAt     DateTime    @default(now())
-  treballador   Treballador @relation(fields: [treballadorId], references: [id])
+  tipus         TipusAbsencia
+  estat         EstatAbsencia    @default(PENDENT)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  treballador   Treballador      @relation(fields: [treballadorId], references: [id])
 
   @@index([treballadorId, inici])
+  @@index([treballadorId, estat])
 }
 
 model JornadaPlantilla {
@@ -216,7 +250,7 @@ model JornadaPlantilla {
   empresa   Empresa  @relation(fields: [empresaId], references: [id])
 
   rotacions    JornadaRotacio[]
-  assignacions TreballadorJornadaPlantilla[]
+  treballadors Treballador[]
 
   @@index([empresaId])
   @@unique([empresaId, nom])
@@ -273,29 +307,27 @@ model JornadaTram {
   @@index([diaId])
 }
 
-//
-// Assignació d’una plantilla a un treballador per rang de dates
-// (AIXÒ és el que evita solapes i defineix amb quina rotació comença)
-//
-model TreballadorJornadaPlantilla {
-  id            Int      @id @default(autoincrement())
-  treballadorId Int
-  plantillaId   Int
+model AbsenciaEmpresa {
+  id        Int                  @id @default(autoincrement())
+  empresaId Int
+  titol     String
+  inici     DateTime
+  fi        DateTime
+  tipus     TipusAbsenciaEmpresa
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  empresa   Empresa              @relation(fields: [empresaId], references: [id])
 
-  dataInici     DateTime
-  dataFi        DateTime?
+  @@index([empresaId, inici])
+}
 
-  // amb quina rotació (index) comença a dataInici
-  anchorRotacioIndex Int @default(0)
+model TokenBlacklist {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  treballador   Treballador      @relation(fields: [treballadorId], references: [id])
-  plantilla     JornadaPlantilla @relation(fields: [plantillaId], references: [id])
-
-  @@index([treballadorId, dataInici])
-  @@index([plantillaId])
+  @@index([expiresAt])
 }
 
 enum Rol {
@@ -315,3 +347,41 @@ enum ValoracioTipus {
   SALA
   TREBALLADOR
 }
+
+enum TipusAbsencia {
+  VACANCES
+  MALALTIA
+  PERMIS
+  ALTRE
+}
+
+enum EstatAbsencia {
+  PENDENT
+  APROVADA
+  REBUTJADA
+}
+
+enum TipusAbsenciaEmpresa {
+  FESTA_LOCAL
+  FESTA_ESTATAL
+  PONT
+  ALTRE
+}
+
+enum BusinessType {
+  PERRUQUERIA
+  BARBERIA
+  ESTETICA
+  SPA
+  MASSATGES
+  FITNESS
+  PILATES
+  IOGA
+  NUTRICIONISTA
+  FISIOTERAPIA
+  DENTAL
+  VETERINARIA
+  ALTRES
+  OTROS
+}
+

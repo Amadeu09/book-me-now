@@ -31,7 +31,7 @@ export default function Index() {
     );
   }
 
-  const destination = token ? '/home' : '/login';
+  const destination = token ? '/profile' : '/login';
   console.log('Index: Redirigiendo a:', destination);
   
   return <Redirect href={destination} />;

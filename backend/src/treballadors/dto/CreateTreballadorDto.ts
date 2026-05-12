@@ -1,25 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
-
-export class JornadaTreballadorDto {
-
-    @ApiProperty({ example: 10, description: 'ID de la plantilla de jornada' })
-    @Type(() => Number)
-    @IsInt()
-    @IsNotEmpty()
-    plantillaJornadaId: number;
-
-    @ApiProperty({ example: '2026-02-07T09:00:00.000Z', description: 'Fecha de inicio de la asignación' })
-    @IsString()
-    @IsNotEmpty()
-    dataInici: string;
-
-    @ApiProperty({ example: '2026-02-07T18:00:00.000Z', description: 'Fecha de fin de la asignación (opcional)', required: false })
-    @IsString()
-    @IsOptional()
-    dataFi?: string;
-}
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsArray, Min } from 'class-validator';
 
 export class CreateTreballadorDto {
     @ApiProperty({ example: 'Juan Pérez', description: 'Nombre del trabajador' })
@@ -33,33 +14,22 @@ export class CreateTreballadorDto {
     @IsNotEmpty()
     idUsuari: number;
 
-    @ApiProperty({ type: () => JornadaTreballadorDto, required: false, description: 'Datos de la jornada inicial (opcional)' })
-    @ValidateNested()
-    @Type(() => JornadaTreballadorDto)
-    @IsOptional()
-    jornadaTreballador?: JornadaTreballadorDto;
-}
-
-export class CreateJornadaTreballadorExistDto {
-    @ApiProperty({ example: 123, description: 'ID del treballador existente a vincular' })
+    @ApiProperty({ example: 30, required: false, description: 'Dies de vacances anuals (per defecte 25)' })
     @Type(() => Number)
     @IsInt()
-    @IsNotEmpty()
-    treballadorId: number;
+    @Min(0)
+    @IsOptional()
+    diesVacancesAnuals?: number;
 
-    @ApiProperty({ example: 10, description: 'ID de la plantilla de jornada' })
+    @ApiProperty({ example: 10, required: false, description: 'ID de la plantilla de jornada a assignar (opcional)' })
     @Type(() => Number)
     @IsInt()
-    @IsNotEmpty()
-    plantillaJornadaId: number;
-
-    @ApiProperty({ example: '2026-02-07T09:00:00.000Z', description: 'Fecha de inicio de la asignación' })
-    @IsString()
-    @IsNotEmpty()
-    dataInici: string;
-
-    @ApiProperty({ example: '2026-02-07T18:00:00.000Z', description: 'Fecha de fin de la asignación (opcional)', required: false })
-    @IsString()
     @IsOptional()
-    dataFi?: string;
+    plantillaId?: number;
+
+    @ApiProperty({ example: [1, 2, 3], required: false, description: 'Lista de IDs de servicios iniciales a asignar (opcional)' })
+    @IsArray()
+    @IsInt({ each: true })
+    @IsOptional()
+    serveisIds?: number[];
 }

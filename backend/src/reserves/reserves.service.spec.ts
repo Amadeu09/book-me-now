@@ -18,6 +18,9 @@ const mockPrismaService = {
         delete: jest.fn(),
         update: jest.fn(),
     },
+    usuari: {
+        findUnique: jest.fn(),
+    },
     client: {
         findFirst: jest.fn(),
         create: jest.fn(),
@@ -156,6 +159,60 @@ describe('ReservesService', () => {
         it('should throw NotFoundException if reserva not found', async () => {
             mockPrismaService.reserva.findUnique.mockResolvedValue(null);
             await expect(service.updateEstado(1, 'CONFIRMADA')).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('findAllBySetmana', () => {
+        it('should return reserves successfully without treballadorId', async () => {
+            const user = { id: 1, empresaId: 1, rol: 'ADMIN_GENERAL' };
+            mockPrismaService.usuari.findUnique.mockResolvedValue(user);
+            mockPrismaService.reserva.findMany.mockResolvedValue([{ id: 1 }]);
+
+            const result = await service.findAllBySetmana(1, '2023-01-01', '2023-01-07', 1);
+
+            expect(result).toBeDefined();
+            expect(mockPrismaService.reserva.findMany).toHaveBeenCalled();
+            expect(mockPrismaService.treballador.findUnique).not.toHaveBeenCalled();
+        });
+
+        it('should return reserves successfully with treballadorId', async () => {
+            const user = { id: 1, empresaId: 1, rol: 'ADMIN_GENERAL' };
+            const treballador = { id: 2, empresaId: 1 };
+            mockPrismaService.usuari.findUnique.mockResolvedValue(user);
+            mockPrismaService.treballador.findUnique.mockResolvedValue(treballador);
+            mockPrismaService.reserva.findMany.mockResolvedValue([{ id: 1 }]);
+
+            const result = await service.findAllBySetmana(1, '2023-01-01', '2023-01-07', 1, '2');
+
+            expect(result).toBeDefined();
+            expect(mockPrismaService.treballador.findUnique).toHaveBeenCalled();
+            expect(mockPrismaService.reserva.findMany).toHaveBeenCalled();
+        });
+
+        it('should throw ForbiddenException if user has wrong empresaId', async () => {
+            const user = { id: 1, empresaId: 2, rol: 'ADMIN_GENERAL' };
+            mockPrismaService.usuari.findUnique.mockResolvedValue(user);
+
+            await expect(service.findAllBySetmana(1, '2023-01-01', '2023-01-07', 1))
+                .rejects.toThrow(ForbiddenException);
+        });
+
+        it('should throw ForbiddenException if user is not ADMIN_GENERAL', async () => {
+            const user = { id: 1, empresaId: 1, rol: 'TREBALLADOR' };
+            mockPrismaService.usuari.findUnique.mockResolvedValue(user);
+
+            await expect(service.findAllBySetmana(1, '2023-01-01', '2023-01-07', 1))
+                .rejects.toThrow(ForbiddenException);
+        });
+
+        it('should throw ForbiddenException if treballador belongs to another empresa', async () => {
+            const user = { id: 1, empresaId: 1, rol: 'ADMIN_GENERAL' };
+            const treballador = { id: 2, empresaId: 2 };
+            mockPrismaService.usuari.findUnique.mockResolvedValue(user);
+            mockPrismaService.treballador.findUnique.mockResolvedValue(treballador);
+
+            await expect(service.findAllBySetmana(1, '2023-01-01', '2023-01-07', 1, '2'))
+                .rejects.toThrow(ForbiddenException);
         });
     });
 });
