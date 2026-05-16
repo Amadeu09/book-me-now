@@ -69,3 +69,8 @@ export async function signup(
   const res = await api.post('/auth/signup', payload);
   return res.data;
 }
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const res = await api.post('/auth/forgot-password', { email });
+  return res.data;
+}

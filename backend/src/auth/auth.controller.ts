@@ -8,7 +8,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto, SignupDto, LoginResponseDto, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto } from './dto/auth.dto';
+import { LoginDto, SignupDto, LoginResponseDto, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { UsuarisService } from '../usuaris/usuaris.service';
 
 @ApiTags('auth')
@@ -114,6 +114,30 @@ export class AuthController {
   ) {
     this.logger.debug(`PATCH /api/auth/me/idioma - User: ${user.userId}`);
     return this.authService.updateIdioma(user.userId, dto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: 'Sol·licitar restabliment de contrasenya', description: 'Envia un email amb un token de restabliment (30 min de validesa)' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 200, description: 'Resposta genèrica (seguretat anti-enumeració)' })
+  @ApiResponse({ status: 429, description: 'Massa intents' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    this.logger.debug(`POST /api/auth/forgot-password - Email: ${dto.email}`);
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Restablir contrasenya amb token', description: 'Estableix una nova contrasenya usant el token rebut per correu' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 200, description: 'Contrasenya restablerta' })
+  @ApiResponse({ status: 400, description: 'Token invàlid o caducat' })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    this.logger.debug('POST /api/auth/reset-password');
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
   @Patch('me/foto')

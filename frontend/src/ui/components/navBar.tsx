@@ -182,9 +182,9 @@ export default function Navbar({ variant }: NavbarProps) {
                 <Ionicons
                   name={iconName as any}
                   size={24}
-                  color={isActive ? theme.primary : '#6b7280'}
+                  color={isActive ? theme.sidebarText : theme.sidebarTextInactive}
                 />
-                <Text style={[styles.mobileNavText, { color: isActive ? theme.primary : '#6b7280' }]}>
+                <Text style={[styles.mobileNavText, { color: isActive ? theme.sidebarText : theme.sidebarTextInactive }]}>
                   {item.name}
                 </Text>
               </TouchableOpacity>

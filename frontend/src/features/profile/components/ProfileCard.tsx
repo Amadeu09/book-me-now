@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { uploadMyFoto } from '../services/profile.service';
@@ -148,6 +150,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     const queryClient = useQueryClient();
     const theme = useTheme();
     const { t } = useLanguage();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        await AsyncStorage.multiRemove(['token', 'user']);
+        router.replace('/login');
+    };
 
     const handlePickPhoto = async () => {
         try {
@@ -299,6 +307,15 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
                 <Text style={[styles.editBtnText, { color: theme.textOnPrimary }]}>{t('editProfile')}</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity
+                style={styles.logoutBtn}
+                onPress={handleLogout}
+                activeOpacity={0.8}
+            >
+                <Ionicons name="log-out-outline" size={18} color={HC.red} />
+                <Text style={styles.logoutBtnText}>{t('logout')}</Text>
+            </TouchableOpacity>
+
             <EditProfileModal visible={editVisible} onClose={() => setEditVisible(false)} />
         </View>
     );
@@ -429,5 +446,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: HC.white,
+    },
+    logoutBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginTop: 10,
+        paddingVertical: 13,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: HC.red,
+        backgroundColor: HC.redLight,
+        width: '100%',
+    },
+    logoutBtnText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: HC.red,
     },
 });

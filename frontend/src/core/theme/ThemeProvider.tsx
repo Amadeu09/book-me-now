@@ -31,7 +31,7 @@ export type AppTheme = {
   setPrimaryColor: (hex: string | null) => void;
 };
 
-const DEFAULT_PRIMARY = '#FF6B6B';
+const DEFAULT_PRIMARY = '#6366F1';
 
 // Default theme — used when the company has NOT set a custom color.
 // Cards are neutral/white; primary is still orange for buttons/navbar.
@@ -44,10 +44,10 @@ const defaultTheme: AppTheme = {
   isDefault: true,
   isUserWhite: false,
   sidebarBg: '#ffffff',
-  sidebarText: '#0f172a',
+  sidebarText: DEFAULT_PRIMARY,
   sidebarTextInactive: '#6b7280',
-  sidebarActiveBg: 'rgba(226, 232, 240, 0.8)',
-  sidebarActiveBorder: 'rgba(148, 163, 184, 0.6)',
+  sidebarActiveBg: 'rgba(99,102,241,0.08)',
+  sidebarActiveBorder: 'rgba(99,102,241,0.25)',
   headerBg: '#ffffff',
   headerText: '#0f172a',
   headerSubtitle: '#6b7280',

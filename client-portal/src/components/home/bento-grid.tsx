@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function BentoGrid() {
   return (
-    <section className="px-6 md:px-12 max-w-[1920px] mx-auto mb-40">
+    <section id="software" className="px-6 md:px-12 max-w-[1920px] mx-auto mb-40">
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
         <div className="max-w-xl">
           <p className="text-primary font-bold tracking-widest uppercase text-sm mb-4">
@@ -34,7 +34,7 @@ export function BentoGrid() {
               Sin llamadas, sin esperas.
             </p>
           </div>
-          <div className="flex flex-col gap-3 mt-8">
+          <div className="flex flex-col gap-3 mt-6">
             {[
               { icon: "check_circle", label: "El cliente elige servicio y horario" },
               { icon: "check_circle", label: "Confirmación automática por email" },
@@ -48,15 +48,14 @@ export function BentoGrid() {
               </div>
             ))}
           </div>
-          {/* Screenshot preview */}
-          <div className="mt-8 rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
+          {/* Screenshot — full width, landscape */}
+          <div className="mt-8 rounded-2xl overflow-hidden border border-white/20 shadow-2xl h-64">
             <Image
-              src="/images/calendari-escriptori.png"
+              src="/images/calendari-escriptori-nou.png"
               alt="Vista del calendario de reservas"
-              width={900}
+              width={1200}
               height={400}
-              className="w-full object-cover object-top"
-              style={{ maxHeight: "220px" }}
+              className="w-full h-full object-cover object-top"
             />
           </div>
         </div>
@@ -80,7 +79,7 @@ export function BentoGrid() {
             {/* Schedule screenshot */}
             <div className="mt-6 rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
               <Image
-                src="/images/crear-horari-mobil.png"
+                src="/images/crear-horari-mobil-nou.png"
                 alt="Creación de plantilla de horario"
                 width={400}
                 height={260}
@@ -114,7 +113,7 @@ export function BentoGrid() {
             </p>
             <div className="rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
               <Image
-                src="/images/estadistiques-escriptori.png"
+                src="/images/estadistiques-escriptori-nou.png"
                 alt="Panel de estadísticas"
                 width={600}
                 height={260}

@@ -41,6 +41,7 @@ const ca = {
 
   // Profile
   editProfile: 'Editar perfil',
+  logout: 'Tancar sessió',
   appColor: 'Color de l\'aplicació',
   language: 'Idioma',
   langCa: 'Català',
@@ -97,9 +98,6 @@ const ca = {
   btEstetica: 'Estètica',
   btSpa: 'Spa',
   btMassatges: 'Massatges',
-  btFitness: 'Fitness',
-  btPilates: 'Pilates',
-  btIoga: 'Ioga',
   btNutricionista: 'Nutricionista',
   btFisioterapia: 'Fisioteràpia',
   btDental: 'Dental',
@@ -313,6 +311,8 @@ const ca = {
   workerJornadaTitle: 'Assignar una jornada (Opcional):',
   workerJornadaLabel: 'Plantilla de Jornada',
   workerNoJornades: 'No hi ha plantilles de jornada.',
+  workerJornadaIniciLabel: 'Data d\'inici de rotació',
+  workerJornadaIniciHint: 'La disponibilitat no mostrarà cites abans d\'aquesta data.',
 
   // Template modal
   templateModalTitleEdit: 'Editar plantilla',

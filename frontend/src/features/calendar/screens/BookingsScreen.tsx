@@ -27,6 +27,7 @@ export default function Bookings() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [userRole, setUserRole] = useState<string | undefined>(undefined);
     const [userId, setUserId] = useState<string | undefined>(undefined);
+    const [currentUserTreballadorId, setCurrentUserTreballadorId] = useState<number | undefined>(undefined);
     const [workers, setWorkers] = useState<ApiTreballador[]>([]);
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | undefined>(undefined);
     const [services, setServices] = useState<ApiServei[]>([]);
@@ -62,11 +63,22 @@ export default function Bookings() {
                     // }
                 });
             } else if (user?.rol === 'EMPLEAT') {
-                fetchGetServeis().catch(err => {
-                    console.error("Error fetching services in Screen:", err);
-                    return [];
-                }).then(servicesData => {
+                Promise.all([
+                    fetchGetServeis().catch(err => {
+                        console.error("Error fetching services in Screen:", err);
+                        return [];
+                    }),
+                    fetchGetTreballadors().catch(err => {
+                        console.error("Error fetching workers in Screen:", err);
+                        return [];
+                    }),
+                ]).then(([servicesData, workersData]) => {
                     setServices(servicesData);
+                    const userId = user.id;
+                    const myWorker = (workersData as ApiTreballador[]).find(
+                        w => w.idUsuari === parseInt(userId, 10)
+                    );
+                    if (myWorker) setCurrentUserTreballadorId(myWorker.id);
                 });
             }
         });
@@ -135,6 +147,8 @@ export default function Bookings() {
                 onSuccess={() => refetch()}
                 workers={workers}
                 services={services}
+                isAdmin={isAdmin}
+                currentUserTreballadorId={currentUserTreballadorId}
             />
 
             <BookingDetailModal

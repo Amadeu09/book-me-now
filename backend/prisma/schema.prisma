@@ -52,10 +52,12 @@ model Usuari {
   rol          Rol
   empresaId    Int
   fotoPerfil   String?
-  colorPrimari String?
-  idioma       String   @default("ca")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  colorPrimari      String?
+  idioma            String    @default("ca")
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   empresa    Empresa  @relation(fields: [empresaId], references: [id])
   treballador Treballador?
 
@@ -79,8 +81,9 @@ model Treballador {
   serveis     TreballadorServei[]
   valoracions Valoracio[]
 
-  plantillaId Int?
-  plantilla   JornadaPlantilla? @relation(fields: [plantillaId], references: [id])
+  plantillaId        Int?
+  plantilla          JornadaPlantilla? @relation(fields: [plantillaId], references: [id])
+  dataIniciRotacio   DateTime?
 
   @@index([empresaId])
   @@index([actiu])

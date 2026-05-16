@@ -318,15 +318,70 @@ export class ReservesService {
   async updateEstado(idReserva: number, nouEstat: ReservaEstat) {
     const reserva = await this.prisma.reserva.findUnique({
       where: { id: idReserva },
+      include: {
+        servei: { select: { nom: true } },
+        empresa: { select: { nom: true } },
+      },
     });
 
     if (!reserva) {
       throw new NotFoundException('Reserva no trobada');
     }
 
-    return this.prisma.reserva.update({
+    const updated = await this.prisma.reserva.update({
       where: { id: idReserva },
       data: { estat: nouEstat },
+    });
+
+    if (nouEstat === 'CANCELLADA' && reserva.clientEmail) {
+      this.enviarEmailCancellacio(reserva).catch(err =>
+        console.error('Error sending cancellation email', err),
+      );
+    }
+
+    return updated;
+  }
+
+  private async enviarEmailCancellacio(reserva: {
+    clientNom?: string | null;
+    clientEmail: string;
+    dataHora: Date;
+    servei: { nom: string };
+    empresa: { nom: string };
+  }): Promise<void> {
+    const portalUrl = this.config.get<string>('PORTAL_URL', 'http://localhost:3002');
+    const dataFormatada = reserva.dataHora.toLocaleDateString('ca-ES', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      timeZone: 'Europe/Madrid',
+    });
+    const horaFormatada = reserva.dataHora.toLocaleTimeString('ca-ES', {
+      hour: '2-digit', minute: '2-digit',
+      timeZone: 'Europe/Madrid',
+    });
+
+    await this.resend.emails.send({
+      from: this.emailFrom,
+      to: reserva.clientEmail,
+      subject: `Reserva cancel·lada — ${reserva.empresa.nom}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px;">
+          <h2 style="color:#6366F1;margin:0 0 4px">BookMeNow</h2>
+          <p style="color:#6B7280;font-size:13px;margin:0 0 24px">${reserva.empresa.nom}</p>
+          <h3 style="color:#0F172A;margin:0 0 12px">La teva reserva ha estat cancel·lada</h3>
+          <p style="color:#334155;font-size:15px;">Hola ${reserva.clientNom ?? ''},</p>
+          <p style="color:#334155;font-size:15px;">Lamentem informar-te que la teva cita ha estat cancel·lada per l'empresa:</p>
+          <div style="background:#F8F9FB;border-radius:8px;padding:16px;margin:16px 0;">
+            <p style="margin:4px 0;color:#334155;font-size:14px;"><strong>Servei:</strong> ${reserva.servei.nom}</p>
+            <p style="margin:4px 0;color:#334155;font-size:14px;"><strong>Data:</strong> ${dataFormatada}</p>
+            <p style="margin:4px 0;color:#334155;font-size:14px;"><strong>Hora:</strong> ${horaFormatada}</p>
+          </div>
+          <p style="color:#334155;font-size:15px;">Si vols tornar a reservar, pots fer-ho des del nostre portal:</p>
+          <a href="${portalUrl}" style="display:inline-block;margin:8px 0 16px;padding:12px 24px;background:#6366F1;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+            Fer nova reserva
+          </a>
+          <p style="color:#9CA3AF;font-size:12px;margin-top:16px;">Disculpa les molèsties.</p>
+        </div>
+      `,
     });
   }
 

@@ -117,7 +117,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-[580px] flex items-center px-6 md:px-12 mb-7">
+    <section id="hero" className="relative min-h-[580px] flex items-center px-6 md:px-12 mb-7">
       <div className="absolute inset-0 z-0 overflow-hidden">
         <div className="w-full h-full overflow-hidden relative">
           {HERO_IMAGES.map((src, i) => (

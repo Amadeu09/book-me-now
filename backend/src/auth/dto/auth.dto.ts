@@ -135,6 +135,28 @@ export class UpdateColorDto {
   colorPrimari?: string | null;
 }
 
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'admin@bookmenow.com', description: 'Email del compte' })
+  @IsEmail({}, { message: 'Email invàlid' })
+  @IsNotEmpty({ message: 'Email requerit' })
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ description: 'Token de restabliment rebut per correu' })
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @ApiProperty({ description: 'Nova contrasenya (mínim 8, majúscula, número i especial)', minLength: 8 })
+  @IsString()
+  @MinLength(8, { message: 'La nova contrasenya ha de tenir mínim 8 caràcters' })
+  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message: 'La nova contrasenya ha de contenir almenys una majúscula, un número i un caràcter especial',
+  })
+  newPassword: string;
+}
+
 export interface JwtPayload {
   sub: number; // userId
   email: string;

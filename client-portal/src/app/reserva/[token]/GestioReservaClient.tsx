@@ -136,7 +136,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
           {reserva.empresa.fotoPerfil ? (
             <img src={reserva.empresa.fotoPerfil} alt={reserva.empresa.nom} className="w-14 h-14 rounded-full object-cover border-2 border-white/30" />
           ) : (
-            <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/30" style={{ background: 'rgba(255,107,107,0.4)' }}>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/30" style={{ background: 'rgba(99,102,241,0.4)' }}>
               <span className="text-xl font-bold text-white">{initial}</span>
             </div>
           )}
@@ -207,7 +207,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
                         <img src={reserva.treballador.Usuari.fotoPerfil} alt={reserva.treballador.nom} className="w-8 h-8 rounded-full object-cover border border-gray-100" />
                       ) : (
                         <div className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-100" style={{ background: '#FFE8E8' }}>
-                          <span className="text-xs font-bold" style={{ color: '#FF6B6B' }}>{tInitial}</span>
+                          <span className="text-xs font-bold" style={{ color: '#6366F1' }}>{tInitial}</span>
                         </div>
                       )}
                     </div>
@@ -239,7 +239,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
                 <button
                   onClick={openModificar}
                   className="w-full py-4 rounded-full font-bold text-sm tracking-tight shadow-lg transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)', color: 'white' }}
+                  style={{ background: 'linear-gradient(135deg, #6366F1, #4338CA)', color: 'white' }}
                 >
                   Modificar cita
                 </button>
@@ -332,7 +332,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
                           ${isAvailable && !isPast && !isSelected ? 'hover:bg-primary/5 text-gray-800 cursor-pointer' : ''}
                           ${!isAvailable || isPast ? 'text-gray-300 cursor-default' : ''}
                           ${isToday && !isSelected ? 'ring-1 ring-primary/40' : ''}`}
-                        style={isSelected ? { background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' } : {}}
+                        style={isSelected ? { background: 'linear-gradient(135deg, #6366F1, #4338CA)' } : {}}
                       >
                         {date.getDate()}
                       </button>
@@ -361,7 +361,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
                             ? 'text-white shadow-sm'
                             : 'bg-gray-100 text-gray-700 hover:bg-primary/5 hover:text-primary'
                         }`}
-                        style={selectedSlot === slot ? { background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' } : {}}
+                        style={selectedSlot === slot ? { background: 'linear-gradient(135deg, #6366F1, #4338CA)' } : {}}
                       >
                         {slot.split(' - ')[0]}
                       </button>
@@ -382,7 +382,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
                 disabled={!selectedDate || !selectedSlot}
                 onClick={() => setView('modificar-confirm')}
                 className="flex-[2] py-3.5 rounded-full font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' }}
+                style={{ background: 'linear-gradient(135deg, #6366F1, #4338CA)' }}
               >
                 {selectedSlot ? `Continuar amb ${selectedSlot.split(' - ')[0]}` : 'Selecciona una hora'}
               </button>
@@ -395,7 +395,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
           <div className={CARD}>
             <div className="flex flex-col items-center text-center gap-4 py-4">
               <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: '#FFE8E8' }}>
-                <span className="material-symbols-outlined text-3xl" style={{ color: '#FF6B6B' }}>edit_calendar</span>
+                <span className="material-symbols-outlined text-3xl" style={{ color: '#6366F1' }}>edit_calendar</span>
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-800 mb-1">Confirmar canvi</h2>
@@ -419,7 +419,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
                   onClick={handleModificar}
                   disabled={loading}
                   className="flex-[2] py-3.5 rounded-full font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' }}
+                  style={{ background: 'linear-gradient(135deg, #6366F1, #4338CA)' }}
                 >
                   {loading ? 'Guardant...' : 'Confirmar canvi'}
                 </button>
@@ -478,7 +478,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
               <button
                 onClick={() => setView('detall')}
                 className="w-full py-4 rounded-full font-bold text-sm text-white transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' }}
+                style={{ background: 'linear-gradient(135deg, #6366F1, #4338CA)' }}
               >
                 Tornar
               </button>

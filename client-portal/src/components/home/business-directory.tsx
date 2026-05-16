@@ -21,9 +21,6 @@ const TIPO_LABELS: Record<string, string> = {
   ESTETICA: 'Estética',
   SPA: 'Spa',
   MASSATGES: 'Masajes',
-  FITNESS: 'Fitness',
-  PILATES: 'Pilates',
-  IOGA: 'Yoga',
   NUTRICIONISTA: 'Nutricionista',
   FISIOTERAPIA: 'Fisioterapia',
   DENTAL: 'Dental',
@@ -58,7 +55,7 @@ function BusinessCard({ empresa }: { empresa: Empresa }) {
         ) : (
           <div
             className="w-full h-full flex items-center justify-center text-5xl font-black text-white/30 select-none"
-            style={{ background: 'linear-gradient(135deg, #FF6B6B 0%, #1F2937 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #1F2937 100%)' }}
           >
             {initial}
           </div>
@@ -246,7 +243,7 @@ export function BusinessDirectorySection() {
                 width: i + 1 === currentPage ? '24px' : '8px',
                 height: '8px',
                 borderRadius: '999px',
-                backgroundColor: i + 1 === currentPage ? '#FF6B6B' : '#e5e7eb',
+                backgroundColor: i + 1 === currentPage ? '#6366F1' : '#e5e7eb',
                 transition: 'all 0.3s ease',
                 border: 'none',
                 cursor: 'pointer',

@@ -26,6 +26,8 @@ interface CreateBookingModalProps {
     onSuccess: () => void;
     workers: ApiTreballador[];
     services: ApiServei[];
+    isAdmin: boolean;
+    currentUserTreballadorId?: number;
 }
 
 export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
@@ -33,7 +35,9 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     onClose,
     onSuccess,
     workers,
-    services
+    services,
+    isAdmin,
+    currentUserTreballadorId,
 }) => {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
@@ -49,6 +53,12 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     const [observacions, setObservacions] = useState('');
     const [idServei, setIdServei] = useState<number | null>(null);
     const [idTreballador, setIdTreballador] = useState<number | null>(null);
+
+    React.useEffect(() => {
+        if (!isAdmin && currentUserTreballadorId) {
+            setIdTreballador(currentUserTreballadorId);
+        }
+    }, [isAdmin, currentUserTreballadorId]);
 
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,7 +83,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         setHora('');
         setObservacions('');
         setIdServei(null);
-        setIdTreballador(null);
+        setIdTreballador(!isAdmin && currentUserTreballadorId ? currentUserTreballadorId : null);
+
         setError('');
         setShowPicker(false);
         setClients([]);
@@ -113,10 +124,13 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     const handleSave = async () => {
         setError('');
         
-        if (!nom.trim() || !data.trim() || !hora.trim() || !idServei || !idTreballador) {
+        const workerRequired = isAdmin ? !idTreballador : false;
+        if (!nom.trim() || !data.trim() || !hora.trim() || !idServei || workerRequired) {
             setError(t('bookingFieldsRequired'));
             return;
         }
+
+        const resolvedTreballadorId = isAdmin ? idTreballador! : (currentUserTreballadorId ?? idTreballador!);
 
         try {
             setIsSubmitting(true);
@@ -128,7 +142,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 hora: hora.trim(),
                 observacions: observacions.trim(),
                 idServei,
-                idTreballador
+                idTreballador: resolvedTreballadorId,
             };
 
             await createReserva(payload);
@@ -286,23 +300,27 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             </View>
                         </View>
 
-                        <Text style={styles.label}>{t('bookingWorkerLabel')}</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-                            {workers.map((w: any) => {
-                                const isSelected = idTreballador === w.id;
-                                return (
-                                    <TouchableOpacity
-                                        key={w.id}
-                                        style={[styles.chip, isSelected && { borderColor: theme.primary, backgroundColor: theme.primary }]}
-                                        onPress={() => setIdTreballador(isSelected ? null : w.id)}
-                                    >
-                                        <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                                            {w.nom}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
+                        {isAdmin && (
+                            <>
+                                <Text style={styles.label}>{t('bookingWorkerLabel')}</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+                                    {workers.map((w: any) => {
+                                        const isSelected = idTreballador === w.id;
+                                        return (
+                                            <TouchableOpacity
+                                                key={w.id}
+                                                style={[styles.chip, isSelected && { borderColor: theme.primary, backgroundColor: theme.primary }]}
+                                                onPress={() => setIdTreballador(isSelected ? null : w.id)}
+                                            >
+                                                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                                                    {w.nom}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
+                            </>
+                        )}
 
                         <Text style={styles.label}>{t('bookingServiceLabel')}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>

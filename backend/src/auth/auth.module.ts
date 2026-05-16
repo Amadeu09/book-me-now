@@ -21,7 +21,7 @@ import { UsuarisService } from '../usuaris/usuaris.service';
         return {
           secret,
           signOptions: {
-            expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '7d',
+            expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '7d') as any,
           },
         };
       },

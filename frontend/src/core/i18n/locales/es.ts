@@ -43,6 +43,7 @@ const es: Record<TranslationKeys, string> = {
 
   // Profile
   editProfile: 'Editar perfil',
+  logout: 'Cerrar sesión',
   appColor: 'Color de la aplicación',
   language: 'Idioma',
   langCa: 'Catalán',
@@ -99,9 +100,6 @@ const es: Record<TranslationKeys, string> = {
   btEstetica: 'Estética',
   btSpa: 'Spa',
   btMassatges: 'Masajes',
-  btFitness: 'Fitness',
-  btPilates: 'Pilates',
-  btIoga: 'Yoga',
   btNutricionista: 'Nutricionista',
   btFisioterapia: 'Fisioterapia',
   btDental: 'Dental',
@@ -316,6 +314,8 @@ const es: Record<TranslationKeys, string> = {
   workerJornadaTitle: 'Asignar una jornada (Opcional):',
   workerJornadaLabel: 'Plantilla de Jornada',
   workerNoJornades: 'No hay plantillas de jornada.',
+  workerJornadaIniciLabel: 'Fecha de inicio de rotación',
+  workerJornadaIniciHint: 'La disponibilidad no mostrará citas antes de esta fecha.',
 
   // Template modal
   templateModalTitleEdit: 'Editar plantilla',
