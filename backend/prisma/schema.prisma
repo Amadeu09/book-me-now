@@ -152,7 +152,6 @@ model Reserva {
   tokenValoracioUsat Boolean         @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
-  factura            Factura?
   valoracions        Valoracio[]
   client             Client?         @relation(fields: [clientId], references: [id])
   empresa            Empresa         @relation(fields: [empresaId], references: [id])
@@ -189,25 +188,6 @@ model Valoracio {
   @@unique([reservaId, tipus])
   @@index([empresaId])
   @@index([tipus, treballadorId])
-}
-
-model Factura {
-  id          Int            @id @default(autoincrement())
-  reservaId   Int            @unique
-  dataEmissio DateTime       @default(now())
-  total       Decimal        @db.Decimal(10, 2)
-  reserva     Reserva        @relation(fields: [reservaId], references: [id])
-  linies      LineaFactura[]
-}
-
-model LineaFactura {
-  id          Int     @id @default(autoincrement())
-  facturaId   Int
-  concepte    String
-  quantitat   Int     @default(1)
-  preuUnitari Decimal @db.Decimal(10, 2)
-  total       Decimal @db.Decimal(10, 2)
-  factura     Factura @relation(fields: [facturaId], references: [id])
 }
 
 //

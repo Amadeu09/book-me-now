@@ -121,7 +121,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       default:
         return {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: `Database operation failed [${error.code}] ${JSON.stringify(error.meta ?? {})}`,
+          message: 'Database error',
           error: 'DatabaseError',
         };
     }

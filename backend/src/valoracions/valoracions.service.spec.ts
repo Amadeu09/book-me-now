@@ -4,6 +4,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateValoracioDto, UpdateValoracioDto } from './dto/valoracions.dto';
 import { ValoracioTipus } from '@prisma/client';
 import { NotFoundException } from '@nestjs/common';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
+
+const mockUser: CurrentUserData = { userId: 1, email: 'admin@test.com', rol: 'ADMIN_GENERAL' as any, empresaId: 1 };
+const mockUserEmpresa10: CurrentUserData = { userId: 1, email: 'admin@test.com', rol: 'ADMIN_GENERAL' as any, empresaId: 10 };
+const mockUserEmpresa2: CurrentUserData = { userId: 1, email: 'admin@test.com', rol: 'ADMIN_GENERAL' as any, empresaId: 2 };
 
 describe('ValoracionsService', () => {
     let service: ValoracionsService;
@@ -44,7 +49,7 @@ describe('ValoracionsService', () => {
             mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 1, empresaId: 10 });
             mockPrismaService.valoracio.create.mockResolvedValue('created');
 
-            const result = await service.create(dto);
+            const result = await service.create(dto, mockUserEmpresa10);
             expect(prisma.treballador.findUnique).toHaveBeenCalledWith({ where: { id: 1 } });
             expect(prisma.valoracio.create).toHaveBeenCalledWith({
                 data: expect.objectContaining({
@@ -61,7 +66,7 @@ describe('ValoracionsService', () => {
         it('should throw NotFound if TREBALLADOR does not exist', async () => {
             const dto: CreateValoracioDto = { id: 1, tipusValoracio: ValoracioTipus.TREBALLADOR, valoracio: 5, nomClient: 'Test', comentari: 'test', idServeis: 1 };
             mockPrismaService.treballador.findUnique.mockResolvedValue(null);
-            await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+            await expect(service.create(dto, mockUser)).rejects.toThrow(NotFoundException);
         });
 
         it('should create SALA via prisma properly', async () => {
@@ -69,7 +74,7 @@ describe('ValoracionsService', () => {
             mockPrismaService.empresa.findUnique.mockResolvedValue({ id: 2 });
             mockPrismaService.valoracio.create.mockResolvedValue('created');
 
-            const result = await service.create(dto);
+            const result = await service.create(dto, mockUserEmpresa2);
             expect(prisma.empresa.findUnique).toHaveBeenCalledWith({ where: { id: 2 } });
             expect(prisma.valoracio.create).toHaveBeenCalledWith({
                 data: expect.objectContaining({
@@ -86,14 +91,14 @@ describe('ValoracionsService', () => {
         it('should throw NotFound if SALA does not exist', async () => {
             const dto: CreateValoracioDto = { id: 2, tipusValoracio: ValoracioTipus.SALA, valoracio: 4, nomClient: 'Marta', comentari: 'test', idServeis: 1 };
             mockPrismaService.empresa.findUnique.mockResolvedValue(null);
-            await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+            await expect(service.create(dto, mockUser)).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('findAll', () => {
         it('should return all valoracions', async () => {
             mockPrismaService.valoracio.findMany.mockResolvedValue(['all']);
-            expect(await service.findAll()).toEqual(['all']);
+            expect(await service.findAll(mockUser)).toEqual(['all']);
         });
     });
 

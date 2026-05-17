@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, Matches, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, Matches, MaxLength, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Rol } from '@prisma/client';
 
@@ -34,6 +34,7 @@ export class SignupUsuariDto {
   @ApiProperty({ example: '#FF6A00', required: false, description: 'Color primario del usuario (hex)' })
   @IsOptional()
   @IsString()
+  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'colorPrimari must be a valid hex color' })
   colorPrimari?: string;
 }
 
@@ -125,6 +126,7 @@ export class UpdateIdiomaDto {
   @ApiProperty({ example: 'ca', enum: ['ca', 'es'], description: 'Idioma de la interfície' })
   @IsString()
   @IsNotEmpty()
+  @IsIn(['ca', 'es'], { message: 'idioma must be ca or es' })
   idioma: 'ca' | 'es';
 }
 
@@ -132,6 +134,7 @@ export class UpdateColorDto {
   @ApiProperty({ example: '#FF6A00', required: false, nullable: true, description: 'Color primario del usuario (hex) o null per eliminar' })
   @IsOptional()
   @IsString()
+  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'colorPrimari must be a valid hex color' })
   colorPrimari?: string | null;
 }
 

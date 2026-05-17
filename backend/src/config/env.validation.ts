@@ -51,6 +51,15 @@ const envSchema = z.object({
         );
       },
       'ALLOWED_ORIGINS must be comma-separated valid URLs or "*"',
+    )
+    .refine(
+      (origins) => {
+        if (process.env.NODE_ENV === 'production') {
+          return !origins.split(',').includes('*');
+        }
+        return true;
+      },
+      'ALLOWED_ORIGINS cannot be "*" in production',
     ),
 });
 

@@ -3,6 +3,14 @@ import { ReservesService } from './reserves.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateReservaDto, UpdateReservaEstatDto } from './dto/reserves.dto';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
+
+const mockUser: CurrentUserData = {
+    userId: 1,
+    email: 'test@test.com',
+    rol: 'ADMIN_GENERAL' as any,
+    empresaId: 1,
+};
 
 const mockPrismaService = {
     servei: {
@@ -117,48 +125,48 @@ describe('ReservesService', () => {
         };
 
         it('should update a reserva', async () => {
-            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1 });
+            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
             mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
             mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
             mockPrismaService.reserva.findMany.mockResolvedValue([]);
             mockPrismaService.client.findFirst.mockResolvedValue({ id: 1 });
             mockPrismaService.reserva.update.mockResolvedValue({ id: 1, ...dto });
 
-            const result = await service.update(1, dto);
+            const result = await service.update(1, dto, mockUser);
             expect(result).toBeDefined();
         });
 
         it('should throw NotFoundException if reserva not found', async () => {
             mockPrismaService.reserva.findUnique.mockResolvedValue(null);
-            await expect(service.update(1, dto)).rejects.toThrow(NotFoundException);
+            await expect(service.update(1, dto, mockUser)).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('delete', () => {
         it('should delete a reserva', async () => {
-            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1 });
+            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
             mockPrismaService.reserva.delete.mockResolvedValue({ id: 1 });
-            const result = await service.delete(1);
+            const result = await service.delete(1, mockUser);
             expect(result).toBeDefined();
         });
 
         it('should throw NotFoundException if reserva not found', async () => {
             mockPrismaService.reserva.findUnique.mockResolvedValue(null);
-            await expect(service.delete(1)).rejects.toThrow(NotFoundException);
+            await expect(service.delete(1, mockUser)).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('updateEstado', () => {
         it('should update status', async () => {
-            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1 });
+            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1, clientEmail: null, servei: { nom: 'Test' }, empresa: { nom: 'Emp' } });
             mockPrismaService.reserva.update.mockResolvedValue({ id: 1, estat: 'CONFIRMADA' });
-            const result = await service.updateEstado(1, 'CONFIRMADA');
+            const result = await service.updateEstado(1, 'CONFIRMADA', mockUser);
             expect(result.estat).toBe('CONFIRMADA');
         });
 
         it('should throw NotFoundException if reserva not found', async () => {
             mockPrismaService.reserva.findUnique.mockResolvedValue(null);
-            await expect(service.updateEstado(1, 'CONFIRMADA')).rejects.toThrow(NotFoundException);
+            await expect(service.updateEstado(1, 'CONFIRMADA', mockUser)).rejects.toThrow(NotFoundException);
         });
     });
 

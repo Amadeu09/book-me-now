@@ -1,27 +1,33 @@
 import { Controller, Get, Post, Body, Param, Delete, Put, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
 import { ValoracionsService } from './valoracions.service';
 import { CreateValoracioDto, CreateValoracioByTokenDto, PaginacioValoracionsDto, UpdateValoracioDto } from './dto/valoracions.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 
 @ApiTags('valoracions')
+@ApiBearerAuth('JWT-auth')
 @Controller('valoracions')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ValoracionsController {
     constructor(private readonly valoracionsService: ValoracionsService) { }
 
     @Post()
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Crear una nueva valoración' })
     @ApiBody({ type: CreateValoracioDto })
     @ApiResponse({ status: 201, description: 'Valoración creada correctamente' })
+    @ApiResponse({ status: 403, description: 'Empresa incorrecta' })
     @ApiResponse({ status: 404, description: 'Entidad (Trabajador/Empresa) no encontrada' })
-    create(@Body() createValoracioDto: CreateValoracioDto) {
-        return this.valoracionsService.create(createValoracioDto);
+    create(@Body() createValoracioDto: CreateValoracioDto, @CurrentUser() user: CurrentUserData) {
+        return this.valoracionsService.create(createValoracioDto, user);
     }
 
     @Get('reserva/:token')
+    @Public()
     @ApiOperation({ summary: 'Obtenir informació de la reserva per valorar (via token)' })
     @ApiParam({ name: 'token', type: String })
     @ApiResponse({ status: 200, description: 'Informació de la reserva' })
@@ -31,6 +37,7 @@ export class ValoracionsController {
     }
 
     @Post('reserva/:token')
+    @Public()
     @ApiOperation({ summary: 'Enviar valoració d\'empresa i treballador via token de cita' })
     @ApiParam({ name: 'token', type: String })
     @ApiBody({ type: CreateValoracioByTokenDto })
@@ -71,12 +78,14 @@ export class ValoracionsController {
     }
 
     @Get()
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Listar todas las valoraciones' })
-    findAll() {
-        return this.valoracionsService.findAll();
+    findAll(@CurrentUser() user: CurrentUserData) {
+        return this.valoracionsService.findAll(user);
     }
 
     @Get(':id')
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Obtener una valoración por ID' })
     @ApiParam({ name: 'id', type: Number })
     findOne(@Param('id', ParseIntPipe) id: number) {
@@ -84,6 +93,7 @@ export class ValoracionsController {
     }
 
     @Put(':id')
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Actualizar una valoración' })
     @ApiParam({ name: 'id', type: Number })
     update(@Param('id', ParseIntPipe) id: number, @Body() updateValoracioDto: UpdateValoracioDto) {
@@ -91,6 +101,7 @@ export class ValoracionsController {
     }
 
     @Delete(':id')
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Eliminar una valoración' })
     @ApiParam({ name: 'id', type: Number })
     remove(@Param('id', ParseIntPipe) id: number) {

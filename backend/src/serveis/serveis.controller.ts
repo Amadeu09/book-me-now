@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  FileTypeValidator,
   Get,
   MaxFileSizeValidator,
   Param,
@@ -18,17 +19,20 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ServeisService } from './serveis.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { CreateServeiDto, UpdateServeiDto } from './dto/servei.dto';
 import { ApiConsumes, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 
 @Controller('serveis')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ServeisController {
   constructor(private readonly serveisService: ServeisService) { }
 
   @Post()
+  @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Crear un nuevo servicio' })
   @ApiBody({ type: CreateServeiDto })
   @ApiResponse({ status: 201, description: 'Servicio creado correctamente' })
@@ -88,6 +92,7 @@ export class ServeisController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Actualizar un servicio' })
   @ApiParam({ name: 'id', description: 'ID del servicio' })
   @ApiBody({ type: UpdateServeiDto })
@@ -106,6 +111,7 @@ export class ServeisController {
   }
 
   @Patch(':id/foto')
+  @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Subir foto de un servicio' })
   @ApiParam({ name: 'id', description: 'ID del servicio' })
   @ApiConsumes('multipart/form-data')
@@ -114,7 +120,10 @@ export class ServeisController {
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile(
       new ParseFilePipe({
-        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 })],
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }),
+          new FileTypeValidator({ fileType: /image\/(jpeg|png|webp)/ }),
+        ],
       }),
     )
     file: Express.Multer.File,
@@ -124,6 +133,7 @@ export class ServeisController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Eliminar (desactivar) un servicio' })
   @ApiParam({ name: 'id', description: 'ID del servicio' })
   @ApiResponse({ status: 200, description: 'Servicio eliminado correctamente' })

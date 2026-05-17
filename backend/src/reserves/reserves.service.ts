@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservaDto, ModificarReservaGestioDto } from './dto/reserves.dto';
 import { ReservaEstat } from '@prisma/client';
 import { Resend } from 'resend';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 const EMAIL_JOB_OPTIONS = {
   attempts: 3,
@@ -204,7 +205,7 @@ export class ReservesService {
     return this.createReservaInternal(dto, { checkActiu: true, filterCancellades: true });
   }
 
-  async delete(idReserva: number) {
+  async delete(idReserva: number, user: CurrentUserData) {
     const reserva = await this.prisma.reserva.findUnique({
       where: { id: idReserva },
     });
@@ -213,18 +214,26 @@ export class ReservesService {
       throw new NotFoundException('Reserva no trobada');
     }
 
+    if (reserva.empresaId !== user.empresaId) {
+      throw new ForbiddenException('Access denied');
+    }
+
     return this.prisma.reserva.delete({
       where: { id: idReserva },
     });
   }
 
-  async update(idReserva: number, dto: CreateReservaDto) {
+  async update(idReserva: number, dto: CreateReservaDto, user: CurrentUserData) {
     const reserva = await this.prisma.reserva.findUnique({
       where: { id: idReserva },
     });
 
     if (!reserva) {
       throw new NotFoundException('Reserva no trobada');
+    }
+
+    if (reserva.empresaId !== user.empresaId) {
+      throw new ForbiddenException('Access denied');
     }
 
     const servei = await this.prisma.servei.findUnique({
@@ -315,7 +324,7 @@ export class ReservesService {
     });
   }
 
-  async updateEstado(idReserva: number, nouEstat: ReservaEstat) {
+  async updateEstado(idReserva: number, nouEstat: ReservaEstat, user: CurrentUserData) {
     const reserva = await this.prisma.reserva.findUnique({
       where: { id: idReserva },
       include: {
@@ -326,6 +335,10 @@ export class ReservesService {
 
     if (!reserva) {
       throw new NotFoundException('Reserva no trobada');
+    }
+
+    if (reserva.empresaId !== user.empresaId) {
+      throw new ForbiddenException('Access denied');
     }
 
     const updated = await this.prisma.reserva.update({

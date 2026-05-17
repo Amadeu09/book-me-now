@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, Get } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -153,7 +153,10 @@ export class AuthController {
   async uploadMyFoto(
     @UploadedFile(
       new ParseFilePipe({
-        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5, message: 'Màx 5MB' })],
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5, message: 'Màx 5MB' }),
+          new FileTypeValidator({ fileType: /image\/(jpeg|png|webp)/ }),
+        ],
       }),
     )
     file: Express.Multer.File,
