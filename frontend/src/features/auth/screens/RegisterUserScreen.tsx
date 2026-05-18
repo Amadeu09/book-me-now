@@ -18,7 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setToken, setUser } from "@/utils/session";
 import { signup } from "@/features/auth/services/auth.service";
 import { uploadFotoUsuari, createTreballador } from "@/features/horarios/services/treballadors.service";
 import { uploadFotoEmpresa } from "@/features/empresas/services/empresas.service";
@@ -100,8 +100,8 @@ export default function RegisterUserScreen() {
     try {
       setLoading(true);
       const response = await signup(empresaData as any, userData);
-      await AsyncStorage.setItem("token", response.token);
-      await AsyncStorage.setItem("user", JSON.stringify(response.user));
+      await setToken(response.token);
+      await setUser(response.user);
 
       const empresaId = response.user.empresaId;
       const usuariId = parseInt(response.user.id, 10);

@@ -43,11 +43,11 @@ export default function Bookings() {
 
                 Promise.all([
                     fetchGetTreballadors().catch(err => {
-                        console.error("Error fetching workers in Screen:", err);
+                        if (__DEV__) console.error("Error fetching workers in Screen:", err);
                         return [];
                     }),
                     fetchGetServeis().catch(err => {
-                        console.error("Error fetching services in Screen:", err);
+                        if (__DEV__) console.error("Error fetching services in Screen:", err);
                         return [];
                     })
                 ]).then(([workersData, servicesData]) => {
@@ -65,11 +65,11 @@ export default function Bookings() {
             } else if (user?.rol === 'EMPLEAT') {
                 Promise.all([
                     fetchGetServeis().catch(err => {
-                        console.error("Error fetching services in Screen:", err);
+                        if (__DEV__) console.error("Error fetching services in Screen:", err);
                         return [];
                     }),
                     fetchGetTreballadors().catch(err => {
-                        console.error("Error fetching workers in Screen:", err);
+                        if (__DEV__) console.error("Error fetching workers in Screen:", err);
                         return [];
                     }),
                 ]).then(([servicesData, workersData]) => {

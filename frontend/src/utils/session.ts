@@ -3,19 +3,26 @@ import type { AuthUser } from '@/features/auth/services/auth.service';
 
 /* ──────────────────────────────────────────
    Session helpers
-   Reads token / user persisted by LoginScreen
-   and RegisterUserScreen (keys: "token", "user")
+   Token i user guardats a AsyncStorage.
+   NOTE: en builds natius (iOS/Android) migrar token a expo-secure-store
+   per xifrat natiu (iOS Keychain / Android Keystore).
+   En web, AsyncStorage i SecureStore usen localStorage — seguretat equivalent.
    ────────────────────────────────────────── */
 
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 
-/** Devuelve el token JWT almacenado, o null */
+/** Retorna el token JWT emmagatzemat, o null */
 export async function getToken(): Promise<string | null> {
     return AsyncStorage.getItem(TOKEN_KEY);
 }
 
-/** Devuelve el usuario autenticado, o null */
+/** Desa el token JWT */
+export async function setToken(token: string): Promise<void> {
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+}
+
+/** Retorna l'usuari autenticat, o null */
 export async function getUser(): Promise<AuthUser | null> {
     const raw = await AsyncStorage.getItem(USER_KEY);
     if (!raw) return null;
@@ -26,16 +33,19 @@ export async function getUser(): Promise<AuthUser | null> {
     }
 }
 
-/** Devuelve el empresaId del usuario logueado, o null */
+/** Desa l'objecte d'usuari */
+export async function setUser(user: AuthUser): Promise<void> {
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+/** Retorna l'empresaId de l'usuari logejat, o null */
 export async function getEmpresaId(): Promise<number | null> {
     const user = await getUser();
     return user?.empresaId ?? null;
 }
 
 /**
- * Patches the stored user's empresa fields.
- * Call this after any successful company update so the theme
- * survives a reload without needing a new login.
+ * Actualitza els camps d'empresa de l'usuari desat.
  */
 export async function patchStoredEmpresa(patch: Partial<NonNullable<AuthUser['empresa']>>): Promise<void> {
     const user = await getUser();
@@ -48,8 +58,7 @@ export async function patchStoredEmpresa(patch: Partial<NonNullable<AuthUser['em
 }
 
 /**
- * Patches top-level fields on the stored user (e.g. colorPrimari).
- * Call this after any successful self-service user update.
+ * Actualitza camps de primer nivell de l'usuari desat.
  */
 export async function patchStoredUser(patch: Partial<AuthUser>): Promise<void> {
     const user = await getUser();
@@ -58,7 +67,7 @@ export async function patchStoredUser(patch: Partial<AuthUser>): Promise<void> {
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(updated));
 }
 
-/** Limpia la sesión (logout) */
+/** Esborra la sessió (logout) */
 export async function clearSession(): Promise<void> {
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
 }

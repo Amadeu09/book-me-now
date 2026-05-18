@@ -215,7 +215,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     try {
                         await uploadFotoUsuari(usuariRes.id, photoUri);
                     } catch (photoErr) {
-                        console.warn('⚠️ Error subiendo foto de perfil:', photoErr);
+                        if (__DEV__) console.warn('⚠️ Error subiendo foto de perfil:', photoErr);
                     }
                 }
 
@@ -243,7 +243,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
             onClose();
 
         } catch (error: unknown) {
-            console.error('Error creating worker:', error);
+            if (__DEV__) console.error('Error creating worker:', error);
             const msg =
                 (error as { response?: { data?: { message?: string | string[] } }; message?: string })?.response?.data?.message ||
                 (error as { message?: string })?.message ||

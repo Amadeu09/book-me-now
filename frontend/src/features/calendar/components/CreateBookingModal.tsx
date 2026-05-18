@@ -151,7 +151,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             onSuccess();
             onClose();
         } catch (err: unknown) {
-            console.error('Error creating booking:', err);
+            if (__DEV__) console.error('Error creating booking:', err);
             const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
             const status = axiosErr?.response?.status;
             const rawMsg = axiosErr?.response?.data?.message || axiosErr?.message || '';

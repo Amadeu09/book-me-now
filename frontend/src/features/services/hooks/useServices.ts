@@ -14,7 +14,7 @@ export function useAllServices() {
             setData(res);
             setIsLoading(false);
         }).catch(err => {
-            console.error('Error fetching serveis:', err);
+            if (__DEV__) console.error('Error fetching serveis:', err);
             setIsLoading(false);
         });
     }, []);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearSession, getUser } from '@/utils/session';
 import {
   View,
   TouchableOpacity,
@@ -67,11 +67,9 @@ export default function Navbar({ variant }: NavbarProps) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const u = await AsyncStorage.getItem('user');
-        if (u) {
-          setUser(JSON.parse(u));
-        }
-      } catch (err) {
+        const u = await getUser();
+        if (u) setUser(u);
+      } catch {
         // ignore
       }
     };
@@ -84,10 +82,10 @@ export default function Navbar({ variant }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.multiRemove(['token', 'user']);
+      await clearSession();
       router.replace('/login');
     } catch (err) {
-      console.error('Logout error', err);
+      if (__DEV__) console.error('Logout error', err);
     }
   };
 

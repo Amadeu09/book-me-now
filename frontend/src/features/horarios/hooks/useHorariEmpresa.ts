@@ -33,7 +33,7 @@ export function useHorariEmpresa() {
             const data = await getHorariEmpresa(empresaId);
             setTrams(data);
         } catch (e) {
-            console.error('[useHorariEmpresa] fetch error', e);
+            if (__DEV__) console.error('[useHorariEmpresa] fetch error', e);
         } finally {
             setIsLoading(false);
         }

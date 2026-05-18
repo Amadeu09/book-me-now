@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setToken, setUser } from "@/utils/session";
 import { login, forgotPassword } from "@/features/auth/services/auth.service";
 import {
   ActivityIndicator,
@@ -74,8 +74,8 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       const response = await login({ email: email.trim().toLowerCase(), password });
-      await AsyncStorage.setItem("token", response.token);
-      await AsyncStorage.setItem("user", JSON.stringify(response.user));
+      await setToken(response.token);
+      await setUser(response.user);
       router.replace({ pathname: "/profile" } as any);
     } catch (error: any) {
       const msg = error?.response?.data?.message || error?.message || "No se pudo iniciar sesión.";
