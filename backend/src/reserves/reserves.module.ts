@@ -10,12 +10,17 @@ import { EmailProcessor } from './email.processor';
     BullModule.registerQueueAsync({
       name: 'emails',
       imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        redis: {
-          host: config.get<string>('REDIS_HOST', 'localhost'),
-          port: config.get<number>('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const password = config.get<string>('REDIS_PASSWORD');
+        return {
+          redis: {
+            host: config.get<string>('REDIS_HOST', 'localhost'),
+            port: config.get<number>('REDIS_PORT', 6379),
+            ...(password && { password }),
+            ...(password && { tls: {} }),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

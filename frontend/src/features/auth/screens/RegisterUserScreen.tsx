@@ -18,7 +18,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { setToken, setUser } from "@/utils/session";
+import { setToken, setUser, patchStoredEmpresa } from "@/utils/session";
+import { useTheme } from "@/core/theme/ThemeProvider";
 import { signup } from "@/features/auth/services/auth.service";
 import { uploadFotoUsuari, createTreballador } from "@/features/horarios/services/treballadors.service";
 import { uploadFotoEmpresa } from "@/features/empresas/services/empresas.service";
@@ -29,6 +30,7 @@ import { HC, cardShadow } from "@/features/home/constants/inicio.constants";
 export default function RegisterUserScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const theme = useTheme();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -94,7 +96,6 @@ export default function RegisterUserScreen() {
     const userData = {
       email: email.trim().toLowerCase(),
       password,
-      colorPrimari: (params.colorPrimari as string) || undefined,
     };
 
     try {
@@ -107,10 +108,14 @@ export default function RegisterUserScreen() {
       const usuariId = parseInt(response.user.id, 10);
       const fotoEmpresaUri = params.fotoUri as string;
 
-      await Promise.allSettled([
+      const [, empresaFotoResult] = await Promise.allSettled([
         photoUri ? uploadFotoUsuari(usuariId, photoUri) : Promise.resolve(),
         fotoEmpresaUri ? uploadFotoEmpresa(empresaId, fotoEmpresaUri) : Promise.resolve(),
       ]);
+
+      if (empresaFotoResult.status === 'fulfilled' && empresaFotoResult.value && fotoEmpresaUri) {
+        await patchStoredEmpresa({ fotoPerfil: (empresaFotoResult.value as any).fotoPerfil });
+      }
 
       if (associarTreballador && nomTreballador.trim()) {
         await createTreballador({
@@ -124,7 +129,8 @@ export default function RegisterUserScreen() {
         await Promise.allSettled(horariTrams.map(t => createHorariTram(empresaId, t)));
       }
 
-      router.replace({ pathname: "/home" } as any);
+      theme.setPrimaryColor(null);
+      router.replace({ pathname: "/profile" } as any);
     } catch (error: unknown) {
       const msg =
         (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||

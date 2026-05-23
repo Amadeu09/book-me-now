@@ -33,56 +33,44 @@ export default function Bookings() {
     const [services, setServices] = useState<ApiServei[]>([]);
     const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
 
+    const userRoleRef = useRef<string | undefined>(undefined);
+    const userIdRef = useRef<string | undefined>(undefined);
+
+    const loadWorkersAndServices = useCallback(async () => {
+        const role = userRoleRef.current;
+        const uid = userIdRef.current;
+        if (!role) return;
+
+        if (role === 'ADMIN_GENERAL') {
+            const [workersData, servicesData] = await Promise.all([
+                fetchGetTreballadors().catch(() => [] as ApiTreballador[]),
+                fetchGetServeis().catch(() => [] as ApiServei[]),
+            ]);
+            setWorkers(workersData);
+            setServices(servicesData);
+        } else if (role === 'EMPLEAT') {
+            const [servicesData, workersData] = await Promise.all([
+                fetchGetServeis().catch(() => [] as ApiServei[]),
+                fetchGetTreballadors().catch(() => [] as ApiTreballador[]),
+            ]);
+            setServices(servicesData);
+            const myWorker = (workersData as ApiTreballador[]).find(
+                w => w.idUsuari === parseInt(uid ?? '0', 10)
+            );
+            if (myWorker) setCurrentUserTreballadorId(myWorker.id);
+        }
+    }, []);
+
     useEffect(() => {
         getUser().then(user => {
+            userRoleRef.current = user?.rol;
+            userIdRef.current = user?.id?.toString();
             setUserRole(user?.rol);
             setUserId(user?.id?.toString());
-
-            if (user?.rol === 'ADMIN_GENERAL') {
-                setIsAdmin(true);
-
-                Promise.all([
-                    fetchGetTreballadors().catch(err => {
-                        if (__DEV__) console.error("Error fetching workers in Screen:", err);
-                        return [];
-                    }),
-                    fetchGetServeis().catch(err => {
-                        if (__DEV__) console.error("Error fetching services in Screen:", err);
-                        return [];
-                    })
-                ]).then(([workersData, servicesData]) => {
-                    setWorkers(workersData);
-                    if (workersData.length > 0) {
-                        setSelectedWorkerId(workersData[0].id.toString());
-                    }
-
-                    setServices(servicesData);
-                    // Optionally set default service
-                    // if (servicesData.length > 0) {
-                    //     setSelectedServiceId(servicesData[0].id.toString());
-                    // }
-                });
-            } else if (user?.rol === 'EMPLEAT') {
-                Promise.all([
-                    fetchGetServeis().catch(err => {
-                        if (__DEV__) console.error("Error fetching services in Screen:", err);
-                        return [];
-                    }),
-                    fetchGetTreballadors().catch(err => {
-                        if (__DEV__) console.error("Error fetching workers in Screen:", err);
-                        return [];
-                    }),
-                ]).then(([servicesData, workersData]) => {
-                    setServices(servicesData);
-                    const userId = user.id;
-                    const myWorker = (workersData as ApiTreballador[]).find(
-                        w => w.idUsuari === parseInt(userId, 10)
-                    );
-                    if (myWorker) setCurrentUserTreballadorId(myWorker.id);
-                });
-            }
+            if (user?.rol === 'ADMIN_GENERAL') setIsAdmin(true);
+            loadWorkersAndServices();
         });
-    }, []);
+    }, [loadWorkersAndServices]);
 
     const [viewMode, setViewMode] = useState<ViewMode>(isDesktop ? 'week' : 'day');
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -118,7 +106,8 @@ export default function Bookings() {
     useFocusEffect(useCallback(() => {
         if (_isFirstFocus.current) { _isFirstFocus.current = false; return; }
         refetch();
-    }, [refetch]));
+        loadWorkersAndServices();
+    }, [refetch, loadWorkersAndServices]));
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>

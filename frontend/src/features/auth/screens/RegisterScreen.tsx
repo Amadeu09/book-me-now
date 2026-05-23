@@ -73,7 +73,6 @@ export default function RegisterScreen() {
         nom: nom.trim(),
         ubicacio: ubicacio.trim(),
         descripcio: descripcio.trim(),
-        colorPrimari: HC.primary,
         tipo: tipo || "",
         fotoUri: fotoUri || "",
         diasAntesReserva: diasAntesReserva.trim() || "14",

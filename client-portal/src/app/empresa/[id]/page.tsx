@@ -20,11 +20,10 @@ export default async function EmpresaPage({
   let serveis;
   let agenda: AgendaPublica = { horaris: [], absencies: [] };
   try {
-    [empresa, serveis] = await Promise.all([
-      getEmpresaPublic(empresaId),
-      getServeisPublic(empresaId),
-    ]);
-  } catch {
+    empresa = await getEmpresaPublic(empresaId);
+    serveis = await getServeisPublic(empresaId);
+  } catch (err) {
+    console.error('[EmpresaPage] fetch failed:', err);
     notFound();
   }
   try {

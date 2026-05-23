@@ -2,27 +2,95 @@ import type { Disponibilitat, Empresa, EmpresaListResponse, ServeiPublic, Reserv
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function getEmpresaPublic(id: number): Promise<Empresa> {
-  const res = await fetch(`${API_URL}/empreses/public/${id}`, {
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    throw new Error(`Error ${res.status}: ${res.statusText}`);
+// SSR GET: Node.js http/https with agent:false (fresh TCP per request, no pool).
+// Retries on ECONNRESET/ECONNREFUSED/timeout — Docker Desktop resets connections during container restarts.
+// Browser: native fetch.
+async function ssrGet(url: string, retries = 4): Promise<Response> {
+  if (typeof window === 'undefined') {
+    const parsed = new URL(url);
+    const isHttps = parsed.protocol === 'https:';
+    const mod = isHttps ? await import('node:https') : await import('node:http');
+    try {
+      return await new Promise<Response>((resolve, reject) => {
+        const req = mod.default.request(
+          {
+            hostname: parsed.hostname,
+            port: parsed.port || (isHttps ? 443 : 80),
+            path: parsed.pathname + parsed.search,
+            method: 'GET',
+            agent: false,
+            timeout: 5000,
+          },
+          (res) => {
+            const chunks: Buffer[] = [];
+            res.on('data', (c: Buffer) => chunks.push(c));
+            res.on('end', () =>
+              resolve(new Response(Buffer.concat(chunks).toString('utf8'), {
+                status: res.statusCode ?? 200,
+                statusText: res.statusMessage ?? '',
+              }))
+            );
+            res.on('error', reject);
+          },
+        );
+        req.on('timeout', () => req.destroy(Object.assign(new Error('TIMEOUT'), { code: 'ETIMEDOUT' })));
+        req.on('error', reject);
+        req.end();
+      });
+    } catch (err: any) {
+      if (retries > 0 && ['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT'].includes(err?.code)) {
+        await new Promise(r => setTimeout(r, 1000));
+        return ssrGet(url, retries - 1);
+      }
+      throw err;
+    }
   }
+  return fetch(url);
+}
 
+export async function getEmpresaPublic(id: number): Promise<Empresa> {
+  const res = await ssrGet(`${API_URL}/empreses/public/${id}`);
+  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
   return res.json();
 }
 
 export async function getServeisPublic(empresaId: number): Promise<ServeiPublic[]> {
-  const res = await fetch(`${API_URL}/serveis/public/${empresaId}`, {
-    cache: 'no-store',
-  });
+  const res = await ssrGet(`${API_URL}/serveis/public/${empresaId}`);
+  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+  return res.json();
+}
 
-  if (!res.ok) {
-    throw new Error(`Error ${res.status}: ${res.statusText}`);
-  }
+export async function getAgendaPublic(empresaId: number): Promise<AgendaPublica> {
+  const res = await ssrGet(`${API_URL}/empreses/${empresaId}/horari/public`);
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
+}
 
+export async function getReservaByToken(token: string): Promise<ReservaGestio> {
+  const res = await ssrGet(`${API_URL}/reserves/gestio/${token}`);
+  if (res.status === 404) throw new Error('NOT_FOUND');
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
+}
+
+export async function getReservaValoracioInfo(token: string): Promise<ReservaValoracioInfo> {
+  const res = await ssrGet(`${API_URL}/valoracions/reserva/${token}`);
+  if (res.status === 404) throw new Error('NOT_FOUND');
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
+}
+
+export async function getEmpresasPublic(
+  tipo: string | null,
+  page: number,
+  limit: number,
+): Promise<EmpresaListResponse> {
+  const params = new URLSearchParams();
+  if (tipo) params.set('tipo', tipo);
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+  const res = await ssrGet(`${API_URL}/empreses/directori?${params}`);
+  if (!res.ok) throw new Error(`Error ${res.status}`);
   return res.json();
 }
 
@@ -31,11 +99,7 @@ export async function getDisponibilitatPublic(treballadorId: number, serveiId: n
     `${API_URL}/treballadors/disponibilitat-publica/${treballadorId}?serveiId=${serveiId}`,
     { cache: 'no-store' },
   );
-
-  if (!res.ok) {
-    throw new Error(`Error ${res.status}: ${res.statusText}`);
-  }
-
+  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
   return res.json();
 }
 
@@ -58,34 +122,8 @@ export async function createReservaPublic(dto: CreateReservaPublicDto): Promise<
     body: JSON.stringify(dto),
     cache: 'no-store',
   });
-
   if (res.status === 409) throw new Error('CONFLICT');
   if (!res.ok) throw new Error(`Error ${res.status}`);
-}
-
-export async function getEmpresasPublic(
-  tipo: string | null,
-  page: number,
-  limit: number,
-): Promise<EmpresaListResponse> {
-  const params = new URLSearchParams();
-  if (tipo) params.set('tipo', tipo);
-  params.set('page', String(page));
-  params.set('limit', String(limit));
-
-  const res = await fetch(`${API_URL}/empreses/directori?${params}`, {
-    cache: 'no-store',
-  });
-
-  if (!res.ok) throw new Error(`Error ${res.status}`);
-  return res.json();
-}
-
-export async function getReservaByToken(token: string): Promise<ReservaGestio> {
-  const res = await fetch(`${API_URL}/reserves/gestio/${token}`, { cache: 'no-store' });
-  if (res.status === 404) throw new Error('NOT_FOUND');
-  if (!res.ok) throw new Error(`Error ${res.status}`);
-  return res.json();
 }
 
 export async function cancellarReservaByToken(token: string): Promise<void> {
@@ -109,21 +147,6 @@ export async function modificarReservaByToken(token: string, data: string, hora:
   if (res.status === 409) throw new Error('CONFLICT');
   if (res.status === 400) throw new Error('BAD_REQUEST');
   if (!res.ok) throw new Error(`Error ${res.status}`);
-}
-
-export async function getAgendaPublic(empresaId: number): Promise<AgendaPublica> {
-  const res = await fetch(`${API_URL}/empreses/${empresaId}/horari/public`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(`Error ${res.status}`);
-  return res.json();
-}
-
-export async function getReservaValoracioInfo(token: string): Promise<ReservaValoracioInfo> {
-  const res = await fetch(`${API_URL}/valoracions/reserva/${token}`, { cache: 'no-store' });
-  if (res.status === 404) throw new Error('NOT_FOUND');
-  if (!res.ok) throw new Error(`Error ${res.status}`);
-  return res.json();
 }
 
 export interface CreateValoracioByTokenDto {
@@ -151,10 +174,6 @@ export async function searchEmpreses(query: string, signal?: AbortSignal): Promi
     `${API_URL}/empreses/cerca?q=${encodeURIComponent(query)}`,
     { cache: 'no-store', signal },
   );
-
-  if (!res.ok) {
-    throw new Error(`Error ${res.status}: ${res.statusText}`);
-  }
-
+  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
   return res.json();
 }
