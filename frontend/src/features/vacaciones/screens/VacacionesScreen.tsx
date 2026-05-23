@@ -32,25 +32,28 @@ type WorkerFilterProps = {
 };
 
 function WorkerFilter({ treballadors, viewTreballadorId, workerLoading, theme, noPad, onSelect }: WorkerFilterProps) {
+    if (treballadors.length === 0) {
+        return (
+            <View style={[filterStyles.container, noPad && { paddingHorizontal: 0 }]}>
+                <View style={filterStyles.emptyWorkers}>
+                    <Ionicons name="people-outline" size={16} color={HC.textMuted} />
+                    <Text style={filterStyles.emptyWorkersText}>Has d'afegir treballadors a l'empresa</Text>
+                </View>
+            </View>
+        );
+    }
+
     return (
         <View style={[filterStyles.container, noPad && { paddingHorizontal: 0 }]}>
             <View style={filterStyles.row}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={filterStyles.chips}>
-                    <TouchableOpacity
-                        style={[filterStyles.chip, viewTreballadorId === null && { backgroundColor: theme.primary, borderColor: theme.primary }]}
-                        onPress={() => onSelect(null)}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="person-outline" size={13} color={viewTreballadorId === null ? '#fff' : HC.textMuted} />
-                        <Text style={[filterStyles.chipText, viewTreballadorId === null && filterStyles.chipTextActive]}>Jo</Text>
-                    </TouchableOpacity>
                     {treballadors.map(t => {
                         const isSel = viewTreballadorId === t.id;
                         return (
                             <TouchableOpacity
                                 key={t.id}
                                 style={[filterStyles.chip, isSel && { backgroundColor: theme.primary, borderColor: theme.primary }]}
-                                onPress={() => onSelect(isSel ? null : t.id)}
+                                onPress={() => onSelect(t.id)}
                                 activeOpacity={0.7}
                             >
                                 <View style={[filterStyles.avatar, isSel && { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
@@ -114,6 +117,16 @@ const filterStyles = StyleSheet.create({
         fontWeight: '700',
         color: '#fff',
     },
+    emptyWorkers: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 8,
+    },
+    emptyWorkersText: {
+        fontSize: 13,
+        color: HC.textMuted,
+    },
 });
 
 function countDays(inici: string, fi: string): number {
@@ -140,7 +153,10 @@ export default function VacacionesScreen() {
         getUser().then(u => {
             if (u?.rol === 'ADMIN_GENERAL') {
                 setIsAdmin(true);
-                getTreballadorsLlista().then(setTreballadors).catch(() => {});
+                getTreballadorsLlista().then(list => {
+                    setTreballadors(list);
+                    if (list.length > 0) setViewTreballadorId(list[0].id);
+                }).catch(() => {});
             }
         });
     }, []);
@@ -269,7 +285,7 @@ export default function VacacionesScreen() {
                     <View style={styles.desktopLayout}>
                         <View style={styles.desktopMain}>
                             <StatsSection {...statsProps} />
-                            {isAdmin && treballadors.length > 0 && (
+                            {isAdmin && (
                                 <WorkerFilter
                                     treballadors={treballadors}
                                     viewTreballadorId={viewTreballadorId}
@@ -295,7 +311,7 @@ export default function VacacionesScreen() {
                 ) : (
                     <>
                         <StatsSection {...statsProps} />
-                        {isAdmin && treballadors.length > 0 && (
+                        {isAdmin && (
                             <WorkerFilter
                                 treballadors={treballadors}
                                 viewTreballadorId={viewTreballadorId}

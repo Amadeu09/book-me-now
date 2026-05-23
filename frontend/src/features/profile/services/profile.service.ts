@@ -8,6 +8,7 @@ export interface ProfileServei {
     preu: number;
     actiu: boolean;
     fotoUrl?: string | null;
+    categoria?: string | null;
 }
 
 export interface ProfileReserva {

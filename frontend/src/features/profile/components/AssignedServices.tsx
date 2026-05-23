@@ -11,6 +11,24 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import type { ProfileServei } from '../services/profile.service';
+
+const CATEGORY_ICONS: Record<string, string> = {
+    PERRUQUERIA: 'cut-outline',
+    BARBERIA: 'man-outline',
+    ESTETICA: 'sparkles-outline',
+    SPA: 'leaf-outline',
+    MASSATGES: 'hand-left-outline',
+    NUTRICIONISTA: 'nutrition-outline',
+    FISIOTERAPIA: 'medkit-outline',
+    DENTAL: 'happy-outline',
+    VETERINARIA: 'paw-outline',
+    ALTRES: 'grid-outline',
+    OTROS: 'grid-outline',
+};
+
+function getCategoryIcon(categoria?: string | null): string {
+    return CATEGORY_ICONS[categoria ?? ''] ?? 'grid-outline';
+}
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { useLanguage } from '@/core/i18n';
 
@@ -28,7 +46,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({ item }) => {
             <Image source={{ uri: item.fotoUrl }} style={styles.serviceImage} resizeMode="cover" />
         ) : (
             <View style={[styles.serviceIcon, { backgroundColor: theme.primaryMid }]}>
-                <Ionicons name="cut-outline" size={20} color={theme.primary} />
+                <Ionicons name={getCategoryIcon(item.categoria) as any} size={20} color={theme.primary} />
             </View>
         )}
 

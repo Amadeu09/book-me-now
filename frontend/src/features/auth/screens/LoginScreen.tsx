@@ -78,8 +78,13 @@ export default function LoginScreen() {
       await setUser(response.user);
       router.replace({ pathname: "/profile" } as any);
     } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.message || "No se pudo iniciar sesión.";
-      setGeneralError(Array.isArray(msg) ? msg.join(", ") : msg);
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status == 400 || status === 404) {
+        setGeneralError("Email o contrasenya incorrectes. Comprova les teves credencials.");
+      } else {
+        const msg = error?.response?.data?.message || error?.message || "No s'ha pogut iniciar sessió.";
+        setGeneralError(Array.isArray(msg) ? msg.join(", ") : msg);
+      }
     } finally {
       setLoading(false);
     }
