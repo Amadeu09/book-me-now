@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -17,20 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-const PALETAS = [
-  { label: "Pizarra", value: "#5B7A96" },
-  { label: "Índigo", value: "#6264A0" },
-  { label: "Lavanda", value: "#7B5E9A" },
-  { label: "Rosa", value: "#9E5A72" },
-  { label: "Coral", value: "#B55E54" },
-  { label: "Terracota", value: "#A86040" },
-  { label: "Ocre", value: "#9B7030" },
-  { label: "Oliva", value: "#6C7E4A" },
-  { label: "Salvia", value: "#4A7E68" },
-  { label: "Teal", value: "#3E7C7E" },
-  { label: "Marino", value: "#3E587A" },
-];
+import { HC, cardShadow } from "@/features/home/constants/inicio.constants";
 
 const TIPOS_NEGOCIO = [
   { label: "Peluquería", value: "PERRUQUERIA" },
@@ -38,25 +24,24 @@ const TIPOS_NEGOCIO = [
   { label: "Estética", value: "ESTETICA" },
   { label: "Spa", value: "SPA" },
   { label: "Masajes", value: "MASSATGES" },
-  { label: "Fitness", value: "FITNESS" },
-  { label: "Pilates", value: "PILATES" },
-  { label: "Yoga", value: "IOGA" },
   { label: "Nutricionista", value: "NUTRICIONISTA" },
   { label: "Fisioterapia", value: "FISIOTERAPIA" },
+  { label: "Pilates", value: "PILATES" },
+  { label: "Fitness", value: "FITNESS" },
+  { label: "Ioga", value: "IOGA" },
   { label: "Dental", value: "DENTAL" },
   { label: "Veterinaria", value: "VETERINARIA" },
   { label: "Otros", value: "OTROS" },
 ];
 
-export default function Register() {
+export default function RegisterScreen() {
   const router = useRouter();
   const [nom, setNom] = useState("");
   const [ubicacio, setUbicacio] = useState("");
   const [descripcio, setDescripcio] = useState("");
-  const [colorPrimari, setColorPrimari] = useState(PALETAS[0].value);
   const [tipo, setTipo] = useState<string | null>(null);
   const [fotoUri, setFotoUri] = useState<string | null>(null);
-  const [diasAntesReserva, setDiasAntesReserva] = useState('14');
+  const [diasAntesReserva, setDiasAntesReserva] = useState("14");
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -70,9 +55,7 @@ export default function Register() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) {
-      setFotoUri(result.assets[0].uri);
-    }
+    if (!result.canceled && result.assets[0]) setFotoUri(result.assets[0].uri);
   };
 
   const handleContinue = () => {
@@ -84,14 +67,13 @@ export default function Register() {
       Alert.alert("Error", "La ubicación debe tener al menos 2 caracteres");
       return;
     }
-
     router.push({
       pathname: "/register-user",
       params: {
         nom: nom.trim(),
         ubicacio: ubicacio.trim(),
         descripcio: descripcio.trim(),
-        colorPrimari,
+        colorPrimari: HC.primary,
         tipo: tipo || "",
         fotoUri: fotoUri || "",
         diasAntesReserva: diasAntesReserva.trim() || "14",
@@ -102,7 +84,6 @@ export default function Register() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" />
-
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -110,26 +91,26 @@ export default function Register() {
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#111827" />
+            <Ionicons name="arrow-back" size={22} color={HC.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.brandRow}>
-            <View style={styles.brandDot} />
-            <Text style={styles.brandText}>BookMeNow</Text>
+            <View style={[styles.brandDot, { backgroundColor: HC.primary }]} />
+            <Text style={[styles.brandText, { color: HC.primary }]}>BOOKMENOW</Text>
           </View>
 
           <View style={{ height: 18 }} />
           <Text style={styles.title}>Datos de tu empresa</Text>
           <Text style={styles.subtitle}>Paso 1 de 2</Text>
-          <View style={{ height: 24 }} />
+          <View style={{ height: 20 }} />
 
           <View style={styles.card}>
-            {/* Nombre empresa */}
+            <Text style={styles.label}>Nombre de la empresa *</Text>
             <View style={styles.inputRow}>
-              <Ionicons name="business-outline" size={18} color="#9ca3af" style={styles.icon} />
+              <Ionicons name="business-outline" size={18} color={HC.textMuted} style={styles.icon} />
               <TextInput
                 placeholder="Nombre de la empresa"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={HC.textMuted}
                 value={nom}
                 onChangeText={setNom}
                 autoCapitalize="words"
@@ -137,12 +118,12 @@ export default function Register() {
               />
             </View>
 
-            {/* Ubicación */}
-            <View style={[styles.inputRow, styles.mt12]}>
-              <Ionicons name="location-outline" size={18} color="#9ca3af" style={styles.icon} />
+            <Text style={[styles.label, { marginTop: 14 }]}>Ubicación *</Text>
+            <View style={styles.inputRow}>
+              <Ionicons name="location-outline" size={18} color={HC.textMuted} style={styles.icon} />
               <TextInput
-                placeholder="Ubicación (ciudad, dirección)"
-                placeholderTextColor="#9ca3af"
+                placeholder="Ciudad, dirección..."
+                placeholderTextColor={HC.textMuted}
                 value={ubicacio}
                 onChangeText={setUbicacio}
                 autoCapitalize="words"
@@ -150,12 +131,12 @@ export default function Register() {
               />
             </View>
 
-            {/* Descripción */}
-            <View style={[styles.inputRow, styles.mt12, { alignItems: "flex-start", minHeight: 80 }]}>
-              <Ionicons name="document-text-outline" size={18} color="#9ca3af" style={[styles.icon, { marginTop: 2 }]} />
+            <Text style={[styles.label, { marginTop: 14 }]}>Descripción</Text>
+            <View style={[styles.inputRow, { alignItems: "flex-start", minHeight: 80 }]}>
+              <Ionicons name="document-text-outline" size={18} color={HC.textMuted} style={[styles.icon, { marginTop: 2 }]} />
               <TextInput
-                placeholder="Descripción de tu empresa (opcional)"
-                placeholderTextColor="#9ca3af"
+                placeholder="Describe tu empresa (opcional)"
+                placeholderTextColor={HC.textMuted}
                 value={descripcio}
                 onChangeText={setDescripcio}
                 multiline
@@ -164,12 +145,12 @@ export default function Register() {
               />
             </View>
 
-            {/* Dies d'antelació */}
-            <View style={[styles.inputRow, styles.mt12]}>
-              <Ionicons name="calendar-outline" size={18} color="#9ca3af" style={styles.icon} />
+            <Text style={[styles.label, { marginTop: 14 }]}>Días de antelación para reservas</Text>
+            <View style={styles.inputRow}>
+              <Ionicons name="calendar-outline" size={18} color={HC.textMuted} style={styles.icon} />
               <TextInput
-                placeholder="Dies d'antelació per reserves (defecte: 14)"
-                placeholderTextColor="#9ca3af"
+                placeholder="14"
+                placeholderTextColor={HC.textMuted}
                 value={diasAntesReserva}
                 onChangeText={setDiasAntesReserva}
                 keyboardType="number-pad"
@@ -177,58 +158,53 @@ export default function Register() {
               />
             </View>
 
-            {/* Tipo de negocio */}
-            <Text style={styles.sectionLabel}>Tipo de negocio</Text>
+            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>Tipo de negocio</Text>
             <View style={styles.tipoGrid}>
               {TIPOS_NEGOCIO.map((t) => (
                 <TouchableOpacity
                   key={t.value}
                   onPress={() => setTipo(tipo === t.value ? null : t.value)}
-                  style={[styles.tipoChip, tipo === t.value && styles.tipoChipSelected]}
+                  style={[styles.chip, tipo === t.value && { borderColor: HC.primary, backgroundColor: HC.primaryLight }]}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.tipoChipText, tipo === t.value && styles.tipoChipTextSelected]}>
+                  <Text style={[styles.chipText, tipo === t.value && { color: HC.primary, fontWeight: "600" }]}>
                     {t.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Foto de perfil */}
-            <Text style={styles.sectionLabel}>Foto de perfil</Text>
-            <View style={styles.imageRow}>
-              <TouchableOpacity style={styles.photoBox} onPress={pickImage} activeOpacity={0.8}>
-                {fotoUri ? (
-                  <Image source={{ uri: fotoUri }} style={styles.photoPreview} />
-                ) : (
-                  <View style={styles.photoPlaceholder}>
-                    <Ionicons name="camera-outline" size={22} color="#9ca3af" />
-                  </View>
-                )}
-                <Text style={styles.photoLabel}>Foto de perfil</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>Foto de perfil</Text>
+            <TouchableOpacity style={styles.photoBox} onPress={pickImage} activeOpacity={0.8}>
+              {fotoUri ? (
+                <Image source={{ uri: fotoUri }} style={styles.photoPreview} />
+              ) : (
+                <View style={[styles.photoPlaceholder, { backgroundColor: HC.primaryLight }]}>
+                  <Ionicons name="camera-outline" size={22} color={HC.primary} />
+                </View>
+              )}
+              <Text style={styles.photoLabel}>{fotoUri ? "Cambiar foto" : "Añadir foto"}</Text>
+            </TouchableOpacity>
 
             <View style={{ height: 20 }} />
 
-            {/* CTA */}
-            <TouchableOpacity activeOpacity={0.9} style={styles.cta} onPress={handleContinue}>
-              <LinearGradient colors={["#ffffff", "#ffe3aa"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaGradient}>
-                <Text style={styles.ctaText}>Continuar</Text>
-              </LinearGradient>
+            <TouchableOpacity
+              style={[styles.cta, { backgroundColor: HC.primary }]}
+              onPress={handleContinue}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.ctaText}>Continuar</Text>
             </TouchableOpacity>
 
-            <View style={{ alignItems: "center", marginTop: 14 }}>
-              <Text style={styles.metaText}>
-                ¿Ya tienes cuenta?{" "}
-                <Text onPress={() => router.back()} style={styles.linkText}>
-                  Iniciar sesión
-                </Text>
-              </Text>
+            <View style={styles.loginRow}>
+              <Text style={styles.metaText}>¿Ya tienes cuenta? </Text>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text style={[styles.linkText, { color: HC.primary }]}>Iniciar sesión</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={styles.footer}>© {new Date().getFullYear()} Book Me Now</Text>
+          <Text style={styles.footer}>© {new Date().getFullYear()} BookMeNow</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -236,103 +212,62 @@ export default function Register() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff" },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 40, maxWidth: 1600, width: "100%", alignSelf: "center" },
+  safe: { flex: 1, backgroundColor: HC.screenBg },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40, maxWidth: 480, width: "100%", alignSelf: "center" },
   backButton: { position: "absolute", top: 0, left: 0, zIndex: 10, padding: 4 },
 
   brandRow: { flexDirection: "row", alignItems: "center" },
-  brandDot: { width: 10, height: 10, borderRadius: 10, backgroundColor: "#6264A0", marginRight: 8 },
-  brandText: { letterSpacing: 4, color: "#6264A0", fontWeight: "700", fontSize: 12 },
-  title: { fontSize: 32, fontWeight: "900", color: "#111827", lineHeight: 38 },
-  subtitle: { color: "#6b7280", marginTop: 6 },
+  brandDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  brandText: { letterSpacing: 3, fontWeight: "800", fontSize: 11 },
+  title: { fontSize: 28, fontWeight: "800", color: HC.textPrimary, lineHeight: 34 },
+  subtitle: { color: HC.textMuted, marginTop: 6, fontSize: 14 },
 
   card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#fff",
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    elevation: 2,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: HC.border,
+    backgroundColor: HC.white,
+    padding: 20,
+    ...cardShadow,
   },
 
+  label: { fontSize: 13, fontWeight: "600", color: HC.textSecondary, marginBottom: 6 },
+  sectionLabel: { fontSize: 11, fontWeight: "700", color: HC.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#f3f4f6",
+    borderColor: HC.border,
+    backgroundColor: HC.screenBg,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 10,
   },
-  mt12: { marginTop: 12 },
   icon: { marginRight: 8 },
-  input: { color: "#111827", fontSize: 14, flex: 1 },
-
-  sectionLabel: {
-    color: "#6b7280",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    marginTop: 18,
-    marginBottom: 10,
-  },
+  input: { color: HC.textPrimary, fontSize: 14, flex: 1 },
 
   tipoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  tipoChip: {
+  chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#f9fafb",
+    borderColor: HC.border,
+    backgroundColor: HC.white,
   },
-  tipoChipSelected: {
-    backgroundColor: "#6264A0",
-    borderColor: "#6264A0",
-  },
-  tipoChipText: { fontSize: 13, color: "#374151", fontWeight: "500" },
-  tipoChipTextSelected: { color: "#fff" },
+  chipText: { fontSize: 13, color: HC.textSecondary },
 
-  imageRow: { flexDirection: "row", gap: 12 },
-  photoBox: { alignItems: "center", gap: 6 },
+  photoBox: { alignItems: "center", gap: 8, alignSelf: "flex-start" },
   photoPreview: { width: 72, height: 72, borderRadius: 36 },
-  photoPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#f3f4f6",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoLabel: { color: "#9ca3af", fontSize: 11 },
+  photoPlaceholder: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
+  photoLabel: { color: HC.textMuted, fontSize: 12 },
 
-  paletaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  swatch: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.08)",
-  },
-  colorPreviewRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
-  colorPreviewDot: { width: 12, height: 12, borderRadius: 6 },
-  colorPreviewText: { color: "#6b7280", fontSize: 12 },
+  cta: { borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  ctaText: { color: HC.white, fontWeight: "700", fontSize: 15 },
 
-  cta: { borderRadius: 14, overflow: "hidden" },
-  ctaGradient: { paddingVertical: 14, alignItems: "center" },
-  ctaText: { color: "#000", fontWeight: "900", fontSize: 14 },
+  loginRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 16 },
+  metaText: { color: HC.textMuted, fontSize: 13 },
+  linkText: { fontSize: 13, fontWeight: "700" },
 
-  metaText: { color: "#6b7280", fontSize: 12 },
-  linkText: { color: "#6264A0", fontWeight: "700" },
-  footer: { textAlign: "center", color: "#9ca3af", marginTop: 26, fontSize: 11 },
+  footer: { textAlign: "center", color: HC.textMuted, marginTop: 32, fontSize: 11 },
 });

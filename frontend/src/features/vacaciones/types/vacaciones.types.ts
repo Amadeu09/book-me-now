@@ -38,4 +38,22 @@ export interface CreateAbsenciaPayload {
     fi: string;
     tipus: TipusAbsenciaTreballador;
     motiu?: string;
+    treballadorId?: number;
+}
+
+export interface TreballadorBasicVacances {
+    id: number;
+    nom: string;
+    fotoPerfil?: string | null;
+}
+
+export interface VacancesResum {
+    diesVacancesAnuals: number;
+    vacancesUsed: number;
+}
+
+export interface UpdateAbsenciaPayload {
+    inici?: string;
+    fi?: string;
+    motiu?: string;
 }

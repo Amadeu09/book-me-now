@@ -14,6 +14,7 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -107,6 +108,7 @@ export class UsuarisController {
             maxSize: 1024 * 1024 * 5,
             message: 'El archivo es demasiado grande (máx 5MB)',
           }),
+          new FileTypeValidator({ fileType: /image\/(jpeg|png|webp)/ }),
         ],
       }),
     )

@@ -2,6 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReservesController } from './reserves.controller';
 import { ReservesService } from './reserves.service';
 import { CreateReservaDto, UpdateReservaEstatDto } from './dto/reserves.dto';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
+
+const mockUser: CurrentUserData = {
+    userId: 1,
+    email: 'test@test.com',
+    rol: 'ADMIN_GENERAL' as any,
+    empresaId: 1,
+};
 
 const mockReservesService = {
     create: jest.fn(),
@@ -62,9 +70,9 @@ describe('ReservesController', () => {
             const dto: UpdateReservaEstatDto = { nouEstat: 'CONFIRMADA', idReserva: 1 };
             mockReservesService.updateEstado.mockResolvedValue('updated');
 
-            const result = await controller.updateEstado(1, dto);
+            const result = await controller.updateEstado(1, dto, mockUser);
 
-            expect(service.updateEstado).toHaveBeenCalledWith(1, dto.nouEstat);
+            expect(service.updateEstado).toHaveBeenCalledWith(1, dto.nouEstat, mockUser);
             expect(result).toBe('updated');
         });
     });
@@ -73,9 +81,9 @@ describe('ReservesController', () => {
         it('should call service.delete', async () => {
             mockReservesService.delete.mockResolvedValue('deleted');
 
-            const result = await controller.delete(1);
+            const result = await controller.delete(1, mockUser);
 
-            expect(service.delete).toHaveBeenCalledWith(1);
+            expect(service.delete).toHaveBeenCalledWith(1, mockUser);
             expect(result).toBe('deleted');
         });
     });
@@ -95,9 +103,9 @@ describe('ReservesController', () => {
             };
             mockReservesService.update.mockResolvedValue('updated');
 
-            const result = await controller.update(1, dto);
+            const result = await controller.update(1, dto, mockUser);
 
-            expect(service.update).toHaveBeenCalledWith(1, dto);
+            expect(service.update).toHaveBeenCalledWith(1, dto, mockUser);
             expect(result).toBe('updated');
         });
     });

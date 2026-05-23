@@ -18,6 +18,7 @@ import { HC, cardShadow } from '../../constants/horarios.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { useLanguage } from '@/core/i18n';
 import { RotationTabs } from './RotationTabs';
+import { DatePickerField } from '../DatePickerField';
 
 // Hooks & Services
 import { useCreateUsuari, useCreateTreballador } from '../../hooks/useTreballadors';
@@ -67,6 +68,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 
     // Form State - Jornada
     const [plantillaJornadaId, setPlantillaJornadaId] = useState<number | null>(null);
+    const [dataIniciRotacio, setDataIniciRotacio] = useState<string>('');
 
     // Mutations
     const { mutateAsync: createUsuari, isPending: isCreatingUsuari } = useCreateUsuari();
@@ -113,6 +115,11 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 setDiesVacancesAnuals(String(initialData.diesVacancesAnuals ?? 25));
 
                 setPlantillaJornadaId(initialData.plantilla?.id ?? null);
+                setDataIniciRotacio(
+                    initialData.dataIniciRotacio
+                        ? initialData.dataIniciRotacio.split('T')[0]
+                        : ''
+                );
             } else {
                 resetForm();
             }
@@ -136,6 +143,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
         setServeisIds([]);
         setDiesVacancesAnuals('25');
         setPlantillaJornadaId(null);
+        setDataIniciRotacio('');
     };
 
     const pickPhoto = async () => {
@@ -190,7 +198,8 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                 };
                 
                 updatePayload.plantillaId = plantillaJornadaId;
-                
+                if (dataIniciRotacio) updatePayload.dataIniciRotacio = dataIniciRotacio;
+
                 await updateTreballador(initialData.id, updatePayload);
                 setIsUpdating(false);
             } else {
@@ -206,7 +215,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     try {
                         await uploadFotoUsuari(usuariRes.id, photoUri);
                     } catch (photoErr) {
-                        console.warn('⚠️ Error subiendo foto de perfil:', photoErr);
+                        if (__DEV__) console.warn('⚠️ Error subiendo foto de perfil:', photoErr);
                     }
                 }
 
@@ -222,6 +231,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
 
                 if (plantillaJornadaId) {
                     treballadorPayload.plantillaId = plantillaJornadaId;
+                    if (dataIniciRotacio) treballadorPayload.dataIniciRotacio = dataIniciRotacio;
                 }
 
                 await createTreballador(treballadorPayload);
@@ -233,7 +243,7 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
             onClose();
 
         } catch (error: unknown) {
-            console.error('Error creating worker:', error);
+            if (__DEV__) console.error('Error creating worker:', error);
             const msg =
                 (error as { response?: { data?: { message?: string | string[] } }; message?: string })?.response?.data?.message ||
                 (error as { message?: string })?.message ||
@@ -378,6 +388,15 @@ export const CreateTrabajadorModal: React.FC<CreateTrabajadorModalProps> = ({
                     })
                 )}
             </ScrollView>
+
+            <Text style={styles.label}>{t('workerJornadaIniciLabel')}</Text>
+            <DatePickerField
+                value={dataIniciRotacio}
+                onChange={setDataIniciRotacio}
+                placeholder={t('workerJornadaIniciLabel')}
+                disabled={isSubmitting}
+            />
+            <Text style={styles.helperText}>{t('workerJornadaIniciHint')}</Text>
 
         </View>
     );

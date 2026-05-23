@@ -1,11 +1,10 @@
-# BookMeNow — Sistema de Gestió de Reserves
-
+# Book11
 Plataforma SaaS per a la gestió empresarial amb cites prèvies. Dissenyada per a petites i mitjanes empreses de serveis (perruqueries, estètica, clíniques, gimnasos, etc.).
 
 ---
 
 ## Arquitectura — Monorepo de tres capes
-
+1
 ```
 BookMeNow-app/
 ├── backend/          → API REST (NestJS + PostgreSQL + Redis)

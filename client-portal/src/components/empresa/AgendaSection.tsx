@@ -74,7 +74,7 @@ export function AgendaSection({ agenda }: AgendaSectionProps) {
       <button
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1 text-sm font-semibold transition-colors"
-        style={{ color: '#FF6B6B' }}
+        style={{ color: '#6366F1' }}
       >
         {open ? 'Tancar agenda' : 'Consultar agenda'}
         <span

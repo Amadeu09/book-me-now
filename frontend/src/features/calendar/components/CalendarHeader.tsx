@@ -20,11 +20,6 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     const theme = useTheme();
     const { t } = useLanguage();
 
-    const MODE_LABELS: Record<ViewMode, string> = {
-        day: t('calendarViewDay'),
-        week: t('calendarViewWeek'),
-        month: t('calendarViewMonth'),
-    };
     const { width } = useWindowDimensions();
     const isDesktop = Platform.OS === 'web' && width >= 1024;
 
@@ -40,32 +35,6 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             </View>
 
             <View style={styles.actions}>
-                {isDesktop && (
-                    <View style={styles.segmentControl}>
-                        {availableModes.map((mode) => {
-                            const isActive = viewMode === mode;
-                            return (
-                                <TouchableOpacity
-                                    key={mode}
-                                    style={[
-                                        styles.segmentButton,
-                                        isActive && { backgroundColor: theme.primary },
-                                    ]}
-                                    onPress={() => onViewChange(mode)}
-                                >
-                                    <Text style={[
-                                        styles.segmentText,
-                                        { color: isActive ? '#ffffff' : palette.textMuted,
-                                          fontWeight: isActive ? '600' : '500' },
-                                    ]}>
-                                        {MODE_LABELS[mode]}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                )}
-
                 <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={onQuickCreate}>
                     <Ionicons name="add" size={20} color={theme.textOnPrimary} />
                     {isDesktop && <Text style={[styles.createButtonText, { color: theme.textOnPrimary }]}>{t('calendarNewBooking')}</Text>}

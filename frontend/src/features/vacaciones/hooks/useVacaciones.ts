@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { getAbsenciesCalendari, createAbsencia } from '../services/vacaciones.service';
-import type { AbsenciesCalendariResponse, TipusAbsenciaTreballador, TipusAbsenciaEmpresa } from '../types/vacaciones.types';
+import { getAbsenciesCalendari, createAbsencia, getAbsenciesCalendariTreballador, deleteAbsencia, updateAbsencia } from '../services/vacaciones.service';
+import type { AbsenciesCalendariResponse, TipusAbsenciaTreballador, TipusAbsenciaEmpresa, UpdateAbsenciaPayload } from '../types/vacaciones.types';
 
 function expandToMap<T extends string>(items: Array<{ inici: string; fi: string; tipus: T }>): Map<string, T> {
     const map = new Map<string, T>();
@@ -46,4 +46,41 @@ export function useVacaciones(year: number) {
 
 export function useCreateAbsencia() {
     return useMutation({ mutationFn: createAbsencia });
+}
+
+export function useDeleteAbsencia() {
+    return useMutation({ mutationFn: (id: number) => deleteAbsencia(id) });
+}
+
+export function useUpdateAbsencia() {
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: number; payload: UpdateAbsenciaPayload }) =>
+            updateAbsencia(id, payload),
+    });
+}
+
+export function useWorkerCalendar(treballadorId: number | null, year: number) {
+    const [data, setData] = useState<AbsenciesCalendariResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    useEffect(() => {
+        if (!treballadorId) { setData(null); return; }
+        setIsLoading(true);
+        getAbsenciesCalendariTreballador(treballadorId, year)
+            .then(setData)
+            .catch(() => setData(null))
+            .finally(() => setIsLoading(false));
+    }, [treballadorId, year, refreshKey]);
+
+    const refetch = useCallback(() => setRefreshKey(k => k + 1), []);
+
+    const absenciaDates = useMemo(
+        () => data
+            ? expandToMap<TipusAbsenciaTreballador>(data.treballador.filter(a => a.estat === 'APROVADA'))
+            : null,
+        [data],
+    );
+
+    return { absenciaDates, data, isLoading, refetch };
 }

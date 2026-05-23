@@ -3,6 +3,14 @@ import { ValoracionsController } from './valoracions.controller';
 import { ValoracionsService } from './valoracions.service';
 import { CreateValoracioDto, UpdateValoracioDto } from './dto/valoracions.dto';
 import { ValoracioTipus } from '@prisma/client';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
+
+const mockUser: CurrentUserData = {
+    userId: 1,
+    email: 'admin@test.com',
+    rol: 'ADMIN_GENERAL' as any,
+    empresaId: 1,
+};
 
 describe('ValoracionsController', () => {
     let controller: ValoracionsController;
@@ -47,8 +55,8 @@ describe('ValoracionsController', () => {
                 idServeis: 1
             };
             mockValoracionsService.create.mockResolvedValue('created');
-            const result = await controller.create(dto);
-            expect(service.create).toHaveBeenCalledWith(dto);
+            const result = await controller.create(dto, mockUser);
+            expect(service.create).toHaveBeenCalledWith(dto, mockUser);
             expect(result).toBe('created');
         });
     });
@@ -56,8 +64,8 @@ describe('ValoracionsController', () => {
     describe('findAll', () => {
         it('should call service.findAll', async () => {
             mockValoracionsService.findAll.mockResolvedValue(['all']);
-            const result = await controller.findAll();
-            expect(service.findAll).toHaveBeenCalled();
+            const result = await controller.findAll(mockUser);
+            expect(service.findAll).toHaveBeenCalledWith(mockUser);
             expect(result).toEqual(['all']);
         });
     });

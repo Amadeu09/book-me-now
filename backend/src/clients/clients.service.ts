@@ -10,10 +10,6 @@ export class ClientsService {
   constructor(private prisma: PrismaService) { }
 
   async findAllByEmpresa(empresaId: number, user: CurrentUserData) {
-    if (user.rol !== 'ADMIN_GENERAL') {
-      throw new ForbiddenException('Només els administradors poden veure el llistat de clients');
-    }
-
     if (user.empresaId !== empresaId) {
       throw new ForbiddenException('No pots accedir als clients d\'una altra empresa');
     }
@@ -93,10 +89,6 @@ export class ClientsService {
     user: CurrentUserData,
     query: ClientsPaginatsQueryDto,
   ) {
-    if (user.rol !== 'ADMIN_GENERAL') {
-      throw new ForbiddenException('Només els administradors poden veure el llistat de clients');
-    }
-
     if (user.empresaId !== empresaId) {
       throw new ForbiddenException('No pots accedir als clients d\'una altra empresa');
     }

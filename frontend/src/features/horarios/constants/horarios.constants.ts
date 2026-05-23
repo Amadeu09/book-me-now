@@ -4,9 +4,9 @@
 
 // ─── Colors ───────────────────────────────
 export const HC = {
-    primary: '#FF6A00',
-    primaryLight: '#FFF1E8',
-    primaryDark: '#E55D00',
+    primary: '#6366F1',
+    primaryLight: '#EEF2FF',
+    primaryDark: '#4338CA',
     green: '#22C55E',
     greenLight: '#ECFDF5',
     yellow: '#F59E0B',

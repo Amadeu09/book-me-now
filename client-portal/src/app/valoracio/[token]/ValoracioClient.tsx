@@ -128,7 +128,7 @@ export function ValoracioClient({ info, token }: Props) {
           {info.empresa.fotoPerfil ? (
             <img src={info.empresa.fotoPerfil} alt={info.empresa.nom} className="w-14 h-14 rounded-full object-cover border-2 border-white/30" />
           ) : (
-            <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/30" style={{ background: 'rgba(255,107,107,0.4)' }}>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/30" style={{ background: 'rgba(99,102,241,0.4)' }}>
               <span className="text-xl font-bold text-white">{empresaInitial}</span>
             </div>
           )}
@@ -177,7 +177,7 @@ export function ValoracioClient({ info, token }: Props) {
               <button
                 onClick={() => setView('form')}
                 className="w-full py-4 rounded-full font-bold text-sm text-white transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' }}
+                style={{ background: 'linear-gradient(135deg, #6366F1, #4338CA)' }}
               >
                 Tornar
               </button>
@@ -196,7 +196,7 @@ export function ValoracioClient({ info, token }: Props) {
                   <img src={info.empresa.fotoPerfil} alt={info.empresa.nom} className="w-10 h-10 rounded-full object-cover border border-gray-100" />
                 ) : (
                   <div className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-100" style={{ background: '#FFE8E8' }}>
-                    <span className="text-sm font-bold" style={{ color: '#FF6B6B' }}>{empresaInitial}</span>
+                    <span className="text-sm font-bold" style={{ color: '#6366F1' }}>{empresaInitial}</span>
                   </div>
                 )}
                 <p className="font-semibold text-gray-800">{info.empresa.nom}</p>
@@ -228,7 +228,7 @@ export function ValoracioClient({ info, token }: Props) {
                     <img src={info.treballador!.fotoPerfil} alt={info.treballador!.nom} className="w-10 h-10 rounded-full object-cover border border-gray-100" />
                   ) : (
                     <div className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-100" style={{ background: '#FFE8E8' }}>
-                      <span className="text-sm font-bold" style={{ color: '#FF6B6B' }}>{treballadorInitial}</span>
+                      <span className="text-sm font-bold" style={{ color: '#6366F1' }}>{treballadorInitial}</span>
                     </div>
                   )}
                   <p className="font-semibold text-gray-800">{info.treballador!.nom}</p>
@@ -256,7 +256,7 @@ export function ValoracioClient({ info, token }: Props) {
               onClick={handleSubmit}
               disabled={!canSubmit || loading}
               className="w-full py-4 rounded-full font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #FF6B6B, #CC3333)' }}
+              style={{ background: 'linear-gradient(135deg, #6366F1, #4338CA)' }}
             >
               {loading ? 'Enviant...' : 'Enviar valoració'}
             </button>

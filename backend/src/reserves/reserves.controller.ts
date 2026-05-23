@@ -83,8 +83,9 @@ export class ReservesController {
   updateEstado(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateReservaEstatDto,
+    @CurrentUser() user: CurrentUserData,
   ) {
-    return this.reservesService.updateEstado(id, dto.nouEstat);
+    return this.reservesService.updateEstado(id, dto.nouEstat, user);
   }
 
   @Delete(':id')
@@ -96,8 +97,8 @@ export class ReservesController {
   @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.reservesService.delete(id);
+  delete(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
+    return this.reservesService.delete(id, user);
   }
 
   @Put(':id')
@@ -113,8 +114,9 @@ export class ReservesController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateReservaDto,
+    @CurrentUser() user: CurrentUserData,
   ) {
-    return this.reservesService.update(id, dto);
+    return this.reservesService.update(id, dto, user);
   }
 
   @Get('treballador/:id')

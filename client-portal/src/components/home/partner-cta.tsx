@@ -1,6 +1,6 @@
 export function PartnerCta() {
   return (
-    <section className="px-6 md:px-12 max-w-[1920px] mx-auto mb-40">
+    <section id="contacto" className="px-6 md:px-12 max-w-[1920px] mx-auto mb-40">
       <div className="relative bg-on-surface text-white rounded-[4rem] overflow-hidden p-12 md:p-24 flex flex-col md:flex-row items-center gap-16">
         <div className="w-full md:w-1/2 z-10">
           <p className="text-primary-fixed font-bold tracking-[0.2em] uppercase text-xs mb-6">

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -11,7 +11,6 @@ import { ServeisModule } from './serveis/serveis.module';
 import { ClientsModule } from './clients/clients.module';
 import { ReservesModule } from './reserves/reserves.module';
 import { ValoracionsModule } from './valoracions/valoracions.module';
-import { FacturesModule } from './factures/factures.module';
 import { HorarisModule } from './horaris/horaris.module';
 import { JornadesModule } from './jornades/jornades.module';
 import { AbsenciesModule } from './absencies/absencies.module';
@@ -55,7 +54,6 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     ClientsModule,
     ReservesModule,
     ValoracionsModule,
-    FacturesModule,
     HorarisModule,
     JornadesModule,
     AbsenciesModule,
@@ -64,6 +62,10 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     EstadisticasModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     // Global exception filter - catch and format all errors
     {
       provide: APP_FILTER,

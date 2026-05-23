@@ -45,7 +45,7 @@ export function useTreballadors(initialPage: number, rows: number) {
                 setData(res);
                 setPage(targetPage);
             })
-            .catch(err => console.error('Error fetching treballadors:', err))
+            .catch(err => { if (__DEV__) console.error('Error fetching treballadors:', err); })
             .finally(() => setIsLoading(false));
     }, [page, rows]);
 

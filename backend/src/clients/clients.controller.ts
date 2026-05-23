@@ -59,7 +59,7 @@ export class ClientsController {
   }
 
   @Get('empresa/:empresaId')
-  @Roles('ADMIN_GENERAL')
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Obtenir tots els clients d\'una empresa' })
   @ApiResponse({ status: 200, description: 'Llistat de clients retornat correctament' })
   @ApiResponse({ status: 403, description: 'Sense permisos o empresa incorrecta' })
@@ -71,7 +71,7 @@ export class ClientsController {
   }
 
   @Get('empresa/:empresaId/paginat')
-  @Roles('ADMIN_GENERAL')
+  @Roles('ADMIN_GENERAL', 'EMPLEAT')
   @ApiOperation({ summary: 'Obtenir clients d\'una empresa de forma paginada' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de pàgina (comença en 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Clients per pàgina (màx. 100)', example: 20 })

@@ -16,7 +16,7 @@ export const TREBALLADOR_COLORS: Record<string, string> = {
 
 export const EMPRESA_COLORS: Record<string, string> = {
     FESTA_LOCAL:   '#F97316',  // orange
-    FESTA_ESTATAL: '#FF6A00',  // primary orange
+    FESTA_ESTATAL: '#6366F1',  // primary indigo
     PONT:          '#F59E0B',  // amber
     ALTRE:         '#94A3B8',  // slate
 };

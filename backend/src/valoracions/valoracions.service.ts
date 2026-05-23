@@ -8,7 +8,7 @@ import { CurrentUserData } from '../common/decorators/current-user.decorator';
 export class ValoracionsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(dto: CreateValoracioDto) {
+    async create(dto: CreateValoracioDto, user: CurrentUserData) {
         let empresaId: number;
         let treballadorId: number | null = null;
 
@@ -25,6 +25,10 @@ export class ValoracionsService {
             });
             if (!empresa) throw new NotFoundException('Empresa/Sala no encontrada');
             empresaId = empresa.id;
+        }
+
+        if (empresaId !== user.empresaId) {
+            throw new ForbiddenException('Access denied');
         }
 
         return this.prisma.valoracio.create({
@@ -193,13 +197,14 @@ export class ValoracionsService {
         };
     }
 
-    findAll() {
+    findAll(user: CurrentUserData) {
         return this.prisma.valoracio.findMany({
+            where: { empresaId: user.empresaId },
             include: {
                 empresa: true,
                 treballador: true,
                 servei: true,
-            }
+            },
         });
     }
 

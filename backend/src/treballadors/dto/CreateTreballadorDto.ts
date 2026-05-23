@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsArray, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsArray, Min, IsDateString } from 'class-validator';
 
 export class CreateTreballadorDto {
     @ApiProperty({ example: 'Juan Pérez', description: 'Nombre del trabajador' })
@@ -32,4 +32,9 @@ export class CreateTreballadorDto {
     @IsInt({ each: true })
     @IsOptional()
     serveisIds?: number[];
+
+    @ApiProperty({ example: '2026-05-19', required: false, description: 'Data d\'inici de la rotació de jornada (ISO date). Per defecte: avui.' })
+    @IsDateString()
+    @IsOptional()
+    dataIniciRotacio?: string;
 }

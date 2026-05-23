@@ -101,7 +101,7 @@ export interface PlantillaSummary {
     accentColor: string;
 }
 
-const ACCENT_COLORS = ['#FF6A00', '#3B82F6', '#8B5CF6', '#22C55E', '#EF4444', '#F59E0B'];
+const ACCENT_COLORS = ['#6366F1', '#3B82F6', '#8B5CF6', '#22C55E', '#EF4444', '#F59E0B'];
 const SHORT_DOW: Record<number, string> = { 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S', 7: 'D' };
 
 /** Transforma la respuesta cruda del API en un resumen para la UI */

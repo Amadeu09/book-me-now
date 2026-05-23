@@ -130,7 +130,7 @@ export class TreballadorsController {
   }
 
   @Put(':id')
-  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Actualizar trabajador' })
   @ApiParam({ name: 'id', description: 'ID del trabajador' })
   @ApiBody({ type: UpdateTreballadorDto })
@@ -147,7 +147,7 @@ export class TreballadorsController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN_GENERAL', 'EMPLEAT')
+  @Roles('ADMIN_GENERAL')
   @ApiOperation({ summary: 'Eliminar trabajador' })
   @ApiParam({ name: 'id', description: 'ID del trabajador' })
   @ApiResponse({ status: 200, description: 'Trabajador eliminado correctamente' })

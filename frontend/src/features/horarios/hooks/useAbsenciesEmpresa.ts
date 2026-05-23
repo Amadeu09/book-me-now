@@ -35,7 +35,7 @@ export function useAbsenciesEmpresa() {
             setAllFuture(future);
             setPage(1);
         } catch (e) {
-            console.error('[useAbsenciesEmpresa] fetch error', e);
+            if (__DEV__) console.error('[useAbsenciesEmpresa] fetch error', e);
         } finally {
             setIsLoading(false);
         }

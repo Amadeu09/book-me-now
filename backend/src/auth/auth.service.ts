@@ -6,20 +6,31 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginDto, SignupDto, LoginResponseDto, JwtPayload, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto } from './dto/auth.dto';
+import { LoginDto, SignupDto, LoginResponseDto, JwtPayload, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { TokenBlacklistService } from './token-blacklist.service';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { Resend } from 'resend';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly resend: Resend;
+  private readonly emailFrom: string;
+  private readonly portalUrl: string;
 
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private tokenBlacklistService: TokenBlacklistService,
-  ) {}
+    private config: ConfigService,
+  ) {
+    this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
+    this.emailFrom = this.config.get<string>('EMAIL_FROM');
+    this.portalUrl = this.config.get<string>('PORTAL_URL') ?? 'http://localhost:3002';
+  }
 
   /**
    * Login user and generate JWT token
@@ -218,6 +229,58 @@ export class AuthService {
     });
     this.logger.log(`Idioma updated for user: ${userId}`);
     return { idioma: dto.idioma };
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await this.prisma.usuari.findUnique({ where: { email } });
+    // Always return the same message to prevent email enumeration
+    if (!user) return { message: 'Si existeix el compte, rebràs un correu en breus.' };
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+
+    await this.prisma.usuari.update({
+      where: { email },
+      data: { resetToken: token, resetTokenExpiry: expiry },
+    });
+
+    const resetUrl = `${this.portalUrl}/reset-password?token=${token}`;
+
+    this.resend.emails.send({
+      from: this.emailFrom,
+      to: email,
+      subject: 'Restableix la teva contrasenya — BookMeNow',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px;">
+          <h2 style="color:#6366F1;margin:0 0 8px">BookMeNow</h2>
+          <p style="color:#334155;font-size:15px;">Has sol·licitat restablir la teva contrasenya. Fes clic al botó per continuar:</p>
+          <a href="${resetUrl}" style="display:inline-block;margin:20px 0;padding:14px 28px;background:#6366F1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;">
+            Restablir contrasenya
+          </a>
+          <p style="color:#6B7280;font-size:13px;">L'enllaç caducarà en <strong>30 minuts</strong>. Si no has sol·licitat cap canvi, ignora aquest correu.</p>
+        </div>
+      `,
+    }).catch(err => this.logger.error('Error sending reset email', err));
+
+    this.logger.log(`Password reset requested for: ${email}`);
+    return { message: 'Si existeix el compte, rebràs un correu en breus.' };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    const user = await this.prisma.usuari.findUnique({ where: { resetToken: token } });
+
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('Token invàlid o caducat');
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.usuari.update({
+      where: { id: user.id },
+      data: { hash, resetToken: null, resetTokenExpiry: null },
+    });
+
+    this.logger.log(`Password reset successful for user: ${user.id}`);
+    return { message: 'Contrasenya restablerta correctament' };
   }
 
   /**

@@ -12,6 +12,7 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  FileTypeValidator,
   Query,
   BadRequestException,
 } from '@nestjs/common';
@@ -145,6 +146,7 @@ export class EmpresasController {
             maxSize: 1024 * 1024 * 5,
             message: 'El archivo es demasiado grande (máx 5MB)',
           }),
+          new FileTypeValidator({ fileType: /image\/(jpeg|png|webp)/ }),
         ],
       }),
     )
@@ -169,6 +171,7 @@ export class EmpresasController {
             maxSize: 1024 * 1024 * 8,
             message: 'El archivo es demasiado grande (máx 8MB)',
           }),
+          new FileTypeValidator({ fileType: /image\/(jpeg|png|webp)/ }),
         ],
       }),
     )

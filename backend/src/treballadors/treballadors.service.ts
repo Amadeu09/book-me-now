@@ -9,6 +9,21 @@ const PLANTILLA_INCLUDE = {
   rotacions: { include: { dies: { include: { trams: true } } } },
 } as const;
 
+function parseDateInici(iso?: string): Date {
+  const d = iso ? new Date(iso) : new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getMondayOfWeek(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0=Sun, 1=Mon, ...
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
 @Injectable()
 export class TreballadorsService {
   constructor(private prisma: PrismaService) { }
@@ -28,7 +43,7 @@ export class TreballadorsService {
         idUsuari: dto.idUsuari,
         nom: dto.nom,
         ...(dto.diesVacancesAnuals !== undefined ? { diesVacancesAnuals: dto.diesVacancesAnuals } : {}),
-        ...(dto.plantillaId ? { plantillaId: dto.plantillaId } : {}),
+        ...(dto.plantillaId ? { plantillaId: dto.plantillaId, dataIniciRotacio: parseDateInici(dto.dataIniciRotacio) } : {}),
       },
     });
 
@@ -142,11 +157,21 @@ export class TreballadorsService {
         disponibilitat[dateString] = []; continue;
       }
 
+      const refDate = new Date(treballador.dataIniciRotacio ?? currentDate);
+      refDate.setHours(0, 0, 0, 0);
+      if (currentDate < refDate) { disponibilitat[dateString] = []; continue; }
+
       let dow = currentDate.getDay();
       if (dow === 0) dow = 7;
 
       const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
-      const rotacio = rotacionsOrdenades[0];
+      const numRotacions = rotacionsOrdenades.length;
+      const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+      const mondayRef = getMondayOfWeek(refDate);
+      const mondayCurrent = getMondayOfWeek(currentDate);
+      const setmanes = Math.round((mondayCurrent.getTime() - mondayRef.getTime()) / MS_PER_WEEK);
+      const rotacioIdx = ((setmanes % numRotacions) + numRotacions) % numRotacions;
+      const rotacio = rotacionsOrdenades[rotacioIdx];
       if (!rotacio) { disponibilitat[dateString] = []; continue; }
 
       const diaRotacio = rotacio.dies.find(d => d.dow === dow);
@@ -272,11 +297,21 @@ export class TreballadorsService {
         disponibilitat[dateString] = []; continue;
       }
 
+      const refDate = new Date(treballador.dataIniciRotacio ?? currentDate);
+      refDate.setHours(0, 0, 0, 0);
+      if (currentDate < refDate) { disponibilitat[dateString] = []; continue; }
+
       let dow = currentDate.getDay();
       if (dow === 0) dow = 7;
 
       const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
-      const rotacio = rotacionsOrdenades[0];
+      const numRotacions = rotacionsOrdenades.length;
+      const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+      const mondayRef = getMondayOfWeek(refDate);
+      const mondayCurrent = getMondayOfWeek(currentDate);
+      const setmanes = Math.round((mondayCurrent.getTime() - mondayRef.getTime()) / MS_PER_WEEK);
+      const rotacioIdx = ((setmanes % numRotacions) + numRotacions) % numRotacions;
+      const rotacio = rotacionsOrdenades[rotacioIdx];
       if (!rotacio) { disponibilitat[dateString] = []; continue; }
 
       const diaRotacio = rotacio.dies.find(d => d.dow === dow);
@@ -432,7 +467,13 @@ export class TreballadorsService {
           if (!plantilla) throw new NotFoundException('La plantilla de jornada no existeix');
           if (plantilla.empresaId !== empresaId) throw new ForbiddenException('La plantilla no pertany a la teva empresa');
         }
-        await tx.treballador.update({ where: { id }, data: { plantillaId: dto.plantillaId } });
+        await tx.treballador.update({
+          where: { id },
+          data: {
+            plantillaId: dto.plantillaId,
+            dataIniciRotacio: dto.plantillaId !== null ? parseDateInici(dto.dataIniciRotacio) : null,
+          },
+        });
       }
 
       return await tx.treballador.findUnique({
@@ -478,7 +519,6 @@ export class TreballadorsService {
 
     return await this.prisma.$transaction(async (tx) => {
       await tx.treballadorServei.deleteMany({ where: { treballadorId: id } });
-      await tx.jornada.deleteMany({ where: { treballadorId: id } });
       await tx.absencia.deleteMany({ where: { treballadorId: id } });
       await tx.reserva.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });
       await tx.valoracio.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });

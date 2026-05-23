@@ -25,25 +25,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             </View>
 
             <View style={styles.rightSection}>
-                <View style={styles.viewSwitcher}>
-                    {(['week', 'month', 'day'] as ViewMode[]).map((mode) => (
-                        <TouchableOpacity
-                            key={mode}
-                            style={[
-                                styles.switchButton,
-                                viewMode === mode && styles.switchButtonActive
-                            ]}
-                            onPress={() => onChangeViewMode(mode)}
-                        >
-                            <Text style={[
-                                styles.switchText,
-                                viewMode === mode && styles.switchTextActive
-                            ]}>
-                                {mode === 'day' ? t('calendarViewDay') : mode === 'week' ? t('calendarViewWeek') : t('calendarViewMonth')}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+
 
                 <TouchableOpacity style={styles.createButton} onPress={onQuickCreate}>
                     <Feather name="plus" size={18} color="white" style={{ marginRight: 6 }} />

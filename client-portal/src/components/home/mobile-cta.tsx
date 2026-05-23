@@ -14,14 +14,14 @@ const PLATFORMS = [
     name: "Android",
     store: "Google Play",
     os: "Android",
-    image: "/images/estadisitques-mobil.png",
+    image: "/images/estadistiques-mobil-nou.png",
     imageAlt: "BookMeNow en Android",
   },
 ];
 
 export function MobileCta() {
   return (
-    <section className="px-6 md:px-12 max-w-[1920px] mx-auto mb-40">
+    <section id="proximamente" className="px-6 md:px-12 max-w-[1920px] mx-auto mb-40">
       <div className="bg-surface-container-low rounded-[4rem] px-12 md:px-24 py-20 flex flex-col md:flex-row items-center gap-16">
 
         {/* Text */}

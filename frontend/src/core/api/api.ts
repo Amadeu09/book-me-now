@@ -1,11 +1,12 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import { getToken, clearSession } from '@/utils/session';
 
-// Resolución robusta de la base URL para dispositivo físico:
-// 1. Env var EXPO_PUBLIC_API_URL (recomendado)
-// 2. extra.apiUrl definida en app.config.ts
-// 3. hostUri de Expo (ej: 192.168.x.x:8081) -> construimos http://IP:3000
+// Resolució robusta de la base URL per a dispositiu físic:
+// 1. Env var EXPO_PUBLIC_API_URL (recomanat)
+// 2. extra.apiUrl definida a app.config.ts
+// 3. hostUri d'Expo (ex: 192.168.x.x:8081) -> construïm http://IP:3000
 // 4. Fallback final localhost:3000
 
 interface ExpoConfigExtra {
@@ -28,7 +29,7 @@ function resolveApiBase(): string {
   }
   if (!candidate) candidate = 'http://localhost:3000';
 
-  // Normaliza para no duplicar "/api" si viene incluido por error
+  // Normalitza per no duplicar "/api" si ve inclòs per error
   candidate = candidate.replace(/\/+$/, '');
   candidate = candidate.replace(/\/?api$/i, '');
   return candidate;
@@ -36,21 +37,39 @@ function resolveApiBase(): string {
 
 const API_URL = `${resolveApiBase()}/api`;
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' }
-});
-
 if (__DEV__) {
   // eslint-disable-next-line no-console
   console.log('[API] Base URL:', API_URL);
 }
 
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+});
 
-// Interceptor de respuesta para loguear errores de red detallados en desarrollo
+// Request interceptor: afegeix Bearer token + corregeix Content-Type per multipart
+api.interceptors.request.use(async (config) => {
+  try {
+    const token = await getToken();
+    if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
+  } catch {
+    // ignore
+  }
+
+  // Quan s'envia FormData, elimina el 'application/json' per defecte perquè
+  // React Native XHR pugui establir 'multipart/form-data; boundary=...' automàticament.
+  if (config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type'];
+  }
+
+  return config;
+});
+
+// Response interceptor: gestió d'errors 401 + logging en dev
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
+  async (error) => {
     if (__DEV__) {
       const cfg = error.config || {};
       // eslint-disable-next-line no-console
@@ -63,26 +82,19 @@ api.interceptors.response.use(
         data: error.response?.data,
       });
     }
+
+    // Token expirat o invàlid → neteja sessió i redirigeix a login
+    if (error.response?.status === 401) {
+      try {
+        await clearSession();
+        router.replace('/login');
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+
     return Promise.reject(error);
   }
 );
-
-// Request interceptor: add bearer token + fix Content-Type for multipart uploads
-api.interceptors.request.use(async (config) => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
-  } catch (err) {
-    // ignore
-  }
-
-  // When sending FormData, remove the default 'application/json' Content-Type so the
-  // browser / React Native XHR can set 'multipart/form-data; boundary=...' automatically.
-  if (config.data instanceof FormData && config.headers) {
-    delete config.headers['Content-Type'];
-  }
-
-  return config;
-});
 
 export default api;

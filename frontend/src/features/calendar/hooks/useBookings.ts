@@ -84,7 +84,7 @@ export const useBookings = (startDate: Date, endDate: Date, userRole: string | u
 
                 setEvents(mappedEvents);
             } catch (err: any) {
-                console.error('Error fetching bookings:', err);
+                if (__DEV__) console.error('Error fetching bookings:', err);
                 setError(err.message || 'Error occurred');
             } finally {
                 setLoading(false);

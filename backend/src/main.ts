@@ -9,9 +9,12 @@ import helmet from 'helmet';
 dotenv.config();
 
 async function bootstrap() {
+  const isProduction = process.env.NODE_ENV === 'production';
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    logger: isProduction
+      ? ['error', 'warn', 'log']
+      : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
   // Configure Cloudinary
@@ -19,8 +22,6 @@ async function bootstrap() {
 
   // M5: Security headers
   app.use(helmet());
-
-  const isProduction = process.env.NODE_ENV === 'production';
 
   // M1: CORS — no-origin requests only allowed outside production
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
@@ -83,7 +84,6 @@ async function bootstrap() {
     .addTag('clients', 'Clientes')
     .addTag('reserves', 'Reservas')
     .addTag('absencies', 'Ausencias y bajas')
-    .addTag('factures', 'Facturas y pagos')
     .addTag('jornades', 'Jornadas y turnos')
     .addTag('valoracions', 'Valoraciones y reseñas')
     .addTag('botiga', 'Tienda y productos')

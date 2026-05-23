@@ -28,6 +28,37 @@ export class AbsenciesController {
         return this.absenciesService.getPendents(user.empresaId, page, rows);
     }
 
+    @Get('treballador/:treballadorId/vacances-resum')
+    @Roles('ADMIN_GENERAL')
+    @ApiOperation({ summary: 'Resum de vacances aprovades d\'un treballador (ADMIN_GENERAL)' })
+    @ApiParam({ name: 'treballadorId', type: Number })
+    @ApiResponse({ status: 200, description: '{ diesVacancesAnuals, vacancesUsed }' })
+    @ApiResponse({ status: 403, description: 'Treballador d\'una altra empresa' })
+    @ApiResponse({ status: 404, description: 'Treballador no trobat' })
+    getVacancesResum(
+        @Param('treballadorId', ParseIntPipe) treballadorId: number,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        return this.absenciesService.getVacancesResumTreballador(treballadorId, user.empresaId);
+    }
+
+    @Get('treballador/:treballadorId/absencies-calendari')
+    @Roles('ADMIN_GENERAL')
+    @ApiOperation({ summary: 'Calendari d\'absències d\'un treballador (ADMIN_GENERAL)' })
+    @ApiParam({ name: 'treballadorId', type: Number })
+    @ApiQuery({ name: 'any', required: false, type: Number, description: 'Filtrar per any (p.ex. 2026)' })
+    @ApiResponse({ status: 200, description: '{ treballador: Absencia[], empresa: AbsenciaEmpresa[], diesVacancesAnuals, missatgeDies }' })
+    @ApiResponse({ status: 403, description: 'Treballador d\'una altra empresa' })
+    @ApiResponse({ status: 404, description: 'Treballador no trobat' })
+    getAbsenciesCalendari(
+        @Param('treballadorId', ParseIntPipe) treballadorId: number,
+        @CurrentUser() user: CurrentUserData,
+        @Query('any') anyStr?: string,
+    ) {
+        const any = anyStr !== undefined ? parseInt(anyStr, 10) : undefined;
+        return this.absenciesService.getAbsenciesCalendariTreballador(treballadorId, user.empresaId, any);
+    }
+
     @Post()
     @Roles('ADMIN_GENERAL', 'EMPLEAT')
     @ApiOperation({ summary: 'Sol·licitar una absència. EMPLEAT → PENDENT; ADMIN_GENERAL → APROVADA directament' })

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, ValidateIf, IsArray, Min, Max } from 'class-validator';
+import { IsInt, IsOptional, IsString, ValidateIf, IsArray, Min, Max, IsDateString } from 'class-validator';
 
 export class UpdateTreballadorDto {
     @ApiProperty({ example: 'Juan Pérez', description: 'Nombre del trabajador', required: false })
@@ -27,4 +27,9 @@ export class UpdateTreballadorDto {
     @Max(365)
     @IsOptional()
     diesVacancesAnuals?: number;
+
+    @ApiProperty({ example: '2026-05-19', required: false, description: 'Data d\'inici de la rotació de jornada (ISO date).' })
+    @IsDateString()
+    @IsOptional()
+    dataIniciRotacio?: string;
 }

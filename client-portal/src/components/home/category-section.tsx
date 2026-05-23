@@ -8,7 +8,7 @@ const STEPS = [
     description:
       "Añade tus servicios, define precios y duración, crea las plantillas de horarios de tus empleados y personaliza tu perfil de empresa.",
     tags: ["Servicios", "Horarios", "Empleados"],
-    image: "/images/horaris-escriptori.png",
+    image: "/images/horaris-escriptori-nou.png",
     imageAlt: "Pantalla de configuración de horarios",
   },
   {
@@ -18,7 +18,7 @@ const STEPS = [
     description:
       "Tus clientes acceden a tu portal, eligen el servicio, el empleado y el horario disponible. Reserva confirmada en segundos, sin llamadas.",
     tags: ["Portal cliente", "Disponibilidad", "24/7"],
-    image: "/images/calendari-escriptori.png",
+    image: "/images/calendari-escriptori-nou.png",
     imageAlt: "Calendario de reservas",
   },
   {
@@ -28,14 +28,14 @@ const STEPS = [
     description:
       "Consulta el calendario de reservas, aprueba ausencias, revisa estadísticas de ingresos y lee las valoraciones de tus clientes.",
     tags: ["Calendario", "Estadísticas", "Valoraciones"],
-    image: "/images/estadistiques-escriptori.png",
+    image: "/images/estadistiques-escriptori-nou.png",
     imageAlt: "Panel de estadísticas y clientes",
   },
 ];
 
 export function CategorySection() {
   return (
-    <section className="bg-surface-container-low py-32 px-6 md:px-12 mb-40 rounded-[4rem]">
+    <section id="como-funciona" className="bg-surface-container-low py-32 px-6 md:px-12 mb-40 rounded-[4rem]">
       <div className="max-w-[1920px] mx-auto">
         {/* Header */}
         <div className="text-center mb-20 max-w-2xl mx-auto">

@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HC } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { useLanguage } from '@/core/i18n';
-import { updateReservaEstat, deleteReserva } from '../services/calendarApi';
+import { updateReservaEstat } from '../services/calendarApi';
 import type { CalendarEvent } from './types';
 
 const ESTAT_COLORS: Record<string, string> = {
@@ -98,15 +98,10 @@ export function BookingDetailModal({ visible, event, onClose, onStatusChanged }:
         setLoading(accio);
         setConfirming(null);
         try {
-            if (accio === 'CANCELLADA') {
-                await deleteReserva(r.id);
-                onStatusChanged();
-                onClose();
-            } else {
-                await updateReservaEstat(r.id, accio);
-                setLocalEstat(accio);
-                onStatusChanged();
-            }
+            await updateReservaEstat(r.id, accio);
+            setLocalEstat(accio);
+            onStatusChanged();
+            if (accio === 'CANCELLADA') onClose();
         } catch {
             // no-op: deixem l'estat com estava
         } finally {

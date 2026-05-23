@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, Get } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -8,7 +8,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto, SignupDto, LoginResponseDto, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto } from './dto/auth.dto';
+import { LoginDto, SignupDto, LoginResponseDto, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { UsuarisService } from '../usuaris/usuaris.service';
 
 @ApiTags('auth')
@@ -116,6 +116,30 @@ export class AuthController {
     return this.authService.updateIdioma(user.userId, dto);
   }
 
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: 'Sol·licitar restabliment de contrasenya', description: 'Envia un email amb un token de restabliment (30 min de validesa)' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 200, description: 'Resposta genèrica (seguretat anti-enumeració)' })
+  @ApiResponse({ status: 429, description: 'Massa intents' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    this.logger.debug(`POST /api/auth/forgot-password - Email: ${dto.email}`);
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Restablir contrasenya amb token', description: 'Estableix una nova contrasenya usant el token rebut per correu' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 200, description: 'Contrasenya restablerta' })
+  @ApiResponse({ status: 400, description: 'Token invàlid o caducat' })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    this.logger.debug('POST /api/auth/reset-password');
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
   @Patch('me/foto')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -129,7 +153,10 @@ export class AuthController {
   async uploadMyFoto(
     @UploadedFile(
       new ParseFilePipe({
-        validators: [new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5, message: 'Màx 5MB' })],
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5, message: 'Màx 5MB' }),
+          new FileTypeValidator({ fileType: /image\/(jpeg|png|webp)/ }),
+        ],
       }),
     )
     file: Express.Multer.File,
