@@ -137,6 +137,7 @@ export class AuthService {
           activa: true,
           descripcio: signupDto.empresa.descripcio ?? null,
           ...(signupDto.empresa.diasAntesReserva ? { diasAntesReserva: signupDto.empresa.diasAntesReserva } : {}),
+          ...(signupDto.empresa.tipo ? { tipo: signupDto.empresa.tipo } : {}),
         },
       });
 

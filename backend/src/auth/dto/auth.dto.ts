@@ -1,6 +1,7 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, Matches, MaxLength, IsIn } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, Matches, MaxLength, IsIn, IsEnum, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { Rol } from '@prisma/client';
+import { Rol, BusinessType } from '@prisma/client';
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@bookmenow.com', description: 'Email del usuario' })
@@ -66,15 +67,21 @@ export class SignupEmpresaDto {
   @Min(1)
   diasAntesReserva?: number;
 
+  @ApiProperty({ enum: BusinessType, required: false })
+  @IsOptional()
+  @IsEnum(BusinessType)
+  tipo?: BusinessType;
 }
 
 export class SignupDto {
   @ApiProperty({ type: SignupUsuariDto, description: 'Datos del usuario administrador' })
-  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => SignupUsuariDto)
   usuari: SignupUsuariDto;
 
   @ApiProperty({ type: SignupEmpresaDto, description: 'Datos de la empresa' })
-  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => SignupEmpresaDto)
   empresa: SignupEmpresaDto;
 }
 

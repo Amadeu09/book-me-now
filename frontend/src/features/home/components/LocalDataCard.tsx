@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { AuthUser } from '@/features/auth/services/auth.service';
 import { EditEmpresaModal } from '@/features/empresas/components/modal/EditEmpresaModal';
 import { uploadFotoEmpresa, uploadBannerEmpresa } from '@/features/empresas/services/empresas.service';
+import { patchStoredEmpresa } from '@/utils/session';
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { useLanguage } from '@/core/i18n';
 
@@ -43,7 +44,9 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa, onEmpresa
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 setIsUploadingPhoto(true);
-                await uploadFotoEmpresa(empresa.id, result.assets[0].uri);
+                const updated = await uploadFotoEmpresa(empresa.id, result.assets[0].uri);
+                if (updated?.fotoPerfil) await patchStoredEmpresa({ fotoPerfil: updated.fotoPerfil });
+                onEmpresaUpdated?.();
                 queryClient.invalidateQueries({ queryKey: ['empresa', empresa.id] });
                 Alert.alert(t('success'), t('photoUpdated'));
             }
@@ -64,7 +67,9 @@ export const LocalDataCard: React.FC<LocalDataCardProps> = ({ empresa, onEmpresa
             });
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 setIsUploadingBanner(true);
-                await uploadBannerEmpresa(empresa.id, result.assets[0].uri);
+                const updated = await uploadBannerEmpresa(empresa.id, result.assets[0].uri);
+                if (updated?.bannerUrl) await patchStoredEmpresa({ bannerUrl: updated.bannerUrl });
+                onEmpresaUpdated?.();
                 queryClient.invalidateQueries({ queryKey: ['empresa', empresa.id] });
                 Alert.alert(t('success'), t('bannerUpdated'));
             }

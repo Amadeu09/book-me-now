@@ -24,6 +24,7 @@ export class EstadisticasService {
         const nNoShow = query.mesNoShow ?? 6;
 
         const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const visitesStart = new Date(now.getFullYear(), now.getMonth() - nVisites + 1, 1);
         const noShowStart = new Date(now.getFullYear(), now.getMonth() - nNoShow + 1, 1);
@@ -38,7 +39,7 @@ export class EstadisticasService {
                 select: { dataHora: true },
             }),
             this.prisma.reserva.findMany({
-                where: { empresaId, estat: ReservaEstat.CONFIRMADA, dataHora: { gte: currentMonthStart } },
+                where: { empresaId, estat: ReservaEstat.CONFIRMADA, dataHora: { gte: currentMonthStart, lt: nextMonthStart } },
                 select: { servei: { select: { preu: true } } },
             }),
             this.prisma.reserva.findMany({

@@ -23,7 +23,16 @@ async function bootstrap() {
   // M5: Security headers
   app.use(helmet());
 
-  // M1: CORS — no-origin requests only allowed outside production
+  // Health check BEFORE CORS — Docker/load balancer probes have no Origin header
+  app.use('/health', (_req: any, res: any) => {
+    const base = { status: 'ok' };
+    const payload = isProduction
+      ? base
+      : { ...base, uptime: process.uptime(), environment: process.env.NODE_ENV };
+    res.status(200).json(payload);
+  });
+
+  // M1: CORS — browser requests must have an allowed Origin
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
     'http://localhost:3000',
     'http://localhost:19000',
@@ -32,13 +41,9 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (Expo mobile, Postman) only in non-production
+      // No-origin = server-to-server (Next.js SSR, curl, Postman) — never a browser CSRF risk
       if (!origin) {
-        if (isProduction) {
-          callback(new Error('Not allowed by CORS'));
-        } else {
-          callback(null, true);
-        }
+        callback(null, true);
         return;
       }
 
@@ -109,15 +114,6 @@ async function bootstrap() {
       customCss: '.swagger-ui .topbar { display: none }',
     });
   }
-
-  // M3: Healthcheck — expose uptime/env only outside production
-  app.getHttpAdapter().get('/health', (_req, res) => {
-    const base = { status: 'ok' };
-    const payload = isProduction
-      ? base
-      : { ...base, uptime: process.uptime(), environment: process.env.NODE_ENV };
-    res.status(200).json(payload);
-  });
 
   const port = parseInt(process.env.PORT || '3000', 10);
   await app.listen(port);
