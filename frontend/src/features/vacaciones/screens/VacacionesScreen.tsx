@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
     View, ScrollView, StyleSheet, ActivityIndicator,
@@ -13,10 +13,108 @@ import { AnnualCalendar } from '../components/AnnualCalendar';
 import { ProximosFestivos } from '../components/ProximosFestivos';
 import { SolicitudesRecientes } from '../components/SolicitudesRecientes';
 import { CreateAbsenciaModal } from '../components/modal/CreateAbsenciaModal';
+import { EditAbsenciaModal } from '../components/modal/EditAbsenciaModal';
 import { AbsenciaLegend } from '../components/AbsenciaLegend';
-import { useVacaciones } from '../hooks/useVacaciones';
+import { useVacaciones, useWorkerCalendar, useDeleteAbsencia } from '../hooks/useVacaciones';
+import { getUser } from '@/utils/session';
+import { getTreballadorsLlista } from '../services/vacaciones.service';
+import type { AbsenciaTreballador, TreballadorBasicVacances } from '../types/vacaciones.types';
 
 const YEAR = new Date().getFullYear();
+
+type WorkerFilterProps = {
+    treballadors: TreballadorBasicVacances[];
+    viewTreballadorId: number | null;
+    workerLoading: boolean;
+    theme: any;
+    noPad?: boolean;
+    onSelect: (id: number | null) => void;
+};
+
+function WorkerFilter({ treballadors, viewTreballadorId, workerLoading, theme, noPad, onSelect }: WorkerFilterProps) {
+    return (
+        <View style={[filterStyles.container, noPad && { paddingHorizontal: 0 }]}>
+            <View style={filterStyles.row}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={filterStyles.chips}>
+                    <TouchableOpacity
+                        style={[filterStyles.chip, viewTreballadorId === null && { backgroundColor: theme.primary, borderColor: theme.primary }]}
+                        onPress={() => onSelect(null)}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="person-outline" size={13} color={viewTreballadorId === null ? '#fff' : HC.textMuted} />
+                        <Text style={[filterStyles.chipText, viewTreballadorId === null && filterStyles.chipTextActive]}>Jo</Text>
+                    </TouchableOpacity>
+                    {treballadors.map(t => {
+                        const isSel = viewTreballadorId === t.id;
+                        return (
+                            <TouchableOpacity
+                                key={t.id}
+                                style={[filterStyles.chip, isSel && { backgroundColor: theme.primary, borderColor: theme.primary }]}
+                                onPress={() => onSelect(isSel ? null : t.id)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[filterStyles.avatar, isSel && { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
+                                    <Text style={filterStyles.avatarText}>{t.nom.charAt(0).toUpperCase()}</Text>
+                                </View>
+                                <Text style={[filterStyles.chipText, isSel && filterStyles.chipTextActive]} numberOfLines={1}>{t.nom}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+                {workerLoading && <ActivityIndicator size="small" color={theme.primary} style={{ marginLeft: 8 }} />}
+            </View>
+        </View>
+    );
+}
+
+const filterStyles = StyleSheet.create({
+    container: {
+        paddingHorizontal: 16,
+        marginBottom: 8,
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    chips: {
+        flexDirection: 'row',
+        gap: 8,
+        paddingVertical: 4,
+    },
+    chip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: HC.border,
+        backgroundColor: HC.white,
+    },
+    chipText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: HC.textSecondary,
+        maxWidth: 100,
+    },
+    chipTextActive: {
+        color: '#fff',
+    },
+    avatar: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#fff',
+    },
+});
 
 function countDays(inici: string, fi: string): number {
     return Math.round((new Date(fi).getTime() - new Date(inici).getTime()) / 86_400_000) + 1;
@@ -33,6 +131,30 @@ export default function VacacionesScreen() {
     const theme = useTheme();
 
     const { data, isLoading, error, holidayDates, absenciaDates, refetch } = useVacaciones(YEAR);
+
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [treballadors, setTreballadors] = useState<TreballadorBasicVacances[]>([]);
+    const [viewTreballadorId, setViewTreballadorId] = useState<number | null>(null);
+
+    useEffect(() => {
+        getUser().then(u => {
+            if (u?.rol === 'ADMIN_GENERAL') {
+                setIsAdmin(true);
+                getTreballadorsLlista().then(setTreballadors).catch(() => {});
+            }
+        });
+    }, []);
+
+    const { absenciaDates: workerAbsenciaDates, data: workerData, isLoading: workerLoading, refetch: workerRefetch } = useWorkerCalendar(viewTreballadorId, YEAR);
+
+    const { mutateAsync: deleteAbs } = useDeleteAbsencia();
+    const [editingAbsencia, setEditingAbsencia] = useState<AbsenciaTreballador | null>(null);
+
+    const handleDelete = async (id: number): Promise<void> => {
+        await deleteAbs(id);
+        refetch();
+        if (viewTreballadorId) workerRefetch();
+    };
 
     const _isFirstFocus = useRef(true);
     useFocusEffect(useCallback(() => {
@@ -111,13 +233,15 @@ export default function VacacionesScreen() {
         );
     }
 
+    const activeAbsenciaDates = workerAbsenciaDates ?? absenciaDates;
+
     const calendarProps = {
         year: YEAR,
         holidayDates,
-        absenciaDates,
-        selStart,
-        selEnd,
-        onDayPress: handleDayPress,
+        absenciaDates: activeAbsenciaDates,
+        selStart: viewTreballadorId ? null : selStart,
+        selEnd: viewTreballadorId ? null : selEnd,
+        onDayPress: viewTreballadorId ? () => {} : handleDayPress,
     };
 
     const statsProps = {
@@ -145,30 +269,59 @@ export default function VacacionesScreen() {
                     <View style={styles.desktopLayout}>
                         <View style={styles.desktopMain}>
                             <StatsSection {...statsProps} />
+                            {isAdmin && treballadors.length > 0 && (
+                                <WorkerFilter
+                                    treballadors={treballadors}
+                                    viewTreballadorId={viewTreballadorId}
+                                    workerLoading={workerLoading}
+                                    theme={theme}
+                                    noPad
+                                    onSelect={id => { setViewTreballadorId(id); setSelStart(null); setSelEnd(null); }}
+                                />
+                            )}
                             <AnnualCalendar numCols={4} {...calendarProps} />
                         </View>
                         <View style={styles.desktopSidebar}>
                             <ProximosFestivos items={data.empresa} />
-                            <SolicitudesRecientes items={data.treballador} />
+                            <SolicitudesRecientes
+                                items={viewTreballadorId ? (workerData?.treballador ?? []) : data.treballador}
+                                isAdmin={isAdmin}
+                                onDelete={isAdmin ? handleDelete : undefined}
+                                onEdit={isAdmin ? setEditingAbsencia : undefined}
+                            />
                             <AbsenciaLegend />
                         </View>
                     </View>
                 ) : (
                     <>
                         <StatsSection {...statsProps} />
+                        {isAdmin && treballadors.length > 0 && (
+                            <WorkerFilter
+                                treballadors={treballadors}
+                                viewTreballadorId={viewTreballadorId}
+                                workerLoading={workerLoading}
+                                theme={theme}
+                                onSelect={id => { setViewTreballadorId(id); setSelStart(null); setSelEnd(null); }}
+                            />
+                        )}
                         <View style={styles.mobileCalendar}>
                             <AnnualCalendar numCols={2} {...calendarProps} />
                         </View>
                         <View style={styles.mobileSections}>
                             <ProximosFestivos items={data.empresa} />
-                            <SolicitudesRecientes items={data.treballador} />
+                            <SolicitudesRecientes
+                                items={viewTreballadorId ? (workerData?.treballador ?? []) : data.treballador}
+                                isAdmin={isAdmin}
+                                onDelete={isAdmin ? handleDelete : undefined}
+                                onEdit={isAdmin ? setEditingAbsencia : undefined}
+                            />
                             <AbsenciaLegend />
                         </View>
                     </>
                 )}
             </ScrollView>
 
-            {selStart !== null && (
+            {selStart !== null && !viewTreballadorId && (
                 <View style={[styles.actionBar, { borderColor: theme.primary, shadowColor: theme.primary }]}>
                     <View style={styles.actionInfo}>
                         <Ionicons name="calendar-outline" size={16} color={theme.primary} />
@@ -197,6 +350,18 @@ export default function VacacionesScreen() {
                 vacancesUsed={vacancesUsed}
                 onClose={() => setModalVisible(false)}
                 onSuccess={refetch}
+                isAdmin={isAdmin}
+                treballadors={treballadors}
+            />
+
+            <EditAbsenciaModal
+                visible={editingAbsencia !== null}
+                absencia={editingAbsencia}
+                onClose={() => setEditingAbsencia(null)}
+                onSuccess={() => {
+                    refetch();
+                    if (viewTreballadorId) workerRefetch();
+                }}
             />
         </SafeAreaView>
     );

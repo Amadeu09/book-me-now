@@ -364,25 +364,46 @@ export default function HorariosScreen() {
                             <GlobalScheduleCard />
                         </View>
 
-                        {/* Personal en turno */}
+                        {/* Plantilles de jornada */}
                         <View style={[styles.mobileSectionHeader, { marginTop: 24 }]}>
-                            <Text style={styles.mobileSectionTitle}>{t('horariosMobilePersonalTitle')}</Text>
-                            <Text style={styles.countText}>12 empleados hoy</Text>
+                            <Text style={styles.mobileSectionTitle}>{t('horariosMobilePlantillesTitle')}</Text>
+                            <TouchableOpacity activeOpacity={0.7} onPress={() => setTemplateModalVisible(true)}>
+                                <Text style={[styles.linkText, { color: theme.primary }]}>{t('horariosCreateNova')}</Text>
+                            </TouchableOpacity>
                         </View>
-
                         <View style={{ paddingHorizontal: 16 }}>
-                            {treballadorsLoading ? (
-                                <Text style={{ padding: 16 }}>{t('loading')}</Text>
+                            {plantillasLoading ? (
+                                <PlantillaListLoading />
+                            ) : plantillasError ? (
+                                <PlantillaListError message={plantillasError} onRetry={() => refetchPlantillas(plantillasPage)} />
+                            ) : plantillas.length === 0 ? (
+                                <PlantillaListEmpty />
                             ) : (
-                                filteredEmployees.slice(0, 3).map((emp: Employee) => (
-                                    <EmployeeShiftCard
-                                        key={emp.id}
-                                        employee={emp}
-                                        variant="card"
-                                        onEdit={handleEditWorker}
-                                        onDelete={handleDeleteWorker}
-                                    />
-                                ))
+                                <>
+                                    {plantillas.map((t) => (
+                                        <PlantillaCard
+                                            key={t.id}
+                                            template={t}
+                                            onEdit={handleEditTemplate}
+                                            onDelete={handleDeleteTemplate}
+                                            isMenuOpen={openMenuId === t.id}
+                                            onMenuOpen={() => setOpenMenuId(t.id)}
+                                            onMenuClose={() => setOpenMenuId(null)}
+                                        />
+                                    ))}
+                                    {plantillasTotalPages > 1 && (
+                                        <View style={{ marginTop: 8 }}>
+                                            <PaginationRow
+                                                currentPage={plantillasPage}
+                                                totalPages={plantillasTotalPages}
+                                                totalItems={plantillasTotal}
+                                                itemsPerPage={2}
+                                                onPageChange={(p) => refetchPlantillas(p)}
+                                                labelTemplate={(count, total) => `${t('paginationShowing')} ${count} ${t('paginationOf')} ${total} ${t('paginationPlantilles')}`}
+                                            />
+                                        </View>
+                                    )}
+                                </>
                             )}
                         </View>
 

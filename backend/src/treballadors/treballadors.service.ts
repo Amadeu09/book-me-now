@@ -519,7 +519,6 @@ export class TreballadorsService {
 
     return await this.prisma.$transaction(async (tx) => {
       await tx.treballadorServei.deleteMany({ where: { treballadorId: id } });
-      await tx.jornada.deleteMany({ where: { treballadorId: id } });
       await tx.absencia.deleteMany({ where: { treballadorId: id } });
       await tx.reserva.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });
       await tx.valoracio.updateMany({ where: { treballadorId: id }, data: { treballadorId: null } });

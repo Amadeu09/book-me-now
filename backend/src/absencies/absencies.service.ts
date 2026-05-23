@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { EstatAbsencia } from '@prisma/client';
+import { EstatAbsencia, TipusAbsencia } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAbsenciaDto, UpdateAbsenciaDto, UpdateEstatAbsenciaDto } from './dto/absencia.dto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
@@ -109,6 +109,50 @@ export class AbsenciesService {
             where: { id: absenciaId },
             data: { estat: dto.estat },
         });
+    }
+
+    async getAbsenciesCalendariTreballador(treballadorId: number, empresaId: number, any?: number) {
+        const treballador = await this.prisma.treballador.findUnique({
+            where: { id: treballadorId },
+            select: { id: true, empresaId: true, diesVacancesAnuals: true },
+        });
+        if (!treballador) throw new NotFoundException('Treballador no trobat');
+        if (treballador.empresaId !== empresaId) throw new ForbiddenException('El treballador no pertany a la teva empresa');
+
+        const yearFilter = any
+            ? { inici: { gte: new Date(`${any}-01-01T00:00:00.000Z`), lte: new Date(`${any}-12-31T23:59:59.999Z`) } }
+            : {};
+
+        const [treballadorAbsencies, empresaAbsencies] = await Promise.all([
+            this.prisma.absencia.findMany({ where: { treballadorId, ...yearFilter }, orderBy: { inici: 'asc' } }),
+            this.prisma.absenciaEmpresa.findMany({ where: { empresaId, ...yearFilter }, orderBy: { inici: 'asc' } }),
+        ]);
+
+        return {
+            treballador: treballadorAbsencies,
+            empresa: empresaAbsencies,
+            diesVacancesAnuals: treballador.diesVacancesAnuals,
+            missatgeDies: treballador.diesVacancesAnuals === 0
+                ? 'No hi ha dies de vacances assignats per aquest treballador.'
+                : null,
+        };
+    }
+
+    async getVacancesResumTreballador(treballadorId: number, empresaId: number) {
+        const treballador = await this.prisma.treballador.findUnique({ where: { id: treballadorId } });
+        if (!treballador) throw new NotFoundException('Treballador no trobat');
+        if (treballador.empresaId !== empresaId) throw new ForbiddenException('El treballador no pertany a la teva empresa');
+
+        const absencies = await this.prisma.absencia.findMany({
+            where: { treballadorId, tipus: TipusAbsencia.VACANCES, estat: EstatAbsencia.APROVADA },
+            select: { inici: true, fi: true },
+        });
+
+        const vacancesUsed = absencies.reduce((sum, a) => {
+            return sum + Math.round((a.fi.getTime() - a.inici.getTime()) / 86_400_000) + 1;
+        }, 0);
+
+        return { diesVacancesAnuals: treballador.diesVacancesAnuals, vacancesUsed };
     }
 
     async remove(empresaId: number, absenciaId: number, currentUserId: number) {

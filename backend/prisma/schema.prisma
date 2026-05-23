@@ -58,7 +58,7 @@ model Usuari {
   resetTokenExpiry  DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  empresa    Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   treballador Treballador?
 
   @@index([empresaId])
@@ -75,9 +75,8 @@ model Treballador {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   absencies   Absencia[]
-  jornades    Jornada[]
   reserves    Reserva[]           @relation("ReservaTreballador")
-  empresa     Empresa             @relation(fields: [empresaId], references: [id])
+  empresa     Empresa             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   serveis     TreballadorServei[]
   valoracions Valoracio[]
 
@@ -98,12 +97,12 @@ model Servei {
   actiu        Boolean             @default(true)
   fotoUrl      String?
   descripcio   String?
-  categoria    BusinessType?       @default(ALTRES)
+  categoria    BusinessType?       @default(OTROS)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   reserves     Reserva[]
   valoracions  Valoracio[]
-  empresa      Empresa             @relation(fields: [empresaId], references: [id])
+  empresa      Empresa             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   treballadors TreballadorServei[]
 
   @@index([empresaId])
@@ -130,8 +129,8 @@ model TreballadorServei {
   id            Int         @id @default(autoincrement())
   treballadorId Int
   serveiId      Int
-  servei        Servei      @relation(fields: [serveiId], references: [id])
-  treballador   Treballador @relation(fields: [treballadorId], references: [id])
+  servei        Servei      @relation(fields: [serveiId], references: [id], onDelete: Cascade)
+  treballador   Treballador @relation(fields: [treballadorId], references: [id], onDelete: Cascade)
 
   @@unique([treballadorId, serveiId])
   @@index([serveiId])
@@ -154,7 +153,7 @@ model Reserva {
   updatedAt          DateTime        @updatedAt
   valoracions        Valoracio[]
   client             Client?         @relation(fields: [clientId], references: [id])
-  empresa            Empresa         @relation(fields: [empresaId], references: [id])
+  empresa            Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   treballador        Treballador?    @relation("ReservaTreballador", fields: [treballadorId], references: [id])
   serveiId           Int
   servei             Servei          @relation(fields: [serveiId], references: [id])
@@ -180,30 +179,14 @@ model Valoracio {
   dataValoracio DateTime       @default(now())
 
   client        Client?        @relation(fields: [clientId], references: [id])
-  empresa       Empresa        @relation(fields: [empresaId], references: [id])
-  treballador   Treballador?   @relation(fields: [treballadorId], references: [id])
+  empresa       Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  treballador   Treballador?   @relation(fields: [treballadorId], references: [id], onDelete: Cascade)
   servei        Servei?        @relation(fields: [serveiId], references: [id])
   reserva       Reserva?       @relation(fields: [reservaId], references: [id])
 
   @@unique([reservaId, tipus])
   @@index([empresaId])
   @@index([tipus, treballadorId])
-}
-
-//
-// --- MODEL EXISTENT: NO TOCAT ---
-// Aquest el mantinc exactament igual.
-//
-model Jornada {
-  id            Int         @id @default(autoincrement())
-  treballadorId Int
-  inici         DateTime
-  fi            DateTime
-  recurrent     Boolean     @default(false)
-  createdAt     DateTime    @default(now())
-  treballador   Treballador @relation(fields: [treballadorId], references: [id])
-
-  @@index([treballadorId, inici])
 }
 
 model Absencia {
@@ -216,7 +199,7 @@ model Absencia {
   estat         EstatAbsencia    @default(PENDENT)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  treballador   Treballador      @relation(fields: [treballadorId], references: [id])
+  treballador   Treballador      @relation(fields: [treballadorId], references: [id], onDelete: Cascade)
 
   @@index([treballadorId, inici])
   @@index([treballadorId, estat])
@@ -230,7 +213,7 @@ model JornadaPlantilla {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   rotacions    JornadaRotacio[]
   treballadors Treballador[]
@@ -250,7 +233,7 @@ model JornadaRotacio {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  plantilla   JornadaPlantilla @relation(fields: [plantillaId], references: [id])
+  plantilla   JornadaPlantilla @relation(fields: [plantillaId], references: [id], onDelete: Cascade)
   dies        JornadaDiaRotacio[]
 
   @@index([plantillaId])
@@ -267,7 +250,7 @@ model JornadaDiaRotacio {
   // opcional (també es pot deduir si no hi ha trams)
   esDescans Boolean @default(false)
 
-  rotacio   JornadaRotacio @relation(fields: [rotacioId], references: [id])
+  rotacio   JornadaRotacio @relation(fields: [rotacioId], references: [id], onDelete: Cascade)
   trams     JornadaTram[]
 
   @@index([rotacioId])
@@ -285,7 +268,7 @@ model JornadaTram {
   // per ordenar al frontend (opcional)
   ordre    Int?
 
-  dia      JornadaDiaRotacio @relation(fields: [diaId], references: [id])
+  dia      JornadaDiaRotacio @relation(fields: [diaId], references: [id], onDelete: Cascade)
 
   @@index([diaId])
 }
@@ -299,7 +282,7 @@ model AbsenciaEmpresa {
   tipus     TipusAbsenciaEmpresa
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
-  empresa   Empresa              @relation(fields: [empresaId], references: [id])
+  empresa   Empresa              @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   @@index([empresaId, inici])
 }

@@ -13,7 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { HC, cardShadow } from '@/features/home/constants/inicio.constants';
 import { useCreateAbsencia } from '../../hooks/useVacaciones';
-import type { TipusAbsenciaTreballador } from '../../types/vacaciones.types';
+import { getTreballadorVacancesResum } from '../../services/vacaciones.service';
+import type { TipusAbsenciaTreballador, TreballadorBasicVacances, VacancesResum } from '../../types/vacaciones.types';
 
 /* ── Types ──────────────────────────────── */
 const TIPUS_OPTIONS: { value: TipusAbsenciaTreballador; label: string; icon: string }[] = [
@@ -41,16 +42,21 @@ type Props = {
     vacancesUsed: number;
     onClose: () => void;
     onSuccess: () => void;
+    isAdmin?: boolean;
+    treballadors?: TreballadorBasicVacances[];
 };
 
 /* ── Component ──────────────────────────── */
-export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, vacancesUsed, onClose, onSuccess }: Props) {
+export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, vacancesUsed, onClose, onSuccess, isAdmin, treballadors }: Props) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
 
     const [tipus, setTipus] = useState<TipusAbsenciaTreballador>('VACANCES');
     const [motiu, setMotiu] = useState('');
     const [apiError, setApiError] = useState<string | null>(null);
+    const [selectedTreballadorId, setSelectedTreballadorId] = useState<number | null>(null);
+    const [resumAdmin, setResumAdmin] = useState<VacancesResum | null>(null);
+    const [resumLoading, setResumLoading] = useState(false);
 
     const { mutateAsync, isPending } = useCreateAbsencia();
 
@@ -59,18 +65,36 @@ export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, va
             setTipus('VACANCES');
             setMotiu('');
             setApiError(null);
+            setSelectedTreballadorId(null);
+            setResumAdmin(null);
         }
     }, [visible]);
 
+    useEffect(() => {
+        if (!selectedTreballadorId) { setResumAdmin(null); return; }
+        setResumLoading(true);
+        getTreballadorVacancesResum(selectedTreballadorId)
+            .then(setResumAdmin)
+            .catch(() => setResumAdmin(null))
+            .finally(() => setResumLoading(false));
+    }, [selectedTreballadorId]);
+
     const daysSelected = inici && fi ? daysBetween(inici, fi) : 0;
-    const diasDisponibles = diesVacancesAnuals - vacancesUsed;
-    const insufficientDays = tipus === 'VACANCES' && daysSelected > diasDisponibles;
+    const effectiveDiesAnuals = (isAdmin && resumAdmin) ? resumAdmin.diesVacancesAnuals : diesVacancesAnuals;
+    const effectiveUsed = (isAdmin && resumAdmin) ? resumAdmin.vacancesUsed : vacancesUsed;
+    const diasDisponibles = effectiveDiesAnuals - effectiveUsed;
+    const insufficientDays = tipus === 'VACANCES' && !resumLoading &&
+        (isAdmin ? (selectedTreballadorId !== null && resumAdmin !== null && daysSelected > diasDisponibles)
+                 : daysSelected > diasDisponibles);
 
     const handleConfirm = async () => {
         if (insufficientDays) return;
         setApiError(null);
         try {
-            await mutateAsync({ inici, fi, tipus, motiu: motiu.trim() || undefined });
+            await mutateAsync({
+                inici, fi, tipus, motiu: motiu.trim() || undefined,
+                ...(isAdmin && selectedTreballadorId ? { treballadorId: selectedTreballadorId } : {}),
+            });
             onSuccess();
             onClose();
         } catch (e: any) {
@@ -120,19 +144,57 @@ export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, va
                             </View>
                         </View>
 
+                        {/* Worker selector (admin only) */}
+                        {isAdmin && treballadors && treballadors.length > 0 && (
+                            <>
+                                <Text style={styles.label}>Assignar a</Text>
+                                <View style={styles.treballadorGrid}>
+                                    {treballadors.map(t => {
+                                        const isSel = selectedTreballadorId === t.id;
+                                        return (
+                                            <TouchableOpacity
+                                                key={t.id}
+                                                style={[styles.treballadorChip, isSel && styles.treballadorChipActive]}
+                                                onPress={() => setSelectedTreballadorId(isSel ? null : t.id)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <View style={[styles.avatar, isSel && styles.avatarActive]}>
+                                                    <Text style={[styles.avatarText, isSel && styles.avatarTextActive]}>
+                                                        {t.nom.charAt(0).toUpperCase()}
+                                                    </Text>
+                                                </View>
+                                                <Text style={[styles.treballadorName, isSel && styles.treballadorNameActive]} numberOfLines={1}>
+                                                    {t.nom}
+                                                </Text>
+                                                {isSel && <Ionicons name="checkmark" size={14} color={HC.primary} />}
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                            </>
+                        )}
+
                         {/* Quota info (VACANCES only) */}
                         {tipus === 'VACANCES' && (
                             <View style={[styles.quotaCard, insufficientDays && styles.quotaCardError]}>
-                                <Ionicons
-                                    name={insufficientDays ? 'warning-outline' : 'checkmark-circle-outline'}
-                                    size={16}
-                                    color={insufficientDays ? HC.red : '#22C55E'}
-                                />
-                                <Text style={[styles.quotaText, insufficientDays && styles.quotaTextError]}>
-                                    {insufficientDays
-                                        ? `No hi ha prou dies disponibles. Tens ${diasDisponibles} dies i en demanes ${daysSelected}.`
-                                        : `${diasDisponibles} dies disponibles de ${diesVacancesAnuals}`}
-                                </Text>
+                                {resumLoading ? (
+                                    <ActivityIndicator size="small" color={HC.primary} />
+                                ) : (
+                                    <>
+                                        <Ionicons
+                                            name={insufficientDays ? 'warning-outline' : 'checkmark-circle-outline'}
+                                            size={16}
+                                            color={insufficientDays ? HC.red : '#22C55E'}
+                                        />
+                                        <Text style={[styles.quotaText, insufficientDays && styles.quotaTextError]}>
+                                            {insufficientDays
+                                                ? `No hi ha prou dies disponibles. Tens ${diasDisponibles} dies i en demanes ${daysSelected}.`
+                                                : isAdmin && !selectedTreballadorId
+                                                    ? 'Selecciona un treballador per veure els dies disponibles'
+                                                    : `${diasDisponibles} dies disponibles de ${effectiveDiesAnuals}`}
+                                        </Text>
+                                    </>
+                                )}
                             </View>
                         )}
 
@@ -189,9 +251,9 @@ export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, va
                             <Text style={styles.btnCancelText}>Cancel·lar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.btnConfirm, (isPending || insufficientDays) && styles.btnDisabled]}
+                            style={[styles.btnConfirm, (isPending || insufficientDays || resumLoading) && styles.btnDisabled]}
                             onPress={handleConfirm}
-                            disabled={isPending || insufficientDays}
+                            disabled={isPending || insufficientDays || resumLoading}
                             activeOpacity={0.8}
                         >
                             {isPending
@@ -424,5 +486,55 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: HC.white,
+    },
+    treballadorGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 4,
+    },
+    treballadorChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: HC.border,
+        backgroundColor: HC.white,
+    },
+    treballadorChipActive: {
+        borderColor: HC.primary,
+        backgroundColor: HC.primaryLight,
+    },
+    avatar: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: HC.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarActive: {
+        backgroundColor: HC.primary,
+    },
+    avatarText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: HC.textMuted,
+    },
+    avatarTextActive: {
+        color: HC.white,
+    },
+    treballadorName: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: HC.textSecondary,
+        maxWidth: 120,
+    },
+    treballadorNameActive: {
+        color: HC.primary,
+        fontWeight: '700',
     },
 });
