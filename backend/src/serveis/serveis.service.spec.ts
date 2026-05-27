@@ -101,15 +101,17 @@ describe('ServeisService', () => {
   });
 
   describe('remove', () => {
-    it('elimina el servei (hard delete)', async () => {
+    it('elimina el servei (soft delete)', async () => {
       const existing = { id: 4, empresaId: 8, actiu: true };
+      const softDeleted = { ...existing, actiu: false };
       prisma.servei.findUnique.mockResolvedValue(existing as any);
-      prisma.servei.delete.mockResolvedValue(existing as any);
+      prisma.servei.update.mockResolvedValue(softDeleted as any);
 
       const res = await service.remove(8, 4);
-      expect(res).toEqual(existing);
-      expect(prisma.servei.delete).toHaveBeenCalledWith({
+      expect(res).toEqual(softDeleted);
+      expect(prisma.servei.update).toHaveBeenCalledWith({
         where: { id: 4 },
+        data: { actiu: false },
       });
     });
   });

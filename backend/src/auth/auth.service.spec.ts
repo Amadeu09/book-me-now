@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenBlacklistService } from './token-blacklist.service';
@@ -43,6 +44,10 @@ describe('AuthService', () => {
           provide: TokenBlacklistService,
           useValue: { addToBlacklist: jest.fn() },
         },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('mock-value') },
+        },
       ],
     }).compile();
 
@@ -74,6 +79,10 @@ describe('AuthService', () => {
         rol: 'ADMIN_GENERAL' as const,
         empresaId: 1,
         empresa: mockEmpresa,
+        fotoPerfil: null,
+        colorPrimari: null,
+        idioma: 'ca',
+        treballador: null,
       };
 
       const mockToken = 'mock.jwt.token';
@@ -91,11 +100,18 @@ describe('AuthService', () => {
           rol: mockUser.rol,
           empresaId: mockUser.empresaId,
           empresa: mockUser.empresa,
+          fotoPerfil: undefined,
+          nom: undefined,
+          colorPrimari: undefined,
+          idioma: 'ca',
         },
       });
       expect(prismaService.usuari.findUnique).toHaveBeenCalledWith({
         where: { email: loginDto.email },
-        include: { empresa: { select: { id: true, nom: true } } },
+        include: {
+          empresa: { select: { id: true, nom: true, ubicacio: true, capacitat: true, fotoPerfil: true, bannerUrl: true, descripcio: true } },
+          treballador: { select: { nom: true } },
+        },
       });
       expect(jwtService.sign).toHaveBeenCalled();
     });
@@ -151,6 +167,9 @@ describe('AuthService', () => {
         ubicacio: signupDto.empresa.ubicacio,
         capacitat: signupDto.empresa.capacitat,
         activa: true,
+        fotoPerfil: null,
+        bannerUrl: null,
+        descripcio: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -161,6 +180,8 @@ describe('AuthService', () => {
         hash: 'hashedPassword',
         rol: 'ADMIN_GENERAL' as const,
         empresaId: mockEmpresa.id,
+        colorPrimari: null,
+        idioma: 'ca',
         createdAt: new Date(),
       };
 
@@ -188,7 +209,19 @@ describe('AuthService', () => {
           email: mockUsuari.email,
           rol: mockUsuari.rol,
           empresaId: mockUsuari.empresaId,
-          empresa: { id: mockEmpresa.id, nom: mockEmpresa.nom },
+          fotoPerfil: undefined,
+          nom: undefined,
+          colorPrimari: undefined,
+          idioma: 'ca',
+          empresa: {
+            id: mockEmpresa.id,
+            nom: mockEmpresa.nom,
+            ubicacio: mockEmpresa.ubicacio,
+            capacitat: mockEmpresa.capacitat,
+            fotoPerfil: undefined,
+            bannerUrl: undefined,
+            descripcio: undefined,
+          },
         },
       });
     });

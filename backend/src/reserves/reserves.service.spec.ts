@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReservesService } from './reserves.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
+import { getQueueToken } from '@nestjs/bull';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CreateReservaDto, UpdateReservaEstatDto } from './dto/reserves.dto';
+import { CreateReservaDto } from './dto/reserves.dto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 const mockUser: CurrentUserData = {
@@ -12,27 +14,26 @@ const mockUser: CurrentUserData = {
     empresaId: 1,
 };
 
+// 2023-01-01 is a Sunday → getDay()=0 → dow=7 (European convention)
+const SUNDAY_DOW = 7;
+const mockPlantilla = {
+    rotacions: [{
+        index: 0,
+        dies: [{ dow: SUNDAY_DOW, esDescans: false, trams: [{ iniciMin: 0, fiMin: 1440 }] }],
+    }],
+};
+const mockTreballador = { id: 1, empresaId: 1, actiu: true, dataIniciRotacio: null, plantilla: mockPlantilla };
+
 const mockPrismaService = {
-    servei: {
-        findUnique: jest.fn(),
-    },
-    treballador: {
-        findUnique: jest.fn(),
-    },
-    reserva: {
-        findMany: jest.fn(),
-        create: jest.fn(),
-        findUnique: jest.fn(),
-        delete: jest.fn(),
-        update: jest.fn(),
-    },
-    usuari: {
-        findUnique: jest.fn(),
-    },
-    client: {
-        findFirst: jest.fn(),
-        create: jest.fn(),
-    },
+    servei: { findUnique: jest.fn() },
+    treballador: { findUnique: jest.fn() },
+    reserva: { findMany: jest.fn(), create: jest.fn(), findUnique: jest.fn(), delete: jest.fn(), update: jest.fn() },
+    usuari: { findUnique: jest.fn() },
+    client: { findFirst: jest.fn(), create: jest.fn(), upsert: jest.fn() },
+    treballadorServei: { findUnique: jest.fn() },
+    absenciaEmpresa: { findFirst: jest.fn().mockResolvedValue(null) },
+    absencia: { findFirst: jest.fn().mockResolvedValue(null) },
+    $transaction: jest.fn(),
 };
 
 describe('ReservesService', () => {
@@ -47,6 +48,14 @@ describe('ReservesService', () => {
                     provide: PrismaService,
                     useValue: mockPrismaService,
                 },
+                {
+                    provide: ConfigService,
+                    useValue: { get: jest.fn() },
+                },
+                {
+                    provide: getQueueToken('emails'),
+                    useValue: { add: jest.fn().mockResolvedValue(undefined) },
+                },
             ],
         }).compile();
 
@@ -54,6 +63,8 @@ describe('ReservesService', () => {
         prisma = module.get<PrismaService>(PrismaService);
 
         jest.clearAllMocks();
+        mockPrismaService.absenciaEmpresa.findFirst.mockResolvedValue(null);
+        mockPrismaService.absencia.findFirst.mockResolvedValue(null);
     });
 
     it('should be defined', () => {
@@ -74,27 +85,36 @@ describe('ReservesService', () => {
         };
 
         it('should create a reserva successfully', async () => {
+            const mockCreated = { id: 100, ...dto, servei: { nom: 'Test' }, treballador: {} };
             mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
-            mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
-            mockPrismaService.reserva.findMany.mockResolvedValue([]); // No overlaps
-            mockPrismaService.client.findFirst.mockResolvedValue({ id: 1 }); // Client exists
-            mockPrismaService.reserva.create.mockResolvedValue({ id: 100, ...dto });
+            mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
+            mockPrismaService.treballadorServei.findUnique.mockResolvedValue({ treballadorId: 1, serveiId: 1 });
+            mockPrismaService.$transaction.mockImplementation(async (callback: any) => {
+                const tx = {
+                    reserva: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn().mockResolvedValue(mockCreated) },
+                    client: { upsert: jest.fn().mockResolvedValue({ id: 1 }), create: jest.fn().mockResolvedValue({ id: 1 }) },
+                };
+                return callback(tx);
+            });
 
             const result = await service.create(dto);
 
             expect(result).toBeDefined();
-            expect(mockPrismaService.reserva.create).toHaveBeenCalled();
+            expect(result.id).toBe(100);
         });
 
         it('should throw ForbiddenException if overlap exists', async () => {
+            const existingReserva = { dataHora: new Date('2023-01-01T10:30:00'), servei: { duradaMin: 60 } };
             mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
-            mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
-
-            const existingReserva = {
-                dataHora: new Date('2023-01-01T10:30:00'),
-                servei: { duradaMin: 60 },
-            };
-            mockPrismaService.reserva.findMany.mockResolvedValue([existingReserva]);
+            mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
+            mockPrismaService.treballadorServei.findUnique.mockResolvedValue({ treballadorId: 1, serveiId: 1 });
+            mockPrismaService.$transaction.mockImplementation(async (callback: any) => {
+                const tx = {
+                    reserva: { findMany: jest.fn().mockResolvedValue([existingReserva]), create: jest.fn() },
+                    client: { upsert: jest.fn(), create: jest.fn() },
+                };
+                return callback(tx);
+            });
 
             await expect(service.create(dto)).rejects.toThrow(ForbiddenException);
         });
@@ -127,7 +147,7 @@ describe('ReservesService', () => {
         it('should update a reserva', async () => {
             mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
             mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
-            mockPrismaService.treballador.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
+            mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
             mockPrismaService.reserva.findMany.mockResolvedValue([]);
             mockPrismaService.client.findFirst.mockResolvedValue({ id: 1 });
             mockPrismaService.reserva.update.mockResolvedValue({ id: 1, ...dto });

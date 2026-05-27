@@ -183,13 +183,10 @@ export default async function EmpresaPage({
               </div>
             )}
 
-            {/* Valoracions */}
+            {/* Horari */}
             <div className={CARD}>
-              <p className={LABEL}>Valoracions</p>
-              <div className="flex flex-col items-center py-4 gap-1.5">
-                <span className="material-symbols-outlined text-gray-300 text-3xl">star</span>
-                <p className="text-sm text-gray-400">Encara no hi ha valoracions</p>
-              </div>
+              <p className={LABEL}>Horari i disponibilitat</p>
+              <AgendaSection agenda={agenda} />
             </div>
 
           </div>
@@ -209,15 +206,6 @@ export default async function EmpresaPage({
                   <span className="text-sm font-medium text-gray-700 text-right max-w-[180px]">
                     {empresa.ubicacio || '—'}
                   </span>
-                </div>
-                <div className="pt-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <span className="material-symbols-outlined text-base">schedule</span>
-                      <span className="text-sm">Disponibilitat</span>
-                    </div>
-                    <AgendaSection agenda={agenda} />
-                  </div>
                 </div>
               </div>
             </div>

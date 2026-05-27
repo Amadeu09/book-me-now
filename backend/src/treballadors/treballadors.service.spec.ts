@@ -34,6 +34,9 @@ describe('TreballadorsService', () => {
         absenciaEmpresa: {
             findMany: jest.fn().mockResolvedValue([]),
         },
+        empresa: {
+            findUnique: jest.fn().mockResolvedValue({ diasAntesReserva: 14 }),
+        },
     };
 
     beforeEach(async () => {
@@ -254,6 +257,11 @@ describe('TreballadorsService', () => {
         const adminUser = { id: adminUserId, rol: 'ADMIN_GENERAL', empresaId };
         const servei = { id: serviceId, empresaId, duradaMin: 60 };
 
+        // Use 2024-01-01 (Monday, dow=1) at 00:01 so all daytime slots are in the future
+        const FAKE_NOW = new Date('2024-01-01T00:01:00');
+        const FAKE_DATE_KEY = '2024-01-01';
+        const FAKE_DOW = 1; // Monday
+
         const makePlantilla = (dow: number) => ({
             rotacions: [{
                 index: 0,
@@ -261,13 +269,20 @@ describe('TreballadorsService', () => {
             }],
         });
 
-        it('should return availability slots', async () => {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            let dow = today.getDay();
-            if (dow === 0) dow = 7;
+        beforeEach(() => {
+            jest.useFakeTimers();
+            jest.setSystemTime(FAKE_NOW);
+        });
 
-            const workerWithPlantilla = { id: workerId, empresaId, plantilla: makePlantilla(dow) };
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('should return availability slots', async () => {
+            const today = new Date(FAKE_NOW);
+            today.setHours(0, 0, 0, 0);
+
+            const workerWithPlantilla = { id: workerId, empresaId, dataIniciRotacio: null, plantilla: makePlantilla(FAKE_DOW) };
 
             mockPrismaService.usuari.findUnique.mockResolvedValue(adminUser);
             mockPrismaService.treballador.findUnique.mockResolvedValue(workerWithPlantilla);
@@ -279,24 +294,22 @@ describe('TreballadorsService', () => {
             const result = await service.getDisponibilitat(empresaId, workerId, serviceId, adminUserId);
 
             expect(result).toBeDefined();
-            const dateKey = today.toISOString().split('T')[0];
-            expect(result[dateKey]).toBeDefined();
-            expect(result[dateKey].length).toBeGreaterThan(0);
+            expect(result[FAKE_DATE_KEY]).toBeDefined();
+            expect(result[FAKE_DATE_KEY].length).toBeGreaterThan(0);
         });
 
         it('should filter slots based on reservations', async () => {
-            const today = new Date();
+            const today = new Date(FAKE_NOW);
             today.setHours(0, 0, 0, 0);
-            let dow = today.getDay();
-            if (dow === 0) dow = 7;
 
             const workerWithPlantilla = {
                 id: workerId,
                 empresaId,
+                dataIniciRotacio: null,
                 plantilla: {
                     rotacions: [{
                         index: 0,
-                        dies: [{ dow, esDescans: false, trams: [{ iniciMin: 480, fiMin: 600 }] }],
+                        dies: [{ dow: FAKE_DOW, esDescans: false, trams: [{ iniciMin: 480, fiMin: 600 }] }],
                     }],
                 },
             };
@@ -314,9 +327,8 @@ describe('TreballadorsService', () => {
 
             const result = await service.getDisponibilitat(empresaId, workerId, serviceId, adminUserId);
 
-            const dateKey = today.toISOString().split('T')[0];
-            expect(result[dateKey]).toContain('09:00 - 10:00');
-            expect(result[dateKey]).not.toContain('08:00 - 09:00');
+            expect(result[FAKE_DATE_KEY]).toContain('09:00 - 10:00');
+            expect(result[FAKE_DATE_KEY]).not.toContain('08:00 - 09:00');
         });
     });
 });

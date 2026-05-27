@@ -44,10 +44,11 @@ type Props = {
     onSuccess: () => void;
     isAdmin?: boolean;
     treballadors?: TreballadorBasicVacances[];
+    initialTreballadorId?: number | null;
 };
 
 /* ── Component ──────────────────────────── */
-export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, vacancesUsed, onClose, onSuccess, isAdmin, treballadors }: Props) {
+export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, vacancesUsed, onClose, onSuccess, isAdmin, treballadors, initialTreballadorId }: Props) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
 
@@ -65,7 +66,7 @@ export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, va
             setTipus('VACANCES');
             setMotiu('');
             setApiError(null);
-            setSelectedTreballadorId(null);
+            setSelectedTreballadorId(initialTreballadorId ?? null);
             setResumAdmin(null);
         }
     }, [visible]);

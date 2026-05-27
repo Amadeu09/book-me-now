@@ -32,17 +32,6 @@ type WorkerFilterProps = {
 };
 
 function WorkerFilter({ treballadors, viewTreballadorId, workerLoading, theme, noPad, onSelect }: WorkerFilterProps) {
-    if (treballadors.length === 0) {
-        return (
-            <View style={[filterStyles.container, noPad && { paddingHorizontal: 0 }]}>
-                <View style={filterStyles.emptyWorkers}>
-                    <Ionicons name="people-outline" size={16} color={HC.textMuted} />
-                    <Text style={filterStyles.emptyWorkersText}>Has d'afegir treballadors a l'empresa</Text>
-                </View>
-            </View>
-        );
-    }
-
     return (
         <View style={[filterStyles.container, noPad && { paddingHorizontal: 0 }]}>
             <View style={filterStyles.row}>
@@ -116,16 +105,6 @@ const filterStyles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '700',
         color: '#fff',
-    },
-    emptyWorkers: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingVertical: 8,
-    },
-    emptyWorkersText: {
-        fontSize: 13,
-        color: HC.textMuted,
     },
 });
 
@@ -255,9 +234,9 @@ export default function VacacionesScreen() {
         year: YEAR,
         holidayDates,
         absenciaDates: activeAbsenciaDates,
-        selStart: viewTreballadorId ? null : selStart,
-        selEnd: viewTreballadorId ? null : selEnd,
-        onDayPress: viewTreballadorId ? () => {} : handleDayPress,
+        selStart,
+        selEnd,
+        onDayPress: handleDayPress,
     };
 
     const statsProps = {
@@ -285,7 +264,7 @@ export default function VacacionesScreen() {
                     <View style={styles.desktopLayout}>
                         <View style={styles.desktopMain}>
                             <StatsSection {...statsProps} />
-                            {isAdmin && (
+                            {isAdmin && treballadors.length > 0 && (
                                 <WorkerFilter
                                     treballadors={treballadors}
                                     viewTreballadorId={viewTreballadorId}
@@ -311,7 +290,7 @@ export default function VacacionesScreen() {
                 ) : (
                     <>
                         <StatsSection {...statsProps} />
-                        {isAdmin && (
+                        {isAdmin && treballadors.length > 0 && (
                             <WorkerFilter
                                 treballadors={treballadors}
                                 viewTreballadorId={viewTreballadorId}
@@ -337,7 +316,7 @@ export default function VacacionesScreen() {
                 )}
             </ScrollView>
 
-            {selStart !== null && !viewTreballadorId && (
+            {selStart !== null && (
                 <View style={[styles.actionBar, { borderColor: theme.primary, shadowColor: theme.primary }]}>
                     <View style={styles.actionInfo}>
                         <Ionicons name="calendar-outline" size={16} color={theme.primary} />
@@ -368,6 +347,7 @@ export default function VacacionesScreen() {
                 onSuccess={refetch}
                 isAdmin={isAdmin}
                 treballadors={treballadors}
+                initialTreballadorId={viewTreballadorId}
             />
 
             <EditAbsenciaModal

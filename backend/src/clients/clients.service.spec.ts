@@ -181,11 +181,13 @@ describe('ClientsService', () => {
       });
     });
 
-    it('should throw ForbiddenException if user is EMPLEAT', async () => {
-      await expect(service.findAllByEmpresa(empresaId, empleatUser))
-        .rejects.toThrow(ForbiddenException);
+    it('should return clients for EMPLEAT user of the same empresa', async () => {
+      mockPrismaService.client.findMany.mockResolvedValue(mockClients);
 
-      expect(mockPrismaService.client.findMany).not.toHaveBeenCalled();
+      const result = await service.findAllByEmpresa(empresaId, empleatUser);
+
+      expect(result).toEqual(mockClients);
+      expect(mockPrismaService.client.findMany).toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException if admin belongs to a different company', async () => {
@@ -208,24 +210,30 @@ describe('ClientsService', () => {
 
   describe('findAllByEmpresaPaginat', () => {
     const empresaId = 10;
-    const mockClients = [
-      { id: 1, nom: 'Anna', email: 'anna@test.com', telefon: '600111222', empresaId },
-      { id: 2, nom: 'Bernat', email: 'bernat@test.com', telefon: '600333444', empresaId },
+    const mockClientsRaw = [
+      { id: 1, nom: 'Anna', email: 'anna@test.com', telefon: '600111222', empresaId, _count: { reserves: 5 } },
+      { id: 2, nom: 'Bernat', email: 'bernat@test.com', telefon: '600333444', empresaId, _count: { reserves: 2 } },
+    ];
+    const mockClientsMapped = [
+      { id: 1, nom: 'Anna', email: 'anna@test.com', telefon: '600111222', empresaId, visites: 5 },
+      { id: 2, nom: 'Bernat', email: 'bernat@test.com', telefon: '600333444', empresaId, visites: 2 },
     ];
 
     it('should return paginated clients with metadata', async () => {
-      mockPrismaService.client.findMany.mockResolvedValue(mockClients);
+      mockPrismaService.client.findMany.mockResolvedValue(mockClientsRaw);
       mockPrismaService.client.count.mockResolvedValue(2);
 
       const result = await service.findAllByEmpresaPaginat(empresaId, adminUser, { page: 1, limit: 20 });
 
-      expect(result).toEqual({ data: mockClients, total: 2, page: 1, limit: 20, totalPages: 1 });
-      expect(mockPrismaService.client.findMany).toHaveBeenCalledWith({
-        where: { empresaId },
-        orderBy: { nom: 'asc' },
-        skip: 0,
-        take: 20,
-      });
+      expect(result).toEqual({ data: mockClientsMapped, total: 2, page: 1, limit: 20, totalPages: 1 });
+      expect(mockPrismaService.client.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { empresaId },
+          orderBy: { nom: 'asc' },
+          skip: 0,
+          take: 20,
+        }),
+      );
       expect(mockPrismaService.client.count).toHaveBeenCalledWith({ where: { empresaId } });
     });
 
@@ -255,11 +263,14 @@ describe('ClientsService', () => {
       );
     });
 
-    it('should throw ForbiddenException if user is EMPLEAT', async () => {
-      await expect(service.findAllByEmpresaPaginat(empresaId, empleatUser, { page: 1, limit: 20 }))
-        .rejects.toThrow(ForbiddenException);
+    it('should return paginated clients for EMPLEAT user of the same empresa', async () => {
+      mockPrismaService.client.findMany.mockResolvedValue(mockClientsRaw);
+      mockPrismaService.client.count.mockResolvedValue(2);
 
-      expect(mockPrismaService.client.findMany).not.toHaveBeenCalled();
+      const result = await service.findAllByEmpresaPaginat(empresaId, empleatUser, { page: 1, limit: 20 });
+
+      expect(result.data).toEqual(mockClientsMapped);
+      expect(mockPrismaService.client.findMany).toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException if admin belongs to a different company', async () => {
@@ -272,7 +283,7 @@ describe('ClientsService', () => {
     });
 
     it('should order by reserves count when orderBy is concurrencia', async () => {
-      mockPrismaService.client.findMany.mockResolvedValue(mockClients);
+      mockPrismaService.client.findMany.mockResolvedValue(mockClientsRaw);
       mockPrismaService.client.count.mockResolvedValue(2);
 
       await service.findAllByEmpresaPaginat(empresaId, adminUser, { page: 1, limit: 20, orderBy: 'concurrencia' });
@@ -283,7 +294,7 @@ describe('ClientsService', () => {
     });
 
     it('should order by nom asc when orderBy is nom', async () => {
-      mockPrismaService.client.findMany.mockResolvedValue(mockClients);
+      mockPrismaService.client.findMany.mockResolvedValue(mockClientsRaw);
       mockPrismaService.client.count.mockResolvedValue(2);
 
       await service.findAllByEmpresaPaginat(empresaId, adminUser, { page: 1, limit: 20, orderBy: 'nom' });

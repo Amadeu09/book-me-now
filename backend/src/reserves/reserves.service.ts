@@ -8,6 +8,7 @@ import { CreateReservaDto, ModificarReservaGestioDto } from './dto/reserves.dto'
 import { ReservaEstat } from '@prisma/client';
 import { Resend } from 'resend';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
+import { getRotacioIdx } from '../common/utils/horari.utils';
 
 const EMAIL_JOB_OPTIONS = {
   attempts: 3,
@@ -28,15 +29,6 @@ export class ReservesService {
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
     this.emailFrom = this.config.get<string>('EMAIL_FROM');
-  }
-
-  private getMonday(d: Date): Date {
-    const date = new Date(d);
-    const day = date.getUTCDay();
-    const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1);
-    date.setUTCDate(diff);
-    date.setUTCHours(0, 0, 0, 0);
-    return date;
   }
 
   private async checkSlotAvailable(
@@ -74,7 +66,10 @@ export class ReservesService {
     if (dow === 0) dow = 7;
 
     const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
-    const rotacio = rotacionsOrdenades[0];
+    const refDate = new Date(treballadorAmbPlantilla.dataIniciRotacio ?? dataHoraInici);
+    refDate.setHours(0, 0, 0, 0);
+    const rotacioIdx = getRotacioIdx(rotacionsOrdenades, refDate, dataHoraInici);
+    const rotacio = rotacionsOrdenades[rotacioIdx];
 
     if (!rotacio) throw new ConflictException('No hi ha disponibilitat per a aquest horari');
 
