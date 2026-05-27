@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { UsuarisService } from '../usuaris/usuaris.service';
 import { LoginDto, SignupDto, LoginResponseDto } from './dto/auth.dto';
 import { Rol } from '@prisma/client';
 
@@ -21,6 +22,10 @@ describe('AuthController', () => {
                 {
                     provide: AuthService,
                     useValue: mockAuthService,
+                },
+                {
+                    provide: UsuarisService,
+                    useValue: { findOne: jest.fn() },
                 },
             ],
         }).compile();

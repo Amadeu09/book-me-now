@@ -50,7 +50,7 @@ describe('AbsenciesController', () => {
 
             const result = await controller.create(dto, user);
 
-            expect(service.create).toHaveBeenCalledWith(user.empresaId, dto, user.userId);
+            expect(service.create).toHaveBeenCalledWith(dto, user);
             expect(result).toBe('created');
         });
     });

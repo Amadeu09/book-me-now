@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export function PartnerCta() {
   return (
     <section id="contacto" className="px-6 md:px-12 max-w-[1920px] mx-auto mb-40">
@@ -13,9 +15,9 @@ export function PartnerCta() {
             ¿Eres un experto en tu oficio? Únete al círculo selecto de negocios
             destacados en BookMeNow.
           </p>
-          <button className="bg-white text-on-surface px-12 py-5 rounded-full font-bold text-lg hover:bg-primary-fixed transition-colors">
+          <Link href="/empresa/1" className="inline-block bg-white text-on-surface px-12 py-5 rounded-full font-bold text-lg hover:bg-primary-fixed transition-colors">
             Solicitar Alta
-          </button>
+          </Link>
         </div>
         <div className="w-full md:w-1/2 relative h-[500px]">
           <div className="absolute top-0 right-0 w-4/5 h-4/5 rounded-3xl overflow-hidden rotate-3 z-0">

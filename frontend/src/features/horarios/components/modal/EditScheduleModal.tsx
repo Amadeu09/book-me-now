@@ -300,12 +300,12 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
                                 )}
                                 {dayTrams.length > 0 && (
                                     <View style={styles.chips}>
-                                        {dayTrams.map((t, idx) => (
+                                        {dayTrams.map((tram, idx) => (
                                             <View key={idx} style={styles.chip}>
                                                 <Text style={styles.chipText}>
-                                                    {minsToHHMM(t.iniciMin)} – {minsToHHMM(t.fiMin)}
+                                                    {minsToHHMM(tram.iniciMin)} – {minsToHHMM(tram.fiMin)}
                                                 </Text>
-                                                {!t.id && (
+                                                {!tram.id && (
                                                     <View style={styles.newBadge}>
                                                         <Text style={styles.newBadgeText}>{t('newBadge')}</Text>
                                                     </View>

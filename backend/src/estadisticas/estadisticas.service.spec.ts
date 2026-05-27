@@ -9,6 +9,9 @@ const mockPrismaService = {
     reserva: {
         findMany: jest.fn(),
     },
+    valoracio: {
+        aggregate: jest.fn().mockResolvedValue({ _avg: { puntuacio: null }, _count: { puntuacio: 0 } }),
+    },
 };
 
 const adminUser: CurrentUserData = {

@@ -4,24 +4,20 @@ import { CreateTreballadorDto } from './dto/CreateTreballadorDto';
 import { AssignarServeisDto } from './dto/AssignarServeisDto';
 import { UpdateTreballadorDto } from './dto/UpdateTreballadorDto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
+import { getRotacioIdx } from '../common/utils/horari.utils';
 
 const PLANTILLA_INCLUDE = {
   rotacions: { include: { dies: { include: { trams: true } } } },
 } as const;
 
 function parseDateInici(iso?: string): Date {
-  const d = iso ? new Date(iso) : new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function getMondayOfWeek(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0=Sun, 1=Mon, ...
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d;
+  if (!iso) {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 @Injectable()
@@ -165,12 +161,7 @@ export class TreballadorsService {
       if (dow === 0) dow = 7;
 
       const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
-      const numRotacions = rotacionsOrdenades.length;
-      const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
-      const mondayRef = getMondayOfWeek(refDate);
-      const mondayCurrent = getMondayOfWeek(currentDate);
-      const setmanes = Math.round((mondayCurrent.getTime() - mondayRef.getTime()) / MS_PER_WEEK);
-      const rotacioIdx = ((setmanes % numRotacions) + numRotacions) % numRotacions;
+      const rotacioIdx = getRotacioIdx(rotacionsOrdenades, refDate, currentDate);
       const rotacio = rotacionsOrdenades[rotacioIdx];
       if (!rotacio) { disponibilitat[dateString] = []; continue; }
 
@@ -305,12 +296,7 @@ export class TreballadorsService {
       if (dow === 0) dow = 7;
 
       const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
-      const numRotacions = rotacionsOrdenades.length;
-      const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
-      const mondayRef = getMondayOfWeek(refDate);
-      const mondayCurrent = getMondayOfWeek(currentDate);
-      const setmanes = Math.round((mondayCurrent.getTime() - mondayRef.getTime()) / MS_PER_WEEK);
-      const rotacioIdx = ((setmanes % numRotacions) + numRotacions) % numRotacions;
+      const rotacioIdx = getRotacioIdx(rotacionsOrdenades, refDate, currentDate);
       const rotacio = rotacionsOrdenades[rotacioIdx];
       if (!rotacio) { disponibilitat[dateString] = []; continue; }
 
