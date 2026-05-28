@@ -64,9 +64,9 @@ export function HeroSection() {
   const typedText = useTypewriter(TYPEWRITER_WORDS);
 
   const HERO_IMAGES = [
-    '/images/bookmenowFoto.png',
-    '/images/bookmenowDental.png',
-    '/images/bookmenowSpa.png',
+    '/images/bookmenowFoto.jpg',
+    '/images/bookmenowDental.jpg',
+    '/images/bookmenowSpa.jpg',
   ];
   const [heroIdx, setHeroIdx] = useState(0);
   useEffect(() => {
