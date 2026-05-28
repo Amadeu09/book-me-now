@@ -65,8 +65,8 @@ export function HeroSection() {
 
   const HERO_IMAGES = [
     '/images/bookmenowFoto.png',
-    '/images/bookmenowdental.png',
-    '/images/bookmenowspa.png',
+    '/images/bookmenowDental.png',
+    '/images/bookmenowSpa.png',
   ];
   const [heroIdx, setHeroIdx] = useState(0);
   useEffect(() => {
