@@ -344,7 +344,7 @@ export default function VacacionesScreen() {
                 diesVacancesAnuals={data.diesVacancesAnuals}
                 vacancesUsed={vacancesUsed}
                 onClose={() => setModalVisible(false)}
-                onSuccess={refetch}
+                onSuccess={() => { refetch(); if (viewTreballadorId) workerRefetch(); }}
                 isAdmin={isAdmin}
                 treballadors={treballadors}
                 initialTreballadorId={viewTreballadorId}
