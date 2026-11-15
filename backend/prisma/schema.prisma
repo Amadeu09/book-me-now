@@ -56,6 +56,8 @@ model Usuari {
   idioma            String    @default("ca")
   resetToken        String?   @unique
   resetTokenExpiry  DateTime?
+  // Tokens emesos abans d'aquesta data deixen de ser vàlids (canvi/reset de contrasenya)
+  credencialsCanviades DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   empresa    Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)

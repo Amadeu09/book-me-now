@@ -28,7 +28,7 @@ export class JornadesController {
     constructor(private readonly jornadasService: JornadesService) { }
 
     @Post()
-    @Roles('ADMIN_GENERAL', 'EMPLEAT')
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Crear plantilla de jornada' })
     @ApiParam({ name: 'empresaId', description: 'ID de la empresa' })
     @ApiResponse({ status: 201, description: 'Plantilla de jornada creada exitosamente' })
@@ -85,7 +85,7 @@ export class JornadesController {
     }
 
     @Put(':id')
-    @Roles('ADMIN_GENERAL', 'EMPLEAT')
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Actualizar plantilla de jornada' })
     @ApiParam({ name: 'empresaId', description: 'ID de la empresa' })
     @ApiParam({ name: 'id', description: 'ID de la plantilla de jornada' })
@@ -105,7 +105,7 @@ export class JornadesController {
     }
 
     @Delete(':id')
-    @Roles('ADMIN_GENERAL', 'EMPLEAT')
+    @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Eliminar plantilla de jornada' })
     @ApiParam({ name: 'empresaId', description: 'ID de la empresa' })
     @ApiParam({ name: 'id', description: 'ID de la plantilla de jornada' })

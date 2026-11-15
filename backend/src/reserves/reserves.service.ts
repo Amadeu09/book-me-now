@@ -554,7 +554,7 @@ export class ReservesService {
       where: { tokenGestio: token },
       include: {
         servei: true,
-        treballador: { include: { Usuari: { select: { fotoPerfil: true } } } },
+        treballador: { select: { id: true, nom: true, Usuari: { select: { fotoPerfil: true } } } },
         empresa: { select: { id: true, nom: true, fotoPerfil: true, ubicacio: true } },
       },
     });

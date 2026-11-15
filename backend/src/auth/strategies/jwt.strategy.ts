@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
 import { TokenBlacklistService } from '../token-blacklist.service';
 import { JwtPayload } from '../dto/auth.dto';
+import { SessionCacheService } from '../session-cache.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -12,6 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private authService: AuthService,
     private configService: ConfigService,
     private tokenBlacklistService: TokenBlacklistService,
+    private sessionCache: SessionCacheService,
   ) {
     const secret = configService.get<string>('JWT_SECRET');
     if (!secret) {
@@ -27,8 +29,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(req: any, payload: JwtPayload) {
     try {
-      // Get the token from the request context
       const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+
+      const enCau = token ? this.sessionCache.get(token) : null;
+      if (enCau) return enCau;
 
       // Check if token is blacklisted
       if (token && (await this.tokenBlacklistService.isBlacklisted(token))) {
@@ -38,12 +42,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Validate user still exists and is active
       const user = await this.authService.validateUser(payload.sub);
 
-      return {
+      // Tokens emesos abans de canviar o restablir la contrasenya ja no valen
+      if (user.credencialsCanviades && payload.iat !== undefined
+        && payload.iat < Math.floor(user.credencialsCanviades.getTime() / 1000)) {
+        throw new UnauthorizedException('Sessió caducada: la contrasenya ha canviat');
+      }
+
+      const sessio = {
         userId: user.id,
         email: user.email,
         rol: user.rol,
         empresaId: user.empresaId,
       };
+      if (token) this.sessionCache.set(token, sessio);
+      return sessio;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;

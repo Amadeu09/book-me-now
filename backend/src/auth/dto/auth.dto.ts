@@ -172,4 +172,6 @@ export interface JwtPayload {
   email: string;
   rol: Rol;
   empresaId: number;
+  iat?: number;
+  exp?: number;
 }

@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException, ConflictException } from '@nestjs/common';
+import { UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { SessionCacheService } from './session-cache.service';
 import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
@@ -16,6 +17,7 @@ describe('AuthService', () => {
     usuari: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
     empresa: {
       create: jest.fn(),
@@ -48,6 +50,7 @@ describe('AuthService', () => {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('mock-value') },
         },
+        SessionCacheService,
       ],
     }).compile();
 
@@ -268,6 +271,7 @@ describe('AuthService', () => {
           email: true,
           rol: true,
           empresaId: true,
+          credencialsCanviades: true,
         },
       });
     });
@@ -276,6 +280,36 @@ describe('AuthService', () => {
       mockPrismaService.usuari.findUnique.mockResolvedValue(null);
 
       await expect(service.validateUser(999)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('changePassword', () => {
+    it('marca credencialsCanviades i retorna un token nou', async () => {
+      const hash = await bcrypt.hash('vella-123', 4);
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, hash });
+      mockPrismaService.usuari.update.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'ADMIN_GENERAL', empresaId: 1 });
+      mockJwtService.sign.mockReturnValue('token-nou');
+
+      const result = await service.changePassword(1, { currentPassword: 'vella-123', newPassword: 'nova-12345' } as any);
+
+      expect(result.token).toBe('token-nou');
+      const data = mockPrismaService.usuari.update.mock.calls[0][0].data;
+      expect(data.credencialsCanviades).toBeInstanceOf(Date);
+    });
+
+    it('rebutja si la contrasenya actual és incorrecta', async () => {
+      const hash = await bcrypt.hash('vella-123', 4);
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, hash });
+      await expect(service.changePassword(1, { currentPassword: 'mala', newPassword: 'nova-12345' } as any))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('refresh', () => {
+    it('emet un token nou per a l\'usuari', async () => {
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1 });
+      mockJwtService.sign.mockReturnValue('renovat');
+      expect(await service.refresh(1)).toEqual({ token: 'renovat' });
     });
   });
 });

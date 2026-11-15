@@ -66,6 +66,18 @@ export class AuthController {
     return this.authService.logout(userId, token);
   }
 
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Renovar la sessió', description: 'Retorna un token nou amb la caducitat completa' })
+  @ApiResponse({ status: 200, description: 'Token renovat' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async refresh(@CurrentUser() user: CurrentUserData): Promise<{ token: string }> {
+    return this.authService.refresh(user.userId);
+  }
+
   @Post('change-password')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -79,7 +91,7 @@ export class AuthController {
   async changePassword(
     @Body() dto: ChangePasswordDto,
     @CurrentUser() user: CurrentUserData,
-  ): Promise<{ message: string }> {
+  ): Promise<{ message: string; token: string }> {
     this.logger.debug(`POST /api/auth/change-password - User: ${user.userId}`);
     return this.authService.changePassword(user.userId, dto);
   }

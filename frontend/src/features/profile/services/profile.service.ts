@@ -1,4 +1,5 @@
 import api from '@/core/api/api';
+import { setToken } from '@/utils/session';
 import { Platform } from 'react-native';
 
 export interface ProfileServei {
@@ -43,7 +44,9 @@ export async function getReservesTreballador(treballadorId: number): Promise<Pro
  * POST /auth/change-password
  */
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await api.post('/auth/change-password', { currentPassword, newPassword });
+    const res = await api.post('/auth/change-password', { currentPassword, newPassword });
+    // El servidor invalida les sessions antigues i en retorna una de nova
+    if (res.data?.token) await setToken(res.data.token);
 }
 
 /**

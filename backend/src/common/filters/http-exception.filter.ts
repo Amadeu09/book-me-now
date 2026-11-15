@@ -51,10 +51,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error = 'ValidationError';
       this.logger.error('PrismaClientValidationError details:', exception.message);
     }
-    // Generic Errors
+    // Generic Errors: en producció no s'exposa el missatge intern al client
     else if (exception instanceof Error) {
-      message = exception.message;
-      error = exception.name;
+      if (process.env.NODE_ENV !== 'production') {
+        message = exception.message;
+        error = exception.name;
+      }
     }
 
     // Log error (don't log 4xx client errors as errors, only as warnings)

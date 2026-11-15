@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { getToken, clearSession } from '@/utils/session';
+import { getToken, setToken, clearSession, segonsFinsCaducitat } from '@/utils/session';
 
 // Resolució robusta de la base URL per a dispositiu físic:
 // 1. Env var EXPO_PUBLIC_API_URL (recomanat)
@@ -48,10 +48,36 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Renovació de sessió: si al token li queden menys de 3 dies, se'n demana un de nou.
+// Així la sessió no caduca de cop mentre l'app s'utilitza.
+const MARGE_RENOVACIO_S = 3 * 24 * 60 * 60;
+let renovacioEnCurs: Promise<string | null> | null = null;
+
+async function renovarSiCal(token: string): Promise<string> {
+  const queda = segonsFinsCaducitat(token);
+  if (queda === null || queda <= 0 || queda > MARGE_RENOVACIO_S) return token;
+
+  if (!renovacioEnCurs) {
+    renovacioEnCurs = axios
+      .post(`${API_URL}/auth/refresh`, {}, { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 })
+      .then(async (res) => {
+        const nou: string | undefined = res.data?.token;
+        if (nou) await setToken(nou);
+        return nou ?? null;
+      })
+      .catch(() => null)
+      .finally(() => {
+        renovacioEnCurs = null;
+      });
+  }
+  return (await renovacioEnCurs) ?? token;
+}
+
 // Request interceptor: afegeix Bearer token + corregeix Content-Type per multipart
 api.interceptors.request.use(async (config) => {
   try {
-    const token = await getToken();
+    let token = await getToken();
+    if (token) token = await renovarSiCal(token);
     if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
   } catch {
     // ignore

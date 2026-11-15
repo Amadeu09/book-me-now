@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -28,7 +29,8 @@ export class TokenBlacklistService {
     return true;
   }
 
-  /** Purge expired entries — call periodically (e.g. from a cron job). */
+  /** Esborra cada nit els tokens de logout ja caducats. */
+  @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async purgeExpired(): Promise<void> {
     const { count } = await this.prisma.tokenBlacklist.deleteMany({
       where: { expiresAt: { lt: new Date() } },
