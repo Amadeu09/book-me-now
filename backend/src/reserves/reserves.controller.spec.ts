@@ -58,9 +58,9 @@ describe('ReservesController', () => {
             };
             mockReservesService.create.mockResolvedValue('created');
 
-            const result = await controller.create(dto);
+            const result = await controller.create(dto, mockUser);
 
-            expect(service.create).toHaveBeenCalledWith(dto);
+            expect(service.create).toHaveBeenCalledWith(dto, mockUser);
             expect(result).toBe('created');
         });
     });

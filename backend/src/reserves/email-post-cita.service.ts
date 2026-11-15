@@ -3,20 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Resend } from 'resend';
 import { PrismaService } from '../prisma/prisma.service';
+import { escapeHtml } from '../common/utils/html.utils';
 
 /** No s'envia l'email de valoració de cites acabades fa més d'aquests dies. */
 const MAX_DIES_ENRERE = 7;
 /** Màxim de reserves revisades per execució. */
 const LOT = 100;
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 /**
  * Envia l'email "Com ha anat la teva cita?" quan acaba cada cita.

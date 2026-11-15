@@ -88,23 +88,27 @@ export class ValoracionsController {
     @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Obtener una valoración por ID' })
     @ApiParam({ name: 'id', type: Number })
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.valoracionsService.findOne(id);
+    findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
+        return this.valoracionsService.findOne(id, user.empresaId);
     }
 
     @Put(':id')
     @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Actualizar una valoración' })
     @ApiParam({ name: 'id', type: Number })
-    update(@Param('id', ParseIntPipe) id: number, @Body() updateValoracioDto: UpdateValoracioDto) {
-        return this.valoracionsService.update(id, updateValoracioDto);
+    update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() updateValoracioDto: UpdateValoracioDto,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        return this.valoracionsService.update(id, updateValoracioDto, user.empresaId);
     }
 
     @Delete(':id')
     @Roles('ADMIN_GENERAL')
     @ApiOperation({ summary: 'Eliminar una valoración' })
     @ApiParam({ name: 'id', type: Number })
-    remove(@Param('id', ParseIntPipe) id: number) {
-        return this.valoracionsService.remove(id);
+    remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserData) {
+        return this.valoracionsService.remove(id, user.empresaId);
     }
 }

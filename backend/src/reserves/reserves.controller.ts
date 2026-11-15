@@ -66,8 +66,8 @@ export class ReservesController {
   @ApiResponse({ status: 403, description: 'Prohibido: No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Servicio o trabajador no encontrados' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor' })
-  create(@Body() dto: CreateReservaDto) {
-    return this.reservesService.create(dto);
+  create(@Body() dto: CreateReservaDto, @CurrentUser() user: CurrentUserData) {
+    return this.reservesService.create(dto, user);
   }
 
   @Put('update/:id')

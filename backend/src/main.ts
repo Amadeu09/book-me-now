@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -11,11 +12,15 @@ dotenv.config();
 async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: isProduction
       ? ['error', 'warn', 'log']
       : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
+
+  // Darrere del proxy de Railway: usar la IP real del client (X-Forwarded-For)
+  // perquè el rate limiting compti per client i no per proxy.
+  app.set('trust proxy', 1);
 
   // Configure Cloudinary
   cloudinaryConfig();

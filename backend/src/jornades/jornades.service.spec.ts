@@ -140,4 +140,19 @@ describe('JornadesService', () => {
                 .rejects.toThrow(NotFoundException);
         });
     });
+    describe('aïllament per empresa (ADMIN_GENERAL d’una altra empresa)', () => {
+        const admin = 'ADMIN_GENERAL' as any;
+
+        it('findAll rebutja un admin d’una altra empresa', async () => {
+            await expect(service.findAll(1, 2, admin)).rejects.toThrow(ForbiddenException);
+        });
+
+        it('update rebutja un admin d’una altra empresa', async () => {
+            await expect(service.update(1, 10, {} as any, 2, admin)).rejects.toThrow(ForbiddenException);
+        });
+
+        it('remove rebutja un admin d’una altra empresa', async () => {
+            await expect(service.remove(1, 10, 2, admin)).rejects.toThrow(ForbiddenException);
+        });
+    });
 });

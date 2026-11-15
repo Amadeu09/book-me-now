@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReservesService } from './reserves.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateReservaDto } from './dto/reserves.dto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
@@ -81,48 +81,63 @@ describe('ReservesService', () => {
 
         it('should create a reserva successfully', async () => {
             const mockCreated = { id: 100, ...dto, servei: { nom: 'Test' }, treballador: {} };
-            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1 });
             mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
             mockPrismaService.treballadorServei.findUnique.mockResolvedValue({ treballadorId: 1, serveiId: 1 });
             mockPrismaService.$transaction.mockImplementation(async (callback: any) => {
                 const tx = {
+                    $executeRaw: jest.fn().mockResolvedValue(1),
                     reserva: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn().mockResolvedValue(mockCreated) },
                     client: { upsert: jest.fn().mockResolvedValue({ id: 1 }), create: jest.fn().mockResolvedValue({ id: 1 }) },
                 };
                 return callback(tx);
             });
 
-            const result = await service.create(dto);
+            const result = await service.create(dto, mockUser);
 
             expect(result).toBeDefined();
             expect(result.id).toBe(100);
         });
 
-        it('should throw ForbiddenException if overlap exists', async () => {
+        it('should throw ConflictException if overlap exists', async () => {
             const existingReserva = { dataHora: new Date('2023-01-01T10:30:00'), servei: { duradaMin: 60 } };
-            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1 });
             mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
             mockPrismaService.treballadorServei.findUnique.mockResolvedValue({ treballadorId: 1, serveiId: 1 });
             mockPrismaService.$transaction.mockImplementation(async (callback: any) => {
                 const tx = {
+                    $executeRaw: jest.fn().mockResolvedValue(1),
                     reserva: { findMany: jest.fn().mockResolvedValue([existingReserva]), create: jest.fn() },
                     client: { upsert: jest.fn(), create: jest.fn() },
                 };
                 return callback(tx);
             });
 
-            await expect(service.create(dto)).rejects.toThrow(ForbiddenException);
+            await expect(service.create(dto, mockUser)).rejects.toThrow(ConflictException);
+        });
+
+        it('should throw ForbiddenException if treballador belongs to another empresa', async () => {
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 2 });
+            mockPrismaService.treballador.findUnique.mockResolvedValue({ ...mockTreballador, empresaId: 2 });
+            await expect(service.create(dto, mockUser)).rejects.toThrow(ForbiddenException);
+            expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+        });
+
+        it('should throw NotFoundException if servei and treballador are from different empresas', async () => {
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 2 });
+            mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
+            await expect(service.create(dto, mockUser)).rejects.toThrow(NotFoundException);
         });
 
         it('should throw NotFoundException if servei not found', async () => {
             mockPrismaService.servei.findUnique.mockResolvedValue(null);
-            await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+            await expect(service.create(dto, mockUser)).rejects.toThrow(NotFoundException);
         });
 
         it('should throw NotFoundException if treballador not found', async () => {
-            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1 });
             mockPrismaService.treballador.findUnique.mockResolvedValue(null);
-            await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+            await expect(service.create(dto, mockUser)).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -141,19 +156,52 @@ describe('ReservesService', () => {
 
         it('should update a reserva', async () => {
             mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
-            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60 });
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1 });
             mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
-            mockPrismaService.reserva.findMany.mockResolvedValue([]);
-            mockPrismaService.client.findFirst.mockResolvedValue({ id: 1 });
-            mockPrismaService.reserva.update.mockResolvedValue({ id: 1, ...dto });
+            mockPrismaService.treballadorServei.findUnique.mockResolvedValue({ treballadorId: 1, serveiId: 1 });
+            mockPrismaService.$transaction.mockImplementation(async (callback: any) => callback({
+                $executeRaw: jest.fn().mockResolvedValue(1),
+                reserva: { findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({ id: 1, ...dto }) },
+                client: { findFirst: jest.fn().mockResolvedValue({ id: 1 }), create: jest.fn() },
+            }));
 
             const result = await service.update(1, dto, mockUser);
             expect(result).toBeDefined();
         });
 
+        it('should throw ForbiddenException if moving to a treballador of another empresa', async () => {
+            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1 });
+            mockPrismaService.treballador.findUnique.mockResolvedValue({ ...mockTreballador, empresaId: 2 });
+            await expect(service.update(1, dto, mockUser)).rejects.toThrow(ForbiddenException);
+        });
+
+        it('should throw ForbiddenException if treballador does not offer the servei', async () => {
+            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1 });
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1 });
+            mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
+            mockPrismaService.treballadorServei.findUnique.mockResolvedValue(null);
+            await expect(service.update(1, dto, mockUser)).rejects.toThrow(ForbiddenException);
+        });
+
         it('should throw NotFoundException if reserva not found', async () => {
             mockPrismaService.reserva.findUnique.mockResolvedValue(null);
             await expect(service.update(1, dto, mockUser)).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('modificarReservaByToken', () => {
+        const futur = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        const reserva = {
+            id: 5, empresaId: 1, treballadorId: 1, estat: 'CONFIRMADA',
+            dataHora: futur, servei: { duradaMin: 60 },
+        };
+
+        it('should reject a date in the past', async () => {
+            mockPrismaService.reserva.findUnique.mockResolvedValue(reserva);
+            await expect(service.modificarReservaByToken('tok', { data: '2020-01-01', hora: '10:00' } as any))
+                .rejects.toThrow(BadRequestException);
+            expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
         });
     });
 

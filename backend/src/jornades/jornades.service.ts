@@ -16,13 +16,9 @@ export class JornadesService {
         userEmpresaId: number,
         userRol: Rol,
     ) {
-        // 1. Verificar permisos: si no es ADMIN_GENERAL, ha de ser de la mateixa empresa
-        if (userRol !== 'ADMIN_GENERAL' && empresaId !== userEmpresaId) {
-            throw new ForbiddenException('No tens permís per crear jornades en aquesta empresa');
-        }
-
+        // 1. Verificar permisos: ha de ser de la mateixa empresa
         if (empresaId !== userEmpresaId) {
-            throw new ForbiddenException('No ets part de l\'empresa');
+            throw new ForbiddenException('No tens permís per crear jornades en aquesta empresa');
         }
         // 2. Verificar que l'empresa existeix
         const empresa = await this.prisma.empresa.findUnique({
@@ -81,7 +77,7 @@ export class JornadesService {
         userRol: Rol,
     ) {
         // 1. Verificar permisos
-        if (userRol !== 'ADMIN_GENERAL' && empresaId !== userEmpresaId) {
+        if (empresaId !== userEmpresaId) {
             throw new ForbiddenException('No tens permís per veure jornades d\'aquesta empresa');
         }
 
@@ -123,7 +119,7 @@ export class JornadesService {
         rows: number = 2,
     ) {
         // 1. Verificar permisos
-        if (userRol !== 'ADMIN_GENERAL' && empresaId !== userEmpresaId) {
+        if (empresaId !== userEmpresaId) {
             throw new ForbiddenException('No tens permís per veure jornades d\'aquesta empresa');
         }
 
@@ -175,7 +171,7 @@ export class JornadesService {
         userRol: Rol,
     ) {
         // 1. Verificar permisos
-        if (userRol !== 'ADMIN_GENERAL' && empresaId !== userEmpresaId) {
+        if (empresaId !== userEmpresaId) {
             throw new ForbiddenException('No tens permís per editar jornades en aquesta empresa');
         }
 
@@ -266,7 +262,7 @@ export class JornadesService {
         userRol: Rol,
     ) {
         // 1. Verificar permisos
-        if (userRol !== 'ADMIN_GENERAL' && empresaId !== userEmpresaId) {
+        if (empresaId !== userEmpresaId) {
             throw new ForbiddenException('No tens permís per eliminar jornades en aquesta empresa');
         }
 
