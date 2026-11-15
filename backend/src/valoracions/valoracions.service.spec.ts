@@ -21,6 +21,7 @@ describe('ValoracionsService', () => {
             create: jest.fn(),
             findMany: jest.fn(),
             findUnique: jest.fn(),
+            findFirst: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
         },
@@ -104,39 +105,55 @@ describe('ValoracionsService', () => {
 
     describe('findOne', () => {
         it('should throw if not found', async () => {
-            mockPrismaService.valoracio.findUnique.mockResolvedValue(null);
-            await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
+            mockPrismaService.valoracio.findFirst.mockResolvedValue(null);
+            await expect(service.findOne(1, 1)).rejects.toThrow(NotFoundException);
         });
 
         it('should return the valoracio if found', async () => {
-            mockPrismaService.valoracio.findUnique.mockResolvedValue('one');
-            expect(await service.findOne(1)).toBe('one');
+            mockPrismaService.valoracio.findFirst.mockResolvedValue('one');
+            expect(await service.findOne(1, 1)).toBe('one');
+        });
+    });
+
+    describe('aïllament per empresa', () => {
+        it('findOne filtra per empresaId', async () => {
+            mockPrismaService.valoracio.findFirst.mockResolvedValue(null);
+            await expect(service.findOne(7, 2)).rejects.toThrow(NotFoundException);
+            expect(mockPrismaService.valoracio.findFirst).toHaveBeenCalledWith(
+                expect.objectContaining({ where: { id: 7, empresaId: 2 } }),
+            );
+        });
+
+        it('remove no esborra valoracions d\'una altra empresa', async () => {
+            mockPrismaService.valoracio.findFirst.mockResolvedValue(null);
+            await expect(service.remove(7, 2)).rejects.toThrow(NotFoundException);
+            expect(mockPrismaService.valoracio.delete).not.toHaveBeenCalled();
         });
     });
 
     describe('update', () => {
         it('should throw if not found', async () => {
-            mockPrismaService.valoracio.findUnique.mockResolvedValue(null);
-            await expect(service.update(1, { valoracio: 3 })).rejects.toThrow(NotFoundException);
+            mockPrismaService.valoracio.findFirst.mockResolvedValue(null);
+            await expect(service.update(1, { valoracio: 3 }, 1)).rejects.toThrow(NotFoundException);
         });
 
         it('should call update and return the result if found', async () => {
-            mockPrismaService.valoracio.findUnique.mockResolvedValue({ id: 1 });
+            mockPrismaService.valoracio.findFirst.mockResolvedValue({ id: 1 });
             mockPrismaService.valoracio.update.mockResolvedValue('updated');
-            expect(await service.update(1, { valoracio: 3, comentari: 'ok' })).toBe('updated');
+            expect(await service.update(1, { valoracio: 3, comentari: 'ok' }, 1)).toBe('updated');
         });
     });
 
     describe('remove', () => {
         it('should throw if not found', async () => {
-            mockPrismaService.valoracio.findUnique.mockResolvedValue(null);
-            await expect(service.remove(1)).rejects.toThrow(NotFoundException);
+            mockPrismaService.valoracio.findFirst.mockResolvedValue(null);
+            await expect(service.remove(1, 1)).rejects.toThrow(NotFoundException);
         });
 
         it('should call delete and return result if found', async () => {
-            mockPrismaService.valoracio.findUnique.mockResolvedValue({ id: 1 });
+            mockPrismaService.valoracio.findFirst.mockResolvedValue({ id: 1 });
             mockPrismaService.valoracio.delete.mockResolvedValue('deleted');
-            expect(await service.remove(1)).toBe('deleted');
+            expect(await service.remove(1, 1)).toBe('deleted');
         });
     });
 });

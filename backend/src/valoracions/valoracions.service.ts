@@ -208,9 +208,9 @@ export class ValoracionsService {
         });
     }
 
-    async findOne(id: number) {
-        const valoracio = await this.prisma.valoracio.findUnique({
-            where: { id },
+    async findOne(id: number, empresaId: number) {
+        const valoracio = await this.prisma.valoracio.findFirst({
+            where: { id, empresaId },
             include: {
                 empresa: true,
                 treballador: true,
@@ -221,8 +221,8 @@ export class ValoracionsService {
         return valoracio;
     }
 
-    async update(id: number, dto: UpdateValoracioDto) {
-        const exists = await this.prisma.valoracio.findUnique({ where: { id } });
+    async update(id: number, dto: UpdateValoracioDto, empresaId: number) {
+        const exists = await this.prisma.valoracio.findFirst({ where: { id, empresaId } });
         if (!exists) throw new NotFoundException('Valoración no encontrada');
 
         return this.prisma.valoracio.update({
@@ -235,8 +235,8 @@ export class ValoracionsService {
         });
     }
 
-    async remove(id: number) {
-        const exists = await this.prisma.valoracio.findUnique({ where: { id } });
+    async remove(id: number, empresaId: number) {
+        const exists = await this.prisma.valoracio.findFirst({ where: { id, empresaId } });
         if (!exists) throw new NotFoundException('Valoración no encontrada');
         return this.prisma.valoracio.delete({ where: { id } });
     }

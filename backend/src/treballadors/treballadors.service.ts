@@ -376,7 +376,7 @@ export class TreballadorsService {
   async getTreballadorsPaginats(empresaId: number, page: number = 1, rows: number = 2, currentUser: number) {
     const user = await this.prisma.usuari.findUnique({ where: { id: currentUser } });
     if (!user) throw new NotFoundException('Usuari no trobat');
-    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+    if (user.empresaId !== empresaId) {
       throw new ForbiddenException('No pots veure treballadors d\'aquesta empresa');
     }
 
@@ -410,7 +410,7 @@ export class TreballadorsService {
   async update(empresaId: number, id: number, dto: UpdateTreballadorDto, currentUser: number) {
     const user = await this.prisma.usuari.findUnique({ where: { id: currentUser } });
     if (!user) throw new NotFoundException('Usuari no trobat');
-    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+    if (user.empresaId !== empresaId) {
       throw new ForbiddenException('No pots modificar treballadors d\'aquesta empresa');
     }
 
@@ -475,7 +475,7 @@ export class TreballadorsService {
   async getTreballadors(empresaId: number, currentUser: number) {
     const user = await this.prisma.usuari.findUnique({ where: { id: currentUser } });
     if (!user) throw new NotFoundException('Usuari no trobat');
-    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+    if (user.empresaId !== empresaId) {
       throw new ForbiddenException('No pots veure els treballadors d\'aquesta empresa');
     }
 
@@ -491,7 +491,7 @@ export class TreballadorsService {
   async remove(empresaId: number, id: number, currentUser: number) {
     const user = await this.prisma.usuari.findUnique({ where: { id: currentUser } });
     if (!user) throw new NotFoundException('Usuari no trobat');
-    if (user.rol !== 'ADMIN_GENERAL' && user.empresaId !== empresaId) {
+    if (user.empresaId !== empresaId) {
       throw new ForbiddenException('No pots eliminar treballadors d\'aquesta empresa');
     }
 

@@ -73,8 +73,8 @@ describe('ValoracionsController', () => {
     describe('findOne', () => {
         it('should call service.findOne', async () => {
             mockValoracionsService.findOne.mockResolvedValue('one');
-            const result = await controller.findOne(1);
-            expect(service.findOne).toHaveBeenCalledWith(1);
+            const result = await controller.findOne(1, mockUser);
+            expect(service.findOne).toHaveBeenCalledWith(1, mockUser.empresaId);
             expect(result).toBe('one');
         });
     });
@@ -83,8 +83,8 @@ describe('ValoracionsController', () => {
         it('should call service.update', async () => {
             const dto: UpdateValoracioDto = { valoracio: 4 };
             mockValoracionsService.update.mockResolvedValue('updated');
-            const result = await controller.update(1, dto);
-            expect(service.update).toHaveBeenCalledWith(1, dto);
+            const result = await controller.update(1, dto, mockUser);
+            expect(service.update).toHaveBeenCalledWith(1, dto, mockUser.empresaId);
             expect(result).toBe('updated');
         });
     });
@@ -92,8 +92,8 @@ describe('ValoracionsController', () => {
     describe('remove', () => {
         it('should call service.remove', async () => {
             mockValoracionsService.remove.mockResolvedValue('removed');
-            const result = await controller.remove(1);
-            expect(service.remove).toHaveBeenCalledWith(1);
+            const result = await controller.remove(1, mockUser);
+            expect(service.remove).toHaveBeenCalledWith(1, mockUser.empresaId);
             expect(result).toBe('removed');
         });
     });

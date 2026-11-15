@@ -3,10 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservaDto, ModificarReservaGestioDto } from './dto/reserves.dto';
-import { ReservaEstat } from '@prisma/client';
+import { Prisma, ReservaEstat } from '@prisma/client';
 import { Resend } from 'resend';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 import { getRotacioIdx } from '../common/utils/horari.utils';
+import { escapeHtml } from '../common/utils/html.utils';
+
+/** Espai de noms dels advisory locks de reserves. */
+const LOCK_NS_RESERVES = 1001;
 
 @Injectable()
 export class ReservesService {
@@ -75,6 +79,57 @@ export class ReservesService {
     if (!withinTram) throw new ConflictException('No hi ha disponibilitat per a aquest horari');
   }
 
+  /**
+   * Bloqueja el treballador dins la transacció i comprova que no hi hagi cap reserva
+   * (no cancel·lada) solapada. El lock evita dobles reserves amb peticions simultànies.
+   */
+  private async assertSenseSolapament(
+    tx: Prisma.TransactionClient,
+    treballadorId: number,
+    inici: Date,
+    fi: Date,
+    excloureReservaId?: number,
+  ): Promise<void> {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LOCK_NS_RESERVES}::int, ${treballadorId}::int)`;
+
+    const dayStart = new Date(inici); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(inici); dayEnd.setHours(23, 59, 59, 999);
+
+    const existents = await tx.reserva.findMany({
+      where: {
+        treballadorId,
+        dataHora: { gte: dayStart, lte: dayEnd },
+        estat: { not: 'CANCELLADA' },
+        ...(excloureReservaId !== undefined && { id: { not: excloureReservaId } }),
+      },
+      include: { servei: { select: { duradaMin: true } } },
+    });
+
+    const solapada = existents.some((r) => {
+      const rFi = new Date(r.dataHora.getTime() + r.servei.duradaMin * 60 * 1000);
+      return r.dataHora < fi && rFi > inici;
+    });
+
+    if (solapada) throw new ConflictException('Aquest horari ja no està disponible');
+  }
+
+  /** Reserves fetes pel client (portal o enllaç): ni en el passat ni més enllà de diasAntesReserva. */
+  private async checkFinestraClient(empresaId: number, dataHoraInici: Date): Promise<void> {
+    if (dataHoraInici <= new Date()) {
+      throw new BadRequestException('No es pot reservar una hora ja passada');
+    }
+    const empresa = await this.prisma.empresa.findUnique({
+      where: { id: empresaId },
+      select: { diasAntesReserva: true },
+    });
+    const limit = new Date();
+    limit.setHours(0, 0, 0, 0);
+    limit.setDate(limit.getDate() + (empresa?.diasAntesReserva ?? 14));
+    if (dataHoraInici >= limit) {
+      throw new BadRequestException('Aquesta data encara no està disponible per reservar');
+    }
+  }
+
   private async safeEnviarEmail(fn: () => Promise<void>, context: string): Promise<void> {
     try {
       await fn();
@@ -85,13 +140,17 @@ export class ReservesService {
 
   private async createReservaInternal(
     dto: CreateReservaDto,
-    options: { checkActiu: boolean; filterCancellades: boolean },
+    options: { checkActiu: boolean; esClient: boolean; empresaIdUsuari?: number },
   ): Promise<any> {
     const servei = await this.prisma.servei.findUnique({ where: { id: dto.idServei } });
     if (!servei || (options.checkActiu && !servei.actiu)) throw new NotFoundException('Servei no trobat');
 
     const treballador = await this.prisma.treballador.findUnique({ where: { id: dto.idTreballador } });
     if (!treballador || (options.checkActiu && !treballador.actiu)) throw new NotFoundException('Treballador no trobat');
+    if (servei.empresaId !== treballador.empresaId) throw new NotFoundException('Servei no trobat');
+    if (options.empresaIdUsuari !== undefined && treballador.empresaId !== options.empresaIdUsuari) {
+      throw new ForbiddenException('El treballador no pertany a la teva empresa');
+    }
 
     const treballadorServei = await this.prisma.treballadorServei.findUnique({
       where: { treballadorId_serveiId: { treballadorId: dto.idTreballador, serveiId: dto.idServei } },
@@ -104,34 +163,14 @@ export class ReservesService {
 
     const dataHoraFinal = new Date(dataHoraInici.getTime() + servei.duradaMin * 60 * 1000);
 
+    if (options.esClient) await this.checkFinestraClient(treballador.empresaId, dataHoraInici);
     await this.checkSlotAvailable(dto.idTreballador, treballador.empresaId, servei.duradaMin, dataHoraInici);
 
     const email = dto.email?.trim().toLowerCase() ?? null;
     const tokenValoracio = email ? randomUUID() : null;
 
     const reserva = await this.prisma.$transaction(async (tx) => {
-      const dayStart = new Date(dataHoraInici); dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(dataHoraInici); dayEnd.setHours(23, 59, 59, 999);
-
-      const existingReserves = await tx.reserva.findMany({
-        where: {
-          treballadorId: dto.idTreballador,
-          dataHora: { gte: dayStart, lte: dayEnd },
-          ...(options.filterCancellades && { estat: { not: 'CANCELLADA' } }),
-        },
-        include: { servei: { select: { duradaMin: true } } },
-      });
-
-      const hasOverlap = existingReserves.some((r) => {
-        const rFi = new Date(r.dataHora.getTime() + r.servei.duradaMin * 60 * 1000);
-        return r.dataHora < dataHoraFinal && rFi > dataHoraInici;
-      });
-
-      if (hasOverlap) {
-        throw options.filterCancellades
-          ? new ConflictException('Aquest horari ja no està disponible')
-          : new ForbiddenException('Ja hi ha una reserva solapada');
-      }
+      await this.assertSenseSolapament(tx, dto.idTreballador, dataHoraInici, dataHoraFinal);
 
       const client = email
         ? await tx.client.upsert({
@@ -174,12 +213,12 @@ export class ReservesService {
     return reserva;
   }
 
-  async create(dto: CreateReservaDto) {
-    return this.createReservaInternal(dto, { checkActiu: false, filterCancellades: false });
+  async create(dto: CreateReservaDto, user: CurrentUserData) {
+    return this.createReservaInternal(dto, { checkActiu: false, esClient: false, empresaIdUsuari: user.empresaId });
   }
 
   async createPublic(dto: CreateReservaDto) {
-    return this.createReservaInternal(dto, { checkActiu: true, filterCancellades: true });
+    return this.createReservaInternal(dto, { checkActiu: true, esClient: true });
   }
 
   async delete(idReserva: number, user: CurrentUserData) {
@@ -229,7 +268,17 @@ export class ReservesService {
       throw new NotFoundException('Treballador no trobat');
     }
 
+    if (treballador.empresaId !== user.empresaId || servei.empresaId !== user.empresaId) {
+      throw new ForbiddenException('El treballador o el servei no pertanyen a la teva empresa');
+    }
+
+    const treballadorServei = await this.prisma.treballadorServei.findUnique({
+      where: { treballadorId_serveiId: { treballadorId: dto.idTreballador, serveiId: dto.idServei } },
+    });
+    if (!treballadorServei) throw new ForbiddenException('El treballador no ofereix aquest servei');
+
     const dataHoraInici = new Date(`${dto.data}T${dto.hora}:00`);
+    if (isNaN(dataHoraInici.getTime())) throw new BadRequestException('Data o hora invàlida');
 
     const dataHoraFinal = new Date(dataHoraInici.getTime() + servei.duradaMin * 60 * 1000);
 
@@ -240,64 +289,37 @@ export class ReservesService {
       dataHoraInici,
     );
 
-    const dayStart = new Date(dataHoraInici);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dataHoraInici);
-    dayEnd.setHours(23, 59, 59, 999);
+    return this.prisma.$transaction(async (tx) => {
+      await this.assertSenseSolapament(tx, dto.idTreballador, dataHoraInici, dataHoraFinal, idReserva);
 
-    const reserves = await this.prisma.reserva.findMany({
-      where: {
-        id: { not: idReserva },
-        treballadorId: dto.idTreballador,
-        dataHora: {
-          gte: dayStart,
-          lte: dayEnd,
-        },
-      },
-      include: {
-        servei: {
-          select: { duradaMin: true },
-        },
-      },
-    });
+      let client = await tx.client.findFirst({
+        where: { email: dto.email, empresaId: treballador.empresaId },
+      });
 
-    const hasOverlap = reserves.some((reservaDia) => {
-      const reservaInici = reservaDia.dataHora;
-      const reservaFi = new Date(reservaInici.getTime() + reservaDia.servei.duradaMin * 60 * 1000);
-      return reservaInici < dataHoraFinal && reservaFi > dataHoraInici;
-    });
+      if (!client) {
+        client = await tx.client.create({
+          data: {
+            nom: dto.nom,
+            email: dto.email,
+            telefon: dto.telefon,
+            empresaId: treballador.empresaId,
+          },
+        });
+      }
 
-    if (hasOverlap) {
-      throw new ForbiddenException('Ja hi ha una reserva solapada');
-    }
-
-    let client = await this.prisma.client.findFirst({
-      where: { email: dto.email, empresaId: treballador.empresaId },
-    });
-
-    if (!client) {
-      client = await this.prisma.client.create({
+      return tx.reserva.update({
+        where: { id: idReserva },
         data: {
-          nom: dto.nom,
-          email: dto.email,
-          telefon: dto.telefon,
+          treballadorId: dto.idTreballador,
+          dataHora: dataHoraInici,
           empresaId: treballador.empresaId,
+          serveiId: dto.idServei,
+          clientId: client.id,
+          clientEmail: dto.email,
+          clientNom: dto.nom,
+          observacions: dto.observacions,
         },
       });
-    }
-
-    return this.prisma.reserva.update({
-      where: { id: idReserva },
-      data: {
-        treballadorId: dto.idTreballador,
-        dataHora: dataHoraInici,
-        empresaId: treballador.empresaId,
-        serveiId: dto.idServei,
-        clientId: client.id,
-        clientEmail: dto.email,
-        clientNom: dto.nom,
-        observacions: dto.observacions,
-      },
     });
   }
 
@@ -356,12 +378,12 @@ export class ReservesService {
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px;">
           <h2 style="color:#6366F1;margin:0 0 4px">BookMeNow</h2>
-          <p style="color:#6B7280;font-size:13px;margin:0 0 24px">${reserva.empresa.nom}</p>
+          <p style="color:#6B7280;font-size:13px;margin:0 0 24px">${escapeHtml(reserva.empresa.nom)}</p>
           <h3 style="color:#0F172A;margin:0 0 12px">La teva reserva ha estat cancel·lada</h3>
-          <p style="color:#334155;font-size:15px;">Hola ${reserva.clientNom ?? ''},</p>
+          <p style="color:#334155;font-size:15px;">Hola ${escapeHtml(reserva.clientNom)},</p>
           <p style="color:#334155;font-size:15px;">Lamentem informar-te que la teva cita ha estat cancel·lada per l'empresa:</p>
           <div style="background:#F8F9FB;border-radius:8px;padding:16px;margin:16px 0;">
-            <p style="margin:4px 0;color:#334155;font-size:14px;"><strong>Servei:</strong> ${reserva.servei.nom}</p>
+            <p style="margin:4px 0;color:#334155;font-size:14px;"><strong>Servei:</strong> ${escapeHtml(reserva.servei.nom)}</p>
             <p style="margin:4px 0;color:#334155;font-size:14px;"><strong>Data:</strong> ${dataFormatada}</p>
             <p style="margin:4px 0;color:#334155;font-size:14px;"><strong>Hora:</strong> ${horaFormatada}</p>
           </div>
@@ -508,10 +530,10 @@ export class ReservesService {
       subject: 'Reserva confirmada',
       html: `
         <h2>La teva reserva ha estat confirmada!</h2>
-        <p>Hola ${dto.nom},</p>
+        <p>Hola ${escapeHtml(dto.nom)},</p>
         <p>Et confirmem la teva cita amb els detalls següents:</p>
         <ul>
-          <li><strong>Servei:</strong> ${reserva.servei.nom}</li>
+          <li><strong>Servei:</strong> ${escapeHtml(reserva.servei.nom)}</li>
           <li><strong>Data:</strong> ${dataFormatada}</li>
           <li><strong>Hora:</strong> ${horaFormatada}</li>
           <li><strong>Durada:</strong> ${reserva.servei.duradaMin} minuts</li>
@@ -565,29 +587,15 @@ export class ReservesService {
     const dataHoraInici = new Date(`${dto.data}T${dto.hora}:00`);
 
     if (isNaN(dataHoraInici.getTime())) throw new BadRequestException('Data o hora invàlida');
+    if (reserva.treballadorId === null) throw new BadRequestException('Aquesta reserva no es pot modificar en línia');
 
     const dataHoraFinal = new Date(dataHoraInici.getTime() + reserva.servei.duradaMin * 60 * 1000);
 
+    await this.checkFinestraClient(reserva.empresaId, dataHoraInici);
+    await this.checkSlotAvailable(reserva.treballadorId, reserva.empresaId, reserva.servei.duradaMin, dataHoraInici);
+
     return this.prisma.$transaction(async (tx) => {
-      const dayStart = new Date(dataHoraInici); dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(dataHoraInici); dayEnd.setHours(23, 59, 59, 999);
-
-      const reserves = await tx.reserva.findMany({
-        where: {
-          id: { not: reserva.id },
-          treballadorId: reserva.treballadorId,
-          dataHora: { gte: dayStart, lte: dayEnd },
-          estat: { not: 'CANCELLADA' },
-        },
-        include: { servei: { select: { duradaMin: true } } },
-      });
-
-      const hasOverlap = reserves.some((r) => {
-        const rFi = new Date(r.dataHora.getTime() + r.servei.duradaMin * 60 * 1000);
-        return r.dataHora < dataHoraFinal && rFi > dataHoraInici;
-      });
-
-      if (hasOverlap) throw new ConflictException('Aquest horari ja no està disponible');
+      await this.assertSenseSolapament(tx, reserva.treballadorId, dataHoraInici, dataHoraFinal, reserva.id);
 
       return tx.reserva.update({
         where: { tokenGestio: token },
