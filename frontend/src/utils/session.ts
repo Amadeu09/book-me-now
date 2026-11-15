@@ -17,6 +17,21 @@ export async function getToken(): Promise<string | null> {
     return AsyncStorage.getItem(TOKEN_KEY);
 }
 
+/** Segons fins que caduca el token (claim exp), o null si no es pot llegir */
+export function segonsFinsCaducitat(token: string): number | null {
+    try {
+        const part = token.split('.')[1];
+        if (!part) return null;
+        const base64 = part.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+        const payload = JSON.parse(atob(padded)) as { exp?: number };
+        if (typeof payload.exp !== 'number') return null;
+        return payload.exp - Math.floor(Date.now() / 1000);
+    } catch {
+        return null;
+    }
+}
+
 /** Desa el token JWT */
 export async function setToken(token: string): Promise<void> {
     await AsyncStorage.setItem(TOKEN_KEY, token);

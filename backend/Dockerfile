@@ -24,6 +24,10 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# Zona horària del negoci: el motor de disponibilitat treballa en hora local
+RUN apk add --no-cache tzdata
+ENV TZ=Europe/Madrid
+
 # Copy node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules
 
@@ -39,7 +43,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Run migrations and start server
 CMD ["sh", "-c", "DATABASE_URL=$DIRECT_URL npx prisma migrate deploy && node dist/main"]

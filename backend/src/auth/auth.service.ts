@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto, LoginResponseDto, JwtPayload, ChangePasswordDto, UpdateColorDto, UpdateIdiomaDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { SessionCacheService } from './session-cache.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { Resend } from 'resend';
@@ -26,6 +27,7 @@ export class AuthService {
     private jwtService: JwtService,
     private tokenBlacklistService: TokenBlacklistService,
     private config: ConfigService,
+    private sessionCache: SessionCacheService,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
     this.emailFrom = this.config.get<string>('EMAIL_FROM');
@@ -96,6 +98,7 @@ export class AuthService {
       
       // Add token to blacklist
       await this.tokenBlacklistService.addToBlacklist(token, expiresAt);
+      this.sessionCache.invalidateToken(token);
       
       this.logger.log(`User logged out successfully: ${userId}`);
       
@@ -199,7 +202,7 @@ export class AuthService {
   /**
    * Self-service password change — verifies current password before updating
    */
-  async changePassword(userId: number, dto: ChangePasswordDto): Promise<{ message: string }> {
+  async changePassword(userId: number, dto: ChangePasswordDto): Promise<{ message: string; token: string }> {
     const user = await this.prisma.usuari.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('Usuari no trobat');
 
@@ -207,10 +210,14 @@ export class AuthService {
     if (!valid) throw new BadRequestException('La contrasenya actual és incorrecta');
 
     const hash = await bcrypt.hash(dto.newPassword, 10);
-    await this.prisma.usuari.update({ where: { id: userId }, data: { hash } });
+    const actualitzat = await this.prisma.usuari.update({
+      where: { id: userId },
+      data: { hash, credencialsCanviades: new Date() },
+    });
+    this.sessionCache.invalidateUser(userId);
 
     this.logger.log(`Password changed for user: ${userId}`);
-    return { message: 'Contrasenya actualitzada correctament' };
+    return { message: 'Contrasenya actualitzada correctament', token: this.signarToken(actualitzat) };
   }
 
   async updateColor(userId: number, dto: UpdateColorDto): Promise<{ colorPrimari: string | null }> {
@@ -277,11 +284,28 @@ export class AuthService {
     const hash = await bcrypt.hash(newPassword, 10);
     await this.prisma.usuari.update({
       where: { id: user.id },
-      data: { hash, resetToken: null, resetTokenExpiry: null },
+      data: { hash, resetToken: null, resetTokenExpiry: null, credencialsCanviades: new Date() },
     });
+    this.sessionCache.invalidateUser(user.id);
 
     this.logger.log(`Password reset successful for user: ${user.id}`);
     return { message: 'Contrasenya restablerta correctament' };
+  }
+
+  private signarToken(user: { id: number; email: string; rol: JwtPayload['rol']; empresaId: number }): string {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      rol: user.rol,
+      empresaId: user.empresaId,
+    };
+    return this.jwtService.sign(payload);
+  }
+
+  /** Renova la sessió: emet un token nou amb la caducitat completa. */
+  async refresh(userId: number): Promise<{ token: string }> {
+    const user = await this.validateUser(userId);
+    return { token: this.signarToken(user) };
   }
 
   /**
@@ -295,6 +319,7 @@ export class AuthService {
         email: true,
         rol: true,
         empresaId: true,
+        credencialsCanviades: true,
       },
     });
 
