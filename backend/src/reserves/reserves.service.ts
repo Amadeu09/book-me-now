@@ -1,7 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservaDto, ModificarReservaGestioDto } from './dto/reserves.dto';
@@ -9,13 +7,6 @@ import { ReservaEstat } from '@prisma/client';
 import { Resend } from 'resend';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 import { getRotacioIdx } from '../common/utils/horari.utils';
-
-const EMAIL_JOB_OPTIONS = {
-  attempts: 3,
-  backoff: { type: 'exponential', delay: 5000 },
-  removeOnComplete: true,
-  removeOnFail: false,
-};
 
 @Injectable()
 export class ReservesService {
@@ -25,7 +16,6 @@ export class ReservesService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
-    @InjectQueue('emails') private emailQueue: Queue,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
     this.emailFrom = this.config.get<string>('EMAIL_FROM');
@@ -178,15 +168,7 @@ export class ReservesService {
         () => this.enviarEmailConfirmacio(reserva, { ...dto, email }, dataHoraInici, reserva.tokenGestio),
         'confirmació',
       );
-
-      const delay = Math.max(0, dataHoraFinal.getTime() - Date.now());
-      this.emailQueue.add('post-cita', {
-        email,
-        nom: dto.nom,
-        serveiNom: reserva.servei.nom,
-        dataHoraInici: dataHoraInici.toISOString(),
-        tokenValoracio: reserva.tokenValoracio ?? undefined,
-      }, { delay, ...EMAIL_JOB_OPTIONS }).catch(err => console.error('[ReservesService] Error afegint job post-cita:', err));
+      // L'email post-cita l'envia EmailPostCitaService quan acaba la cita.
     }
 
     return reserva;

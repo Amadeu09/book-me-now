@@ -149,6 +149,7 @@ model Reserva {
   tokenGestio        String?         @unique
   tokenValoracio     String?         @unique
   tokenValoracioUsat Boolean         @default(false)
+  emailPostCitaEnviat Boolean        @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   valoracions        Valoracio[]
@@ -163,6 +164,7 @@ model Reserva {
   @@index([clientId])
   @@index([estat])
   @@index([serveiId])
+  @@index([emailPostCitaEnviat, dataHora])
 }
 
 model Valoracio {

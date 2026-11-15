@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReservesService } from './reserves.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { getQueueToken } from '@nestjs/bull';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateReservaDto } from './dto/reserves.dto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
@@ -51,10 +50,6 @@ describe('ReservesService', () => {
                 {
                     provide: ConfigService,
                     useValue: { get: jest.fn() },
-                },
-                {
-                    provide: getQueueToken('emails'),
-                    useValue: { add: jest.fn().mockResolvedValue(undefined) },
                 },
             ],
         }).compile();

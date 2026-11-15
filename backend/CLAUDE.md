@@ -53,7 +53,7 @@ Each feature module (`auth`, `usuaris`, `empresas`, `treballadors`, `serveis`, `
 
 ### Environment Validation
 
-`src/config/env.validation.ts` uses Zod to validate all env vars at startup. Copy `.env.example` to `.env`. Required: `DATABASE_URL` (PostgreSQL), `JWT_SECRET` (min 32 chars, no weak words), `JWT_EXPIRES_IN`, `NODE_ENV`, `PORT`, `ALLOWED_ORIGINS`. Variables `RESEND_API_KEY`, `EMAIL_FROM`, `REDIS_HOST`, `REDIS_PORT` no passen per Zod (tenen defaults al `ConfigService`) però han d'existir al `.env`.
+`src/config/env.validation.ts` uses Zod to validate all env vars at startup. Copy `.env.example` to `.env`. Required: `DATABASE_URL` (PostgreSQL), `JWT_SECRET` (min 32 chars, no weak words), `JWT_EXPIRES_IN`, `NODE_ENV`, `PORT`, `ALLOWED_ORIGINS`. Variables `RESEND_API_KEY`, `EMAIL_FROM`, `PORTAL_URL` no passen per Zod (tenen defaults al `ConfigService`) però han d'existir al `.env`.
 
 ### File Uploads
 
@@ -65,14 +65,13 @@ Resend s'utilitza per enviar emails des de `reservas@bookmenow.org` (domini veri
 
 L'enviament d'emails és **no bloquejant**: es crida sense `await` amb `.catch(err => console.error(...))` per no retardar la resposta HTTP.
 
-### Cues de tasques (BullMQ + Redis)
+### Tasques programades (email post-cita)
 
-BullMQ s'utilitza per programar jobs diferits, principalment emails post-cita. La queue `emails` està registrada al `ReservesModule` (`src/reserves/reserves.module.ts`). El processor és `src/reserves/email.processor.ts`.
+No hi ha cua ni Redis. `EmailPostCitaService` (`src/reserves/email-post-cita.service.ts`) s'executa cada 10 minuts amb `@nestjs/schedule` i envia l'email "Com ha anat la teva cita?" de les reserves acabades (últims 7 dies, no cancel·lades ni no presentades).
 
-- Requereix Redis corrent. Variables: `REDIS_HOST`, `REDIS_PORT` (i `REDIS_PASSWORD` a producció)
-- En local: `docker-compose up` aixeca Redis automàticament
-- A producció: usar Redis gestionat (Upstash, Railway, Render) i afegir `REDIS_PASSWORD` al `.env`
-- El `delay` del job es calcula com `dataHoraFinal.getTime() - Date.now()` per disparar l'email just en acabar la cita
+- El camp `Reserva.emailPostCitaEnviat` evita duplicats: cada reserva es marca abans d'enviar (`updateMany` condicional), així és segur amb diverses instàncies.
+- Si Resend falla, es desmarca i es torna a intentar a la següent execució.
+- Es va treure Bull/Redis (15/11/2026) perquè el polling esgotava la quota d'Upstash i feia caure el servidor.
 
 ### Domain Model (Prisma)
 
