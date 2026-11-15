@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuarisModule } from './usuaris/usuaris.module';
@@ -43,6 +44,8 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
       ttl: 900000, // 15 minutes
       limit: 500, // 500 requests per 15 minutes
     }]),
+    // Tasques programades (email post-cita)
+    ScheduleModule.forRoot(),
     // Core modules
     PrismaModule,
     AuthModule,

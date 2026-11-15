@@ -7,7 +7,7 @@ Plataforma SaaS per a la gestió empresarial amb cites prèvies. Dissenyada per 
 1
 ```
 BookMeNow-app/
-├── backend/          → API REST (NestJS + PostgreSQL + Redis)
+├── backend/          → API REST (NestJS + PostgreSQL)
 ├── frontend/         → App mòbil i web (React Native + Expo)
 ├── client-portal/    → Portal públic (Next.js)
 └── docker-compose.yml
@@ -45,9 +45,9 @@ cd backend
 cp .env.example .env
 # Edita .env amb les teves credencials
 
-docker-compose up -d          # Aixeca PostgreSQL + Redis + backend
+docker-compose up -d          # Aixeca PostgreSQL + backend
 # O per a desenvolupament en host:
-docker-compose up postgres redis -d
+docker-compose up postgres -d
 npm install
 npx prisma migrate deploy
 npx prisma generate
@@ -96,7 +96,6 @@ npm run dev
 | `ALLOWED_ORIGINS` | Orígens CORS separats per comes |
 | `RESEND_API_KEY` | Clau per a emails transaccionals |
 | `EMAIL_FROM` | Adreça emisora dels emails |
-| `REDIS_HOST` / `REDIS_PORT` | Connexió Redis per a BullMQ |
 | `CLOUDINARY_CLOUD_NAME` | Credencials Cloudinary (imatges) |
 | `CLOUDINARY_API_KEY` | Credencials Cloudinary |
 | `CLOUDINARY_API_SECRET` | Credencials Cloudinary |
@@ -122,7 +121,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 ## Docker Compose
 
 ```bash
-# Aixecar tot (Postgres + Redis + backend + frontend)
+# Aixecar tot (Postgres + backend + frontend)
 docker-compose up -d
 
 # Logs
@@ -176,7 +175,7 @@ npm run lint            # ESLint
 - NestJS 10 · TypeScript
 - Prisma 6 + PostgreSQL 15
 - JWT (Passport) + token blacklist per logout
-- BullMQ + Redis per a tasques asíncrones (emails post-cita)
+- Tasca programada (@nestjs/schedule) per als emails post-cita
 - Cloudinary per a imatges
 - Resend per a emails transaccionals
 - Swagger/OpenAPI 3.0
@@ -217,7 +216,7 @@ npm run lint            # ESLint
 | Directori públic d'empreses | — | — | ✅ |
 | Reserva pública sense login (token únic) | ✅ | — | ✅ |
 | Emails transaccionals (confirmació, valoració) | ✅ | — | — |
-| Cua de tasques asíncrones (BullMQ) | ✅ | — | — |
+| Tasques programades (emails post-cita) | ✅ | — | — |
 | Documentació API (Swagger) | ✅ | — | — |
 
 ---

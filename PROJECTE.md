@@ -46,7 +46,7 @@ Cada capa té una responsabilitat clara:
 - **Prisma 6** com a ORM per a PostgreSQL
 - **PostgreSQL 15** com a base de dades relacional
 - **JWT + Passport** per a autenticació i autorització
-- **BullMQ + Redis** per a cua de tasques asíncrones (emails diferits)
+- **@nestjs/schedule** per a tasques programades (emails post-cita)
 - **Cloudinary** per a gestió d'imatges (fotos de perfil, banners, imatges de serveis)
 - **Resend** per a enviament d'emails transaccionals
 - **Swagger/OpenAPI 3.0** per a documentació automàtica de l'API
@@ -131,7 +131,7 @@ Ambdós tipus s'integren al motor de disponibilitat per bloquejar slots automàt
 
 ### 3.8 Tasques asíncrones i emails
 
-Quan una reserva passa a estat `FINALITZADA`, s'encua una tasca a **BullMQ** (amb Redis com a broker) que envia un email de valoració al client. Això es fa de forma asíncrona per no bloquejar la resposta de l'API.
+Quan acaba una cita, una tasca programada (cada 10 minuts) envia un email de valoració al client i marca la reserva amb `emailPostCitaEnviat` per no repetir-lo.
 
 Els emails s'envien des de `reservas@bookmenow.org` utilitzant **Resend** com a servei de transaccional.
 
