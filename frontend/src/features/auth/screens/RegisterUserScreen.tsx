@@ -130,7 +130,7 @@ export default function RegisterUserScreen() {
       }
 
       theme.setPrimaryColor(null);
-      router.replace({ pathname: "/profile" } as any);
+      router.replace({ pathname: "/inici" } as any);
     } catch (error: unknown) {
       const msg =
         (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||

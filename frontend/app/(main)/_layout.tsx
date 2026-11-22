@@ -6,8 +6,7 @@ import Navbar from "@/ui/components/navBar";
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { StripedBackground } from '@/components/StripedBackground';
 
-const EMPLEAT_ROUTES = ['/bookings', '/profile', '/vacaciones'];
-const ADMIN_RESTRICTED = ['/services', '/horarios'];
+const ADMIN_RESTRICTED = ['/services', '/horarios', '/estadisticas', '/configuracio-empresa'];
 
 export default function MainLayout() {
     const { width } = useWindowDimensions();
@@ -26,7 +25,7 @@ export default function MainLayout() {
                     if (user?.rol === 'EMPLEAT') {
                         const isRestricted = ADMIN_RESTRICTED.some(r => pathname.startsWith(r));
                         if (isRestricted || pathname === '/') {
-                            router.replace('/profile');
+                            router.replace('/inici');
                         }
                     }
                 }
@@ -48,13 +47,16 @@ export default function MainLayout() {
 
             <View style={{ flex: 1, paddingBottom: isDesktopWeb ? 0 : 72 }}>
                 <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
-                    <Tabs.Screen name="profile" />
+                    <Tabs.Screen name="inici" />
+                    <Tabs.Screen name="profile" options={{ href: null }} />
                     <Tabs.Screen name="bookings" />
                     <Tabs.Screen name="services" />
                     <Tabs.Screen name="horarios" />
                     <Tabs.Screen name="vacaciones" />
                     <Tabs.Screen name="estadisticas" />
                     <Tabs.Screen name="valoracions-empresa" options={{ href: null }} />
+                    <Tabs.Screen name="configuracio-empresa" />
+                    <Tabs.Screen name="configuracio-usuari" />
                 </Tabs>
             </View>
 
