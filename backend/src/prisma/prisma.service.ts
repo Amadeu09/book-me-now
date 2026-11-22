@@ -1,12 +1,31 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
+/**
+ * Neon suspèn la base de dades quan no hi ha trànsit i tarda uns segons a
+ * despertar-se. Prisma, per defecte, només espera 5 s a connectar (connect_timeout)
+ * i 10 s per una connexió del pool (pool_timeout); la primera petició després d'un
+ * temps sense ús fallava. Si la URL no els porta, s'hi afegeixen valors més amplis.
+ */
+export function ambTimeoutsDespertar(url: string | undefined): string | undefined {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (!u.searchParams.has('connect_timeout')) u.searchParams.set('connect_timeout', '20');
+    if (!u.searchParams.has('pool_timeout')) u.searchParams.set('pool_timeout', '20');
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
     super({
+      datasourceUrl: ambTimeoutsDespertar(process.env.DATABASE_URL),
       log: process.env.NODE_ENV === 'development' 
         ? ['query', 'error', 'warn']
         : ['error'],
