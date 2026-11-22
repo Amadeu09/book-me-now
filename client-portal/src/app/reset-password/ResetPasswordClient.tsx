@@ -57,8 +57,8 @@ export function ResetPasswordClient({ token }: { token?: string }) {
       setLoading(true);
       await resetPassword(token, password);
       setSuccess(true);
-    } catch (err: any) {
-      if (err.message === 'TOKEN_INVALID') {
+    } catch (err: unknown) {
+      if ((err as Error).message === 'TOKEN_INVALID') {
         setError('El enlace ha caducado o ya fue utilizado. Solicita uno nuevo desde la app.');
       } else {
         setError('No se pudo restablecer la contraseña. Inténtalo de nuevo.');

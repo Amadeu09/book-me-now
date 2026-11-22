@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
 import { EmailPostCitaService } from './email-post-cita.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -28,6 +29,7 @@ describe('EmailPostCitaService', () => {
     const module = await Test.createTestingModule({
       providers: [
         EmailPostCitaService,
+        EmailService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: jest.fn((_k: string, def?: string) => def ?? 'x') } },
       ],
@@ -80,5 +82,15 @@ describe('EmailPostCitaService', () => {
       where: { id: 1 },
       data: { emailPostCitaEnviat: false },
     });
+  });
+
+  it('no reintenta si Resend rebutja l\'adreça (error definitiu)', async () => {
+    prisma.reserva.findMany.mockResolvedValue([reserva(60)]);
+    prisma.reserva.updateMany.mockResolvedValue({ count: 1 });
+    send.mockResolvedValue({ data: null, error: { name: 'validation_error', message: 'Invalid `to` field' } });
+
+    await service.enviarPendents();
+
+    expect(prisma.reserva.update).not.toHaveBeenCalled();
   });
 });

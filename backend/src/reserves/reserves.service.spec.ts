@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReservesService } from './reserves.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateReservaDto } from './dto/reserves.dto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
@@ -51,6 +52,10 @@ describe('ReservesService', () => {
                     provide: ConfigService,
                     useValue: { get: jest.fn() },
                 },
+                {
+                    provide: EmailService,
+                    useValue: { send: jest.fn().mockResolvedValue({ ok: true }), sendInBackground: jest.fn() },
+                },
             ],
         }).compile();
 
@@ -64,6 +69,46 @@ describe('ReservesService', () => {
 
     it('should be defined', () => {
         expect(service).toBeDefined();
+    });
+
+    describe('createPublic', () => {
+        const dto: CreateReservaDto = {
+            idServei: 1, idTreballador: 1, data: '2099-01-04', hora: '10:00',
+            email: 'Client@Example.com ', nom: 'Algú', telefon: '600000000',
+        };
+
+        beforeEach(() => {
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1, actiu: true });
+            mockPrismaService.treballador.findUnique.mockResolvedValue({ ...mockTreballador, empresa: { activa: true } });
+            mockPrismaService.treballadorServei.findUnique.mockResolvedValue({ treballadorId: 1, serveiId: 1 });
+        });
+
+        it('exigeix email', async () => {
+            await expect(service.createPublic({ ...dto, email: undefined })).rejects.toThrow(BadRequestException);
+        });
+
+        it('no accepta reserves d\'una empresa desactivada', async () => {
+            mockPrismaService.treballador.findUnique.mockResolvedValue({ ...mockTreballador, empresa: { activa: false } });
+            await expect(service.createPublic(dto)).rejects.toThrow(NotFoundException);
+        });
+
+        it('no sobreescriu les dades d\'un client existent', async () => {
+            const upsert = jest.fn().mockResolvedValue({ id: 1 });
+            jest.spyOn(service as any, 'checkFinestraClient').mockResolvedValue(undefined);
+            jest.spyOn(service as any, 'checkSlotAvailable').mockResolvedValue(undefined);
+            mockPrismaService.$transaction.mockImplementation(async (callback: any) => callback({
+                $executeRaw: jest.fn().mockResolvedValue(1),
+                reserva: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn().mockResolvedValue({ id: 9, servei: { nom: 'S', duradaMin: 60 } }) },
+                client: { upsert, create: jest.fn() },
+            }));
+
+            await service.createPublic(dto);
+
+            expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+                where: { email_empresaId: { email: 'client@example.com', empresaId: 1 } },
+                update: {},
+            }));
+        });
     });
 
     describe('create', () => {
@@ -162,11 +207,33 @@ describe('ReservesService', () => {
             mockPrismaService.$transaction.mockImplementation(async (callback: any) => callback({
                 $executeRaw: jest.fn().mockResolvedValue(1),
                 reserva: { findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({ id: 1, ...dto }) },
-                client: { findFirst: jest.fn().mockResolvedValue({ id: 1 }), create: jest.fn() },
+                client: { upsert: jest.fn().mockResolvedValue({ id: 1 }), create: jest.fn() },
             }));
 
             const result = await service.update(1, dto, mockUser);
             expect(result).toBeDefined();
+        });
+
+        it('sense email manté el client actual en lloc d\'agafar-ne un qualsevol', async () => {
+            mockPrismaService.reserva.findUnique.mockResolvedValue({ id: 1, empresaId: 1, clientId: 42, clientNom: dto.nom });
+            mockPrismaService.servei.findUnique.mockResolvedValue({ id: 1, duradaMin: 60, empresaId: 1 });
+            mockPrismaService.treballador.findUnique.mockResolvedValue(mockTreballador);
+            mockPrismaService.treballadorServei.findUnique.mockResolvedValue({ treballadorId: 1, serveiId: 1 });
+            const update = jest.fn().mockResolvedValue({ id: 1 });
+            const client = { upsert: jest.fn(), create: jest.fn(), findFirst: jest.fn() };
+            mockPrismaService.$transaction.mockImplementation(async (callback: any) => callback({
+                $executeRaw: jest.fn().mockResolvedValue(1),
+                reserva: { findMany: jest.fn().mockResolvedValue([]), update },
+                client,
+            }));
+
+            await service.update(1, { ...dto, email: undefined }, mockUser);
+
+            expect(client.findFirst).not.toHaveBeenCalled();
+            expect(client.upsert).not.toHaveBeenCalled();
+            expect(update).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({ clientId: 42, clientEmail: null }),
+            }));
         });
 
         it('should throw ForbiddenException if moving to a treballador of another empresa', async () => {

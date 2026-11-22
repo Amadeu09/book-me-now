@@ -224,7 +224,7 @@ const s = StyleSheet.create({
     pillsScroll: { flexGrow: 0 },
     pillsContent: { gap: 8, paddingVertical: 4 },
     pill: {
-        paddingVertical: 6, paddingHorizontal: 14, borderRadius: radius.full ?? 999,
+        paddingVertical: 6, paddingHorizontal: 14, borderRadius: radius.pill,
         borderWidth: 1, borderColor: HC.textLight, backgroundColor: HC.card,
     },
     pillText: { fontSize: 13, fontWeight: '500', color: HC.textPrimary },

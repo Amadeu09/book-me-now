@@ -16,7 +16,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { opcionsPujadaImatge } from '../common/utils/upload.utils';
 import { ServeisService } from './serveis.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -115,7 +115,7 @@ export class ServeisController {
   @ApiOperation({ summary: 'Subir foto de un servicio' })
   @ApiParam({ name: 'id', description: 'ID del servicio' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('foto', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('foto', opcionsPujadaImatge(5)))
   uploadFoto(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile(

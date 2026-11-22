@@ -53,6 +53,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: user.email,
         rol: user.rol,
         empresaId: user.empresaId,
+        // Tokens antics sense `ini`: la sessió compta des que es va emetre el token
+        sessioIniciada: payload.ini ?? payload.iat,
       };
       if (token) this.sessionCache.set(token, sessio);
       return sessio;

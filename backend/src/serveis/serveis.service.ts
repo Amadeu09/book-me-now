@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, InternalServerErro
 import { v2 as cloudinary } from 'cloudinary';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServeiDto, UpdateServeiDto } from './dto/servei.dto';
+import { normalitzarPaginacio } from '../common/utils/paginacio.utils';
 
 @Injectable()
 export class ServeisService {
@@ -22,6 +23,7 @@ export class ServeisService {
   }
 
   async findAll(empresaId: number, page = 1, pageSize = 4) {
+    ({ page, rows: pageSize } = normalitzarPaginacio(page, pageSize, 4));
     const skip = (page - 1) * pageSize;
     const [data, total] = await this.prisma.$transaction([
       this.prisma.servei.findMany({
@@ -133,7 +135,7 @@ export class ServeisService {
 
   async findAllPublic(empresaId: number) {
     const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } });
-    if (!empresa) throw new NotFoundException('Empresa no trobada');
+    if (!empresa || !empresa.activa) throw new NotFoundException('Empresa no trobada');
 
     return this.prisma.servei.findMany({
       where: { empresaId, actiu: true },

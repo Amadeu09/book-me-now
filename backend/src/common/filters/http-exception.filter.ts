@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
+import { ocultarTokens } from '../utils/log.utils';
 
 /**
  * Global exception filter
@@ -59,12 +60,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
 
-    // Log error (don't log 4xx client errors as errors, only as warnings)
-    const logLevel = status >= 500 ? 'error' : 'warn';
-    this.logger[logLevel](
-      `${request.method} ${request.url} - Status: ${status} - ${error}: ${message}`,
-      exception instanceof Error ? exception.stack : undefined,
-    );
+    // 5xx: error amb stack trace. 4xx: només una línia d'avís (un 404 o un 401 no
+    // necessita la traça, i omplia els logs).
+    const rutaLog = ocultarTokens(request.url);
+    if (status >= 500) {
+      this.logger.error(
+        `${request.method} ${rutaLog} - Status: ${status} - ${error}: ${message}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    } else {
+      this.logger.warn(`${request.method} ${rutaLog} - Status: ${status} - ${error}: ${message}`);
+    }
 
     // Send formatted response
     response.status(status).json({

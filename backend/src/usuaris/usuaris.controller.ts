@@ -17,7 +17,7 @@ import {
   FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { opcionsPujadaImatge } from '../common/utils/upload.utils';
 import {
   ApiTags,
   ApiOperation,
@@ -98,7 +98,7 @@ export class UsuarisController {
   @ApiResponse({ status: 200, description: 'Foto actualizada', type: UsuariResponseDto })
   @ApiResponse({ status: 400, description: 'Archivo no válido o demasiado grande' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  @UseInterceptors(FileInterceptor('foto', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('foto', opcionsPujadaImatge(5)))
   uploadFoto(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile(

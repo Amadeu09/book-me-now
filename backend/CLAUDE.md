@@ -63,7 +63,7 @@ Cloudinary is configured in `src/cloudinary.config.ts` and used for profile/comp
 
 Resend s'utilitza per enviar emails des de `reservas@bookmenow.org` (domini verificat). Requereix `RESEND_API_KEY` i `EMAIL_FROM` al `.env`. **Mai hardcodeïs `onboarding@resend.dev`** — sempre usa `this.config.get('EMAIL_FROM')`.
 
-L'enviament d'emails és **no bloquejant**: es crida sense `await` amb `.catch(err => console.error(...))` per no retardar la resposta HTTP.
+Tots els emails passen per `EmailService` (`src/email/email.service.ts`, global via `CommonModule`). Per enviaments que no han de retardar la resposta HTTP, usa `sendInBackground()` (mai llança). Sense `RESEND_API_KEY` no s'envia res (útil en tests i local). `send()` retorna `{ ok, permanent }`: `permanent` indica que reintentar no servirà (adreça invàlida).
 
 ### Tasques programades (email post-cita)
 

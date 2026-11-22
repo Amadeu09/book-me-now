@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { SessionCacheService } from './session-cache.service';
+import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
@@ -51,6 +52,10 @@ describe('AuthService', () => {
           useValue: { get: jest.fn().mockReturnValue('mock-value') },
         },
         SessionCacheService,
+        {
+          provide: EmailService,
+          useValue: { send: jest.fn(), sendInBackground: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -310,6 +315,19 @@ describe('AuthService', () => {
       mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1 });
       mockJwtService.sign.mockReturnValue('renovat');
       expect(await service.refresh(1)).toEqual({ token: 'renovat' });
+    });
+
+    it('conserva l\'inici de la sessió original al token nou', async () => {
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1 });
+      mockJwtService.sign.mockReturnValue('renovat');
+      const inici = Math.floor(Date.now() / 1000) - 5 * 24 * 3600;
+      await service.refresh(1, inici);
+      expect(mockJwtService.sign).toHaveBeenLastCalledWith(expect.objectContaining({ ini: inici }));
+    });
+
+    it('no renova una sessió de més de 30 dies', async () => {
+      const inici = Math.floor(Date.now() / 1000) - 31 * 24 * 3600;
+      await expect(service.refresh(1, inici)).rejects.toThrow(UnauthorizedException);
     });
   });
 });
