@@ -559,6 +559,14 @@ const es: Record<TranslationKeys, string> = {
   configCanviarContrasenya: 'Cambiar contraseña',
   configContrasenyaCanviada: 'Contraseña cambiada.',
   configTancarSessio: 'Cerrar sesión',
+  vacTitle: 'Vacaciones y ausencias',
+  vacSubtitle: 'Planifica los descansos y consulta los días que te quedan.',
+  configSubEmpresa: 'Imagen, datos del negocio y reservas online.',
+  configSubUsuari: 'Tu perfil, apariencia, idioma y contraseña.',
+  navPanel: 'Panel de gestión',
+  navSeccioPrincipal: 'Principal',
+  navPlegar: 'Plegar el menú',
+  navDesplegar: 'Desplegar el menú',
 };
 
 export default es;

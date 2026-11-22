@@ -13,6 +13,7 @@ import { CitesPendentsCard } from '../components/CitesPendentsCard';
 import { AbsenciesPendentsCard } from '../components/AbsenciesPendentsCard';
 import { ServeisAssignatsCard } from '../components/ServeisAssignatsCard';
 import { horaCurta, type PeriodeCites } from '../utils/dates';
+import { SCREEN_MAX_WIDTH } from '@/ui/components/ScreenHeader';
 
 /**
  * Inici: només el que cal veure d'un cop d'ull —
@@ -71,9 +72,9 @@ export default function IniciScreen() {
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="dark-content" />
+            <IniciHeader nom={nom} empresa={user?.empresa?.nom} fotoPerfil={fotoPerfil} isDesktop={isDesktop} />
             <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
                 <View style={styles.inner}>
-                    <IniciHeader nom={nom} empresa={user?.empresa?.nom} fotoPerfil={fotoPerfil} isDesktop={isDesktop} />
 
                     {isDesktop && (
                         <View style={styles.tiles}>
@@ -120,10 +121,10 @@ export default function IniciScreen() {
 const styles = StyleSheet.create({
     safe: { flex: 1 },
     content: { padding: 16, paddingBottom: 32 },
-    contentDesktop: { paddingHorizontal: 40, paddingVertical: 32 },
-    inner: { width: '100%', maxWidth: 1100, alignSelf: 'center', gap: 20 },
+    contentDesktop: { paddingHorizontal: 40, paddingTop: 28, paddingBottom: 40 },
+    inner: { width: '100%', maxWidth: SCREEN_MAX_WIDTH, alignSelf: 'center', gap: 24 },
     tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
     columns: { flexDirection: 'row', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' },
-    colMain: { flexGrow: 3, flexBasis: 480, minWidth: 0 },
-    colSide: { flexGrow: 2, flexBasis: 320, minWidth: 0, gap: 24 },
+    colMain: { flexGrow: 5, flexShrink: 1, flexBasis: 520, minWidth: 0 },
+    colSide: { flexGrow: 3, flexShrink: 1, flexBasis: 340, minWidth: 0, gap: 24 },
 });

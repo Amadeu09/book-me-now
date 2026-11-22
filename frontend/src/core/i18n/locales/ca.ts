@@ -556,6 +556,14 @@ const ca = {
   configCanviarContrasenya: 'Canviar contrasenya',
   configContrasenyaCanviada: 'Contrasenya canviada.',
   configTancarSessio: 'Tancar sessió',
+  vacTitle: 'Vacances i absències',
+  vacSubtitle: 'Planifica els descansos i consulta els dies que et queden.',
+  configSubEmpresa: 'Imatge, dades del negoci i reserves en línia.',
+  configSubUsuari: 'El teu perfil, aparença, idioma i contrasenya.',
+  navPanel: 'Panell de gestió',
+  navSeccioPrincipal: 'Principal',
+  navPlegar: 'Plegar el menú',
+  navDesplegar: 'Desplegar el menú',
 } as const;
 
 export type TranslationKeys = keyof typeof ca;

@@ -26,8 +26,25 @@ export default function ConfigEmpresaScreen() {
                 <ActivityIndicator color={theme.primary} style={styles.loader} />
             ) : (
                 <>
+                    <View style={styles.columns}>
+                    <View style={styles.colSide}>
                     <EmpresaImatgeSection empresaId={empresaId} nom={empresa.nom} fotoPerfil={empresa.fotoPerfil} bannerUrl={empresa.bannerUrl} />
 
+                    <ConfigSection title={t('configReservesOnline')}>
+                        <View style={styles.diesRow}>
+                            <Field
+                                label={t('configDiesAntelacio')}
+                                value={form.diasAntesReserva}
+                                onChangeText={(v) => canviar('diasAntesReserva', v)}
+                                keyboardType="number-pad"
+                                error={errors.diasAntesReserva}
+                                help={t('configDiesAjuda')}
+                            />
+                        </View>
+                    </ConfigSection>
+                    </View>
+
+                    <View style={styles.colMain}>
                     <ConfigSection title={t('configDadesNegoci')}>
                         <View style={styles.grid}>
                             <Field label={t('configNomEmpresa')} value={form.nom} onChangeText={(v) => canviar('nom', v)} error={errors.nom} />
@@ -45,19 +62,8 @@ export default function ConfigEmpresaScreen() {
                             help={t('configDescripcioAjuda')}
                         />
                     </ConfigSection>
-
-                    <ConfigSection title={t('configReservesOnline')}>
-                        <View style={styles.diesRow}>
-                            <Field
-                                label={t('configDiesAntelacio')}
-                                value={form.diasAntesReserva}
-                                onChangeText={(v) => canviar('diasAntesReserva', v)}
-                                keyboardType="number-pad"
-                                error={errors.diasAntesReserva}
-                                help={t('configDiesAjuda')}
-                            />
-                        </View>
-                    </ConfigSection>
+                    </View>
+                    </View>
 
                     <View style={styles.footer}>
                         {missatge ? <Text style={styles.missatge} accessibilityLiveRegion="polite">{missatge}</Text> : <View />}
@@ -77,6 +83,9 @@ const styles = StyleSheet.create({
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
     textarea: { minHeight: 88, textAlignVertical: 'top' },
     diesRow: { maxWidth: 420 },
+    columns: { flexDirection: 'row', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' },
+    colSide: { flexGrow: 2, flexShrink: 1, flexBasis: 360, minWidth: 0, gap: 20 },
+    colMain: { flexGrow: 3, flexShrink: 1, flexBasis: 480, minWidth: 0, gap: 20 },
     footer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
     buttons: { flexDirection: 'row', gap: 12 },
     missatge: { fontSize: 14, color: HC.textSecondary, flexShrink: 1 },

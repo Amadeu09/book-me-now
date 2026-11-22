@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Text,
-  Image,
   useWindowDimensions,
   Platform,
   Modal,
@@ -16,16 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { useLanguage } from '@/core/i18n';
 import api from '@/core/api/api';
+import { SidebarDesktop, type SidebarItem } from './SidebarDesktop';
 
 type NavKey = 'navInici' | 'navReserves' | 'navServeis' | 'navHoraris' | 'navVacances' | 'navEstadistiques';
 
-type NavItem = {
-  key: NavKey;
-  icon: string;
-  activeIcon: string;
-  path: string;
-  adminOnly: boolean;
-};
+type NavItem = SidebarItem & { key: NavKey; adminOnly: boolean };
 
 const ALL_NAV_ITEMS: NavItem[] = [
   { key: 'navInici',         icon: 'home-outline',      activeIcon: 'home',      path: '/inici',        adminOnly: false },
@@ -37,9 +31,9 @@ const ALL_NAV_ITEMS: NavItem[] = [
 ];
 
 /** Subapartats de Configuració. Empresa només per a administradors. */
-const CONFIG_ITEMS: { key: 'navEmpresa' | 'navUsuari'; path: string; adminOnly: boolean }[] = [
-  { key: 'navEmpresa', path: '/configuracio-empresa', adminOnly: true },
-  { key: 'navUsuari',  path: '/configuracio-usuari',  adminOnly: false },
+const CONFIG_ITEMS: (SidebarItem & { adminOnly: boolean })[] = [
+  { key: 'navEmpresa', icon: 'business-outline',      activeIcon: 'business',      path: '/configuracio-empresa', adminOnly: true },
+  { key: 'navUsuari',  icon: 'person-circle-outline', activeIcon: 'person-circle', path: '/configuracio-usuari',  adminOnly: false },
 ];
 
 type MobileNavItem = {
@@ -80,7 +74,6 @@ export default function Navbar({ variant }: NavbarProps) {
 
   const isDesktopWeb = variant === 'desktop' || (variant !== 'mobile' && Platform.OS === 'web' && width >= 1024);
 
-  const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [mantenimentSheetOpen, setMantenimentSheetOpen] = useState(false);
 
@@ -100,7 +93,6 @@ export default function Navbar({ variant }: NavbarProps) {
   const desktopItems = isEmpleat ? ALL_NAV_ITEMS.filter(i => !i.adminOnly) : ALL_NAV_ITEMS;
   const mobileItems = isEmpleat ? MOBILE_NAV_ITEMS.filter(i => !i.adminOnly) : MOBILE_NAV_ITEMS;
   const configItems = isEmpleat ? CONFIG_ITEMS.filter(i => !i.adminOnly) : CONFIG_ITEMS;
-  const configActive = pathname.startsWith('/configuracio');
 
   const handleLogout = async () => {
     try {
@@ -113,118 +105,20 @@ export default function Navbar({ variant }: NavbarProps) {
     }
   };
 
-  const sidebarWidth = collapsed ? 70 : 240;
+  if (isDesktopWeb) {
+    return <SidebarDesktop items={desktopItems} configItems={configItems} user={user} onLogout={handleLogout} />;
+  }
 
   return (
     <View
       style={[
         styles.container,
         { backgroundColor: theme.sidebarBg },
-        isDesktopWeb
-          ? { ...styles.containerWeb, width: sidebarWidth, position: 'relative' }
-          : { ...styles.containerMobile, paddingBottom: insets.bottom || 8 },
+        { ...styles.containerMobile, paddingBottom: insets.bottom || 8 },
       ]}
     >
-      {/* HEADER WEB EXPANDIDO */}
-      {isDesktopWeb && !collapsed && (
-        <View style={styles.webHeaderRow}>
-          <View style={styles.webHeaderTextContainer}>
-            <Text style={[styles.webLogo, { color: theme.headerText }]}>BookMeNow</Text>
-            <Text style={[styles.webSubtitle, { color: theme.headerSubtitle }]}>Panel</Text>
-          </View>
-          <TouchableOpacity onPress={() => setCollapsed(true)} style={styles.toggleButtonHeader}>
-            <Ionicons name="chevron-back" size={22} color={theme.sidebarText} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* HEADER WEB COLAPSADO */}
-      {isDesktopWeb && collapsed && (
-        <TouchableOpacity onPress={() => setCollapsed(false)} style={styles.toggleButtonCollapsed}>
-          <Ionicons name="chevron-forward" size={22} color={theme.sidebarText} />
-        </TouchableOpacity>
-      )}
-
-      {/* NAV ITEMS — Desktop sidebar */}
-      {isDesktopWeb && (
-        <View style={styles.navListWeb}>
-          {desktopItems.map((item) => {
-            const isActive = pathname === item.path;
-            const iconName = isActive ? item.activeIcon : item.icon;
-            return (
-              <TouchableOpacity
-                key={item.path}
-                activeOpacity={0.8}
-                accessibilityRole="link"
-                accessibilityLabel={t(item.key)}
-                onPress={() => router.push(item.path as any)}
-                style={[
-                  styles.navItemBase,
-                  styles.navItemWeb,
-                  collapsed && styles.navItemCollapsed,
-                  isActive && { backgroundColor: theme.sidebarActiveBg, borderWidth: 1, borderColor: theme.sidebarActiveBorder },
-                ]}
-              >
-                <Ionicons
-                  name={iconName as any}
-                  size={24}
-                  color={isActive ? theme.sidebarText : theme.sidebarTextInactive}
-                  style={styles.iconLeft}
-                />
-                {!collapsed && (
-                  <Text style={[styles.navText, { color: isActive ? theme.sidebarText : theme.sidebarTextInactive }]}>
-                    {t(item.key)}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-
-          {/* CONFIGURACIÓ amb els seus subapartats */}
-          <View style={[styles.navSeparator, { backgroundColor: theme.sidebarActiveBorder }]} />
-          <TouchableOpacity
-            activeOpacity={0.8}
-            accessibilityRole="link"
-            accessibilityLabel={t('navConfiguracio')}
-            onPress={() => router.push(configItems[0].path as any)}
-            style={[styles.navItemBase, styles.navItemWeb, collapsed && styles.navItemCollapsed]}
-          >
-            <Ionicons
-              name={(configActive ? 'settings' : 'settings-outline') as any}
-              size={24}
-              color={configActive ? theme.sidebarText : theme.sidebarTextInactive}
-              style={styles.iconLeft}
-            />
-            {!collapsed && (
-              <Text style={[styles.navText, { color: configActive ? theme.sidebarText : theme.sidebarTextInactive }]}>
-                {t('navConfiguracio')}
-              </Text>
-            )}
-          </TouchableOpacity>
-          {!collapsed && configItems.map((sub) => {
-            const isActive = pathname === sub.path;
-            return (
-              <TouchableOpacity
-                key={sub.path}
-                activeOpacity={0.8}
-                accessibilityRole="link"
-                onPress={() => router.push(sub.path as any)}
-                style={[
-                  styles.subNavItem,
-                  isActive && { backgroundColor: theme.sidebarActiveBg, borderWidth: 1, borderColor: theme.sidebarActiveBorder },
-                ]}
-              >
-                <Text style={[styles.subNavText, { color: isActive ? theme.sidebarText : theme.sidebarTextInactive }, isActive && styles.subNavTextActive]}>
-                  {t(sub.key)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      )}
-
       {/* NAV ITEMS — Mobile bottom bar */}
-      {!isDesktopWeb && (
+      {(
         <View style={styles.navListMobile}>
           {mobileItems.map((item) => {
             const isActive = item.activePaths
@@ -261,43 +155,8 @@ export default function Navbar({ variant }: NavbarProps) {
         </View>
       )}
 
-      {/* PERFIL USUARIO WEB (Bottom) */}
-      {isDesktopWeb && user && (
-        <View style={[
-          styles.profileContainerWeb,
-          collapsed && styles.profileContainerCollapsed,
-          { backgroundColor: theme.sidebarBg, borderTopColor: theme.sidebarActiveBorder },
-        ]}>
-          <TouchableOpacity
-            style={styles.profileLink}
-            onPress={() => router.push('/configuracio-usuari')}
-            accessibilityRole="link"
-            accessibilityLabel={t('navUsuari')}
-          >
-          <View style={[styles.avatarCircle, { backgroundColor: theme.sidebarActiveBg }]}>
-            {user?.fotoPerfil ? (
-              <Image source={{ uri: user.fotoPerfil }} style={styles.avatarImage} />
-            ) : (
-              <Text style={[styles.avatarText, { color: theme.sidebarText }]}>
-                {user?.email?.[0]?.toUpperCase() ?? 'U'}
-              </Text>
-            )}
-          </View>
-          {!collapsed && (
-            <View style={styles.profileTextContainer}>
-              <Text style={[styles.profileName, { color: theme.sidebarText }]} numberOfLines={1}>{user?.nom}</Text>
-              <Text style={[styles.profileEmail, { color: theme.sidebarTextInactive }]} numberOfLines={1}>{user?.email}</Text>
-            </View>
-          )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} accessibilityRole="button" accessibilityLabel={t('logout')}>
-            <Ionicons name="log-out-outline" size={20} color={theme.sidebarTextInactive} />
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* MANTENIMENT BOTTOM SHEET */}
-      {!isDesktopWeb && (
+      {(
         <Modal
           visible={mantenimentSheetOpen}
           transparent
