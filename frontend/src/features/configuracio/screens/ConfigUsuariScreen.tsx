@@ -38,6 +38,8 @@ export default function ConfigUsuariScreen() {
                 <ActivityIndicator color={theme.primary} style={styles.loader} />
             ) : (
                 <>
+                    <View style={styles.columns}>
+                    <View style={styles.colMain}>
                     <UsuariPerfilSection
                         nom={nom}
                         email={user.email}
@@ -45,8 +47,12 @@ export default function ConfigUsuariScreen() {
                         jornada={jornada}
                         fotoPerfil={treballador?.Usuari?.fotoPerfil ?? user.fotoPerfil ?? null}
                     />
+                    </View>
+                    <View style={styles.colSide}>
                     <UsuariAparencaSection />
                     <UsuariContrasenyaSection />
+                    </View>
+                    </View>
                     <View style={styles.footer}>
                         <Boto label={t('configTancarSessio')} onPress={tancarSessio} variant="danger" />
                     </View>
@@ -59,4 +65,7 @@ export default function ConfigUsuariScreen() {
 const styles = StyleSheet.create({
     loader: { paddingVertical: 48 },
     footer: { flexDirection: 'row' },
+    columns: { flexDirection: 'row', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' },
+    colMain: { flexGrow: 1, flexShrink: 1, flexBasis: 420, minWidth: 0, gap: 20 },
+    colSide: { flexGrow: 1, flexShrink: 1, flexBasis: 420, minWidth: 0, gap: 20 },
 });

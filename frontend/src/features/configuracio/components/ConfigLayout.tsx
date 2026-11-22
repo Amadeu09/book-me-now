@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { HC } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { useLanguage } from '@/core/i18n';
+import { ScreenHeader } from '@/ui/components/ScreenHeader';
 
 export type ApartatConfig = 'empresa' | 'usuari';
 
@@ -29,14 +30,13 @@ export function ConfigLayout({ actiu, esAdmin, children }: ConfigLayoutProps) {
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="dark-content" />
+            <ScreenHeader
+                icon="settings-outline"
+                title={`${t('configTitol')} · ${actiu === 'empresa' ? t('navEmpresa') : t('navUsuari')}`}
+                subtitle={actiu === 'empresa' ? t('configSubEmpresa') : t('configSubUsuari')}
+            />
             <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
                 <View style={styles.inner}>
-                    <View style={styles.header}>
-                        <Text style={styles.overline}>{t('configTitol')}</Text>
-                        <Text style={[styles.title, isDesktop && styles.titleDesktop]} accessibilityRole="header">
-                            {actiu === 'empresa' ? t('navEmpresa') : t('navUsuari')}
-                        </Text>
-                    </View>
                     {pestanyes.length > 1 && (
                         <View style={styles.tabs} accessibilityRole="tablist">
                             {pestanyes.map((p) => {
@@ -65,12 +65,8 @@ export function ConfigLayout({ actiu, esAdmin, children }: ConfigLayoutProps) {
 const styles = StyleSheet.create({
     safe: { flex: 1 },
     content: { padding: 16, paddingBottom: 40 },
-    contentDesktop: { paddingHorizontal: 40, paddingVertical: 32 },
-    inner: { width: '100%', maxWidth: 860, alignSelf: 'center', gap: 20 },
-    header: { gap: 2 },
-    overline: { fontSize: 14, color: HC.textMuted },
-    title: { fontSize: 22, fontWeight: '700', color: HC.textPrimary },
-    titleDesktop: { fontSize: 28 },
+    contentDesktop: { paddingHorizontal: 40, paddingTop: 24, paddingBottom: 40 },
+    inner: { width: '100%', maxWidth: 1200, alignSelf: 'center', gap: 20 },
     tabs: { flexDirection: 'row', gap: 4, borderBottomWidth: 1, borderBottomColor: HC.border },
     tab: { paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: 'transparent', marginBottom: -1 },
     tabText: { fontSize: 14, color: HC.textSecondary },

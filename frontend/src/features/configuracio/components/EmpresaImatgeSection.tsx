@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { HC } from '@/features/home/constants/inicio.constants';
 import { useTheme } from '@/core/theme/ThemeProvider';
@@ -22,6 +22,7 @@ export function EmpresaImatgeSection({ empresaId, nom, fotoPerfil, bannerUrl }: 
     const { t } = useLanguage();
     const queryClient = useQueryClient();
     const [pujant, setPujant] = useState<'logo' | 'banner' | null>(null);
+    const { width } = useWindowDimensions();
 
     const pujar = async (tipus: 'logo' | 'banner') => {
         const uri = await escollirImatge(tipus === 'logo');
@@ -45,7 +46,7 @@ export function EmpresaImatgeSection({ empresaId, nom, fotoPerfil, bannerUrl }: 
 
     return (
         <ConfigSection title={t('configImatge')}>
-            <View style={[styles.banner, { backgroundColor: theme.primaryLight === '#ffffff' ? HC.primaryLight : theme.primaryLight }]}>
+            <View style={[styles.banner, width >= 768 && styles.bannerDesktop, { backgroundColor: theme.primaryLight === '#ffffff' ? HC.primaryLight : theme.primaryLight }]}>
                 {bannerUrl ? <Image source={{ uri: bannerUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={t('configBanner')} /> : null}
                 <View style={styles.bannerBtn}>
                     <Boto label={t('configCanviarBanner')} onPress={() => pujar('banner')} loading={pujant === 'banner'} />
@@ -69,6 +70,7 @@ export function EmpresaImatgeSection({ empresaId, nom, fotoPerfil, bannerUrl }: 
 }
 
 const styles = StyleSheet.create({
+    bannerDesktop: { height: 170 },
     banner: { height: 140, borderRadius: 12, overflow: 'hidden', justifyContent: 'flex-end', alignItems: 'flex-end', padding: 12 },
     bannerBtn: { flexDirection: 'row' },
     logoRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
