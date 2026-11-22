@@ -76,7 +76,7 @@ export default function LoginScreen() {
       const response = await login({ email: email.trim().toLowerCase(), password });
       await setToken(response.token);
       await setUser(response.user);
-      router.replace({ pathname: "/profile" } as any);
+      router.replace({ pathname: "/inici" } as any);
     } catch (error: any) {
       const status = error?.response?.status;
       if (status === 401 || status === 403 || status == 400 || status === 404) {

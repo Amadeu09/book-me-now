@@ -14,18 +14,36 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { useLanguage } from '@/core/i18n';
+import api from '@/core/api/api';
 
-const ALL_NAV_ITEMS = [
-  { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', path: '/profile', adminOnly: false },
-  { name: 'Reservas', icon: 'calendar-outline', activeIcon: 'calendar', path: '/bookings', adminOnly: false },
-  { name: 'Servicios', icon: 'grid-outline', activeIcon: 'grid', path: '/services', adminOnly: true },
-  { name: 'Horarios y disponibilidad', icon: 'time-outline', activeIcon: 'time', path: '/horarios', adminOnly: true },
-  { name: 'Vacaciones', icon: 'sunny-outline', activeIcon: 'sunny', path: '/vacaciones', adminOnly: false },
-  { name: 'Estadísticas', icon: 'bar-chart-outline', activeIcon: 'bar-chart', path: '/estadisticas', adminOnly: true },
+type NavKey = 'navInici' | 'navReserves' | 'navServeis' | 'navHoraris' | 'navVacances' | 'navEstadistiques';
+
+type NavItem = {
+  key: NavKey;
+  icon: string;
+  activeIcon: string;
+  path: string;
+  adminOnly: boolean;
+};
+
+const ALL_NAV_ITEMS: NavItem[] = [
+  { key: 'navInici',         icon: 'home-outline',      activeIcon: 'home',      path: '/inici',        adminOnly: false },
+  { key: 'navReserves',      icon: 'calendar-outline',  activeIcon: 'calendar',  path: '/bookings',     adminOnly: false },
+  { key: 'navServeis',       icon: 'grid-outline',      activeIcon: 'grid',      path: '/services',     adminOnly: true },
+  { key: 'navHoraris',       icon: 'time-outline',      activeIcon: 'time',      path: '/horarios',     adminOnly: true },
+  { key: 'navVacances',      icon: 'sunny-outline',     activeIcon: 'sunny',     path: '/vacaciones',   adminOnly: false },
+  { key: 'navEstadistiques', icon: 'bar-chart-outline', activeIcon: 'bar-chart', path: '/estadisticas', adminOnly: true },
+];
+
+/** Subapartats de Configuració. Empresa només per a administradors. */
+const CONFIG_ITEMS: { key: 'navEmpresa' | 'navUsuari'; path: string; adminOnly: boolean }[] = [
+  { key: 'navEmpresa', path: '/configuracio-empresa', adminOnly: true },
+  { key: 'navUsuari',  path: '/configuracio-usuari',  adminOnly: false },
 ];
 
 type MobileNavItem = {
-  name: string;
+  key: NavKey | 'navGestio' | 'navConfiguracio';
   icon: string;
   activeIcon: string;
   path?: string;
@@ -35,16 +53,17 @@ type MobileNavItem = {
 };
 
 const MOBILE_NAV_ITEMS: MobileNavItem[] = [
-  { name: 'Perfil',       icon: 'person-outline',    activeIcon: 'person',    path: '/profile',    adminOnly: false },
-  { name: 'Reserves',     icon: 'calendar-outline',  activeIcon: 'calendar',  path: '/bookings',   adminOnly: false },
-  { name: 'Manteniment',  icon: 'construct-outline', activeIcon: 'construct', adminOnly: true, activePaths: ['/services', '/horarios'], isSheet: true },
-  { name: 'Vacances',     icon: 'sunny-outline',     activeIcon: 'sunny',     path: '/vacaciones', adminOnly: false },
-  { name: 'Estadísticas', icon: 'bar-chart-outline', activeIcon: 'bar-chart', path: '/estadisticas', adminOnly: true },
+  { key: 'navInici',        icon: 'home-outline',      activeIcon: 'home',      path: '/inici',      adminOnly: false },
+  { key: 'navReserves',     icon: 'calendar-outline',  activeIcon: 'calendar',  path: '/bookings',   adminOnly: false },
+  { key: 'navGestio',       icon: 'construct-outline', activeIcon: 'construct', adminOnly: true, activePaths: ['/services', '/horarios', '/estadisticas'], isSheet: true },
+  { key: 'navVacances',     icon: 'sunny-outline',     activeIcon: 'sunny',     path: '/vacaciones', adminOnly: false },
+  { key: 'navConfiguracio', icon: 'settings-outline',  activeIcon: 'settings',  path: '/configuracio-usuari', adminOnly: false, activePaths: ['/configuracio-usuari', '/configuracio-empresa'] },
 ];
 
-const MANTENIMENT_ITEMS = [
-  { icon: 'grid-outline' as const, label: 'Serveis', path: '/services' },
-  { icon: 'time-outline' as const, label: 'Horaris i disponibilitat', path: '/horarios' },
+const GESTIO_ITEMS: { icon: 'grid-outline' | 'time-outline' | 'bar-chart-outline'; key: NavKey; path: string }[] = [
+  { icon: 'grid-outline', key: 'navServeis', path: '/services' },
+  { icon: 'time-outline', key: 'navHoraris', path: '/horarios' },
+  { icon: 'bar-chart-outline', key: 'navEstadistiques', path: '/estadisticas' },
 ];
 
 type NavbarProps = {
@@ -57,6 +76,7 @@ export default function Navbar({ variant }: NavbarProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const { t } = useLanguage();
 
   const isDesktopWeb = variant === 'desktop' || (variant !== 'mobile' && Platform.OS === 'web' && width >= 1024);
 
@@ -79,9 +99,13 @@ export default function Navbar({ variant }: NavbarProps) {
   const isEmpleat = user?.rol === 'EMPLEAT';
   const desktopItems = isEmpleat ? ALL_NAV_ITEMS.filter(i => !i.adminOnly) : ALL_NAV_ITEMS;
   const mobileItems = isEmpleat ? MOBILE_NAV_ITEMS.filter(i => !i.adminOnly) : MOBILE_NAV_ITEMS;
+  const configItems = isEmpleat ? CONFIG_ITEMS.filter(i => !i.adminOnly) : CONFIG_ITEMS;
+  const configActive = pathname.startsWith('/configuracio');
 
   const handleLogout = async () => {
     try {
+      // Invalida el token al servidor; si falla, la sessió local es tanca igualment
+      await api.post('/auth/logout').catch(() => undefined);
       await clearSession();
       router.replace('/login');
     } catch (err) {
@@ -131,6 +155,8 @@ export default function Navbar({ variant }: NavbarProps) {
               <TouchableOpacity
                 key={item.path}
                 activeOpacity={0.8}
+                accessibilityRole="link"
+                accessibilityLabel={t(item.key)}
                 onPress={() => router.push(item.path as any)}
                 style={[
                   styles.navItemBase,
@@ -147,9 +173,50 @@ export default function Navbar({ variant }: NavbarProps) {
                 />
                 {!collapsed && (
                   <Text style={[styles.navText, { color: isActive ? theme.sidebarText : theme.sidebarTextInactive }]}>
-                    {item.name}
+                    {t(item.key)}
                   </Text>
                 )}
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* CONFIGURACIÓ amb els seus subapartats */}
+          <View style={[styles.navSeparator, { backgroundColor: theme.sidebarActiveBorder }]} />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            accessibilityRole="link"
+            accessibilityLabel={t('navConfiguracio')}
+            onPress={() => router.push(configItems[0].path as any)}
+            style={[styles.navItemBase, styles.navItemWeb, collapsed && styles.navItemCollapsed]}
+          >
+            <Ionicons
+              name={(configActive ? 'settings' : 'settings-outline') as any}
+              size={24}
+              color={configActive ? theme.sidebarText : theme.sidebarTextInactive}
+              style={styles.iconLeft}
+            />
+            {!collapsed && (
+              <Text style={[styles.navText, { color: configActive ? theme.sidebarText : theme.sidebarTextInactive }]}>
+                {t('navConfiguracio')}
+              </Text>
+            )}
+          </TouchableOpacity>
+          {!collapsed && configItems.map((sub) => {
+            const isActive = pathname === sub.path;
+            return (
+              <TouchableOpacity
+                key={sub.path}
+                activeOpacity={0.8}
+                accessibilityRole="link"
+                onPress={() => router.push(sub.path as any)}
+                style={[
+                  styles.subNavItem,
+                  isActive && { backgroundColor: theme.sidebarActiveBg, borderWidth: 1, borderColor: theme.sidebarActiveBorder },
+                ]}
+              >
+                <Text style={[styles.subNavText, { color: isActive ? theme.sidebarText : theme.sidebarTextInactive }, isActive && styles.subNavTextActive]}>
+                  {t(sub.key)}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -163,11 +230,14 @@ export default function Navbar({ variant }: NavbarProps) {
             const isActive = item.activePaths
               ? item.activePaths.includes(pathname)
               : pathname === item.path;
+            const label = t(item.key);
             const iconName = isActive ? item.activeIcon : item.icon;
             return (
               <TouchableOpacity
-                key={item.name}
+                key={item.key}
                 activeOpacity={0.8}
+                accessibilityRole={item.isSheet ? 'button' : 'link'}
+                accessibilityLabel={label}
                 onPress={() => {
                   if (item.isSheet) {
                     setMantenimentSheetOpen(true);
@@ -183,7 +253,7 @@ export default function Navbar({ variant }: NavbarProps) {
                   color={isActive ? theme.sidebarText : theme.sidebarTextInactive}
                 />
                 <Text style={[styles.mobileNavText, { color: isActive ? theme.sidebarText : theme.sidebarTextInactive }]}>
-                  {item.name}
+                  {label}
                 </Text>
               </TouchableOpacity>
             );
@@ -198,6 +268,12 @@ export default function Navbar({ variant }: NavbarProps) {
           collapsed && styles.profileContainerCollapsed,
           { backgroundColor: theme.sidebarBg, borderTopColor: theme.sidebarActiveBorder },
         ]}>
+          <TouchableOpacity
+            style={styles.profileLink}
+            onPress={() => router.push('/configuracio-usuari')}
+            accessibilityRole="link"
+            accessibilityLabel={t('navUsuari')}
+          >
           <View style={[styles.avatarCircle, { backgroundColor: theme.sidebarActiveBg }]}>
             {user?.fotoPerfil ? (
               <Image source={{ uri: user.fotoPerfil }} style={styles.avatarImage} />
@@ -213,7 +289,8 @@ export default function Navbar({ variant }: NavbarProps) {
               <Text style={[styles.profileEmail, { color: theme.sidebarTextInactive }]} numberOfLines={1}>{user?.email}</Text>
             </View>
           )}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} accessibilityRole="button" accessibilityLabel={t('logout')}>
             <Ionicons name="log-out-outline" size={20} color={theme.sidebarTextInactive} />
           </TouchableOpacity>
         </View>
@@ -235,8 +312,8 @@ export default function Navbar({ variant }: NavbarProps) {
             />
             <View style={[styles.sheet, { paddingBottom: insets.bottom || 16 }]}>
               <View style={styles.sheetHandle} />
-              <Text style={styles.sheetTitle}>Manteniment</Text>
-              {MANTENIMENT_ITEMS.map((si) => (
+              <Text style={styles.sheetTitle}>{t('navGestio')}</Text>
+              {GESTIO_ITEMS.map((si) => (
                 <TouchableOpacity
                   key={si.path}
                   style={styles.sheetRow}
@@ -246,7 +323,7 @@ export default function Navbar({ variant }: NavbarProps) {
                   }}
                 >
                   <Ionicons name={si.icon} size={24} color="#0f172a" />
-                  <Text style={styles.sheetRowText}>{si.label}</Text>
+                  <Text style={styles.sheetRowText}>{t(si.key)}</Text>
                   <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
                 </TouchableOpacity>
               ))}
@@ -254,7 +331,7 @@ export default function Navbar({ variant }: NavbarProps) {
                 style={styles.sheetCancelBtn}
                 onPress={() => setMantenimentSheetOpen(false)}
               >
-                <Text style={styles.sheetCancelText}>Cancel·lar</Text>
+                <Text style={styles.sheetCancelText}>{t('cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -265,6 +342,11 @@ export default function Navbar({ variant }: NavbarProps) {
 }
 
 const styles = StyleSheet.create({
+  navSeparator: { height: 1, marginVertical: 10, marginHorizontal: 8 },
+  subNavItem: { marginLeft: 40, marginRight: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, marginBottom: 2 },
+  subNavText: { fontSize: 14 },
+  subNavTextActive: { fontWeight: '600' },
+  profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
   container: {
     position: 'relative',
     zIndex: 50,
