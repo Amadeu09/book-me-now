@@ -32,3 +32,11 @@ export const updateHorariTram = (empresaId: number, id: number, dto: UpdateHorar
 
 export const deleteHorariTram = (empresaId: number, id: number): Promise<void> =>
     api.delete(`${base(empresaId)}/${id}`).then(r => r.data);
+
+/** Substitueix totes les franges d'un dia (llista buida = tancat). */
+export const substituirDiaHorari = (
+    empresaId: number,
+    dow: number,
+    trams: { iniciMin: number; fiMin: number }[],
+): Promise<HorariEmpresa[]> =>
+    api.put<HorariEmpresa[]>(`${base(empresaId)}/dia/${dow}`, { trams }).then(r => r.data);

@@ -28,7 +28,7 @@ import { getJornades } from '../../services/jornades.service';
 
 interface CreateTrabajadorModalProps {
     visible: boolean;
-    initialData?: any; // The worker data from EmployeeShiftCard
+    initialData?: any; // Treballador a editar (null per crear-ne un)
     onClose: () => void;
     onSuccess?: () => void;
 }

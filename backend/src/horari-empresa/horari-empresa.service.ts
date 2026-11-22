@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
-import { CreateHorariEmpresaDto, UpdateHorariEmpresaDto } from './dto/horari-empresa.dto';
+import { CreateHorariEmpresaDto, SubstituirDiaHorariDto, UpdateHorariEmpresaDto } from './dto/horari-empresa.dto';
 
 @Injectable()
 export class HorariEmpresaService {
@@ -55,6 +55,38 @@ export class HorariEmpresaService {
         return this.prisma.horariEmpresa.update({
             where: { id },
             data: { iniciMin: dto.iniciMin, fiMin: dto.fiMin },
+        });
+    }
+
+    /** Substitueix tots els trams d'un dia en una sola transacció (desat automàtic). */
+    async substituirDia(empresaId: number, dow: number, dto: SubstituirDiaHorariDto, user: CurrentUserData) {
+        this.assertAdmin(user);
+        this.assertSameEmpresa(user, empresaId);
+        if (!Number.isInteger(dow) || dow < 0 || dow > 6) {
+            throw new BadRequestException('El dia ha de ser entre 0 (dilluns) i 6 (diumenge)');
+        }
+
+        const trams = [...dto.trams].sort((a, b) => a.iniciMin - b.iniciMin);
+        for (let i = 0; i < trams.length; i++) {
+            if (trams[i].iniciMin >= trams[i].fiMin) {
+                throw new BadRequestException('L\'hora d\'inici ha de ser anterior a l\'hora de fi');
+            }
+            if (i > 0 && trams[i].iniciMin < trams[i - 1].fiMin) {
+                throw new BadRequestException('Els trams d\'un mateix dia no es poden solapar');
+            }
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+            await tx.horariEmpresa.deleteMany({ where: { empresaId, dow } });
+            if (trams.length > 0) {
+                await tx.horariEmpresa.createMany({
+                    data: trams.map(t => ({ empresaId, dow, iniciMin: t.iniciMin, fiMin: t.fiMin })),
+                });
+            }
+            return tx.horariEmpresa.findMany({
+                where: { empresaId, dow },
+                orderBy: { iniciMin: 'asc' },
+            });
         });
     }
 

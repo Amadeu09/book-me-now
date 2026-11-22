@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { HorariEmpresaService } from './horari-empresa.service';
-import { CreateHorariEmpresaDto, UpdateHorariEmpresaDto } from './dto/horari-empresa.dto';
+import { CreateHorariEmpresaDto, SubstituirDiaHorariDto, UpdateHorariEmpresaDto } from './dto/horari-empresa.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -50,6 +50,22 @@ export class HorariEmpresaController {
         @CurrentUser() user: CurrentUserData,
     ) {
         return this.service.create(empresaId, dto, user);
+    }
+
+    @Put('dia/:dow')
+    @Roles('ADMIN_GENERAL')
+    @ApiOperation({ summary: 'Substituir tots els trams d\'un dia (0=Dilluns … 6=Diumenge)' })
+    @ApiParam({ name: 'empresaId', type: Number })
+    @ApiParam({ name: 'dow', type: Number })
+    @ApiResponse({ status: 200, description: 'Trams del dia després del canvi' })
+    @ApiResponse({ status: 400, description: 'Trams invàlids o solapats' })
+    substituirDia(
+        @Param('empresaId', ParseIntPipe) empresaId: number,
+        @Param('dow', ParseIntPipe) dow: number,
+        @Body() dto: SubstituirDiaHorariDto,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        return this.service.substituirDia(empresaId, dow, dto, user);
     }
 
     @Put(':id')
