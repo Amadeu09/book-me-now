@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { LogoMark } from '@/components/layout/logo';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -73,7 +74,7 @@ export function ResetPasswordClient({ token }: { token?: string }) {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-8 max-w-md w-full">
         {/* Brand */}
         <div className="flex items-center gap-2 mb-6">
-          <span className="w-2 h-2 rounded-full bg-[#6366F1] block" />
+          <LogoMark size={28} />
           <span className="text-[#6366F1] font-black tracking-[0.2em] text-xs uppercase">BookMeNow</span>
         </div>
 

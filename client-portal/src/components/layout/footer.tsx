@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { LogoMark } from './logo';
 
 type ModalType = 'privacy' | 'terms' | 'contact' | null;
 
@@ -115,7 +116,7 @@ export function Footer() {
     <>
       <footer className="w-full rounded-t-[32px] bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row justify-between items-center px-16 py-20 font-['Plus_Jakarta_Sans'] text-sm uppercase tracking-widest">
         <div className="mb-12 md:mb-0">
-          <div className="text-lg font-black text-slate-900 dark:text-white mb-4">BookMeNow</div>
+          <div className="flex items-center gap-2.5 text-lg font-black text-slate-900 dark:text-white mb-4"><LogoMark size={28} />BookMeNow</div>
           <p className="text-slate-400 dark:text-slate-600 normal-case tracking-normal max-w-xs">
             © {new Date().getFullYear()} BookMeNow. Curated with Intention.
           </p>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, Pressable, ScrollView, StyleSheet, type PressableStateCallbackType } from 'react-native';
+import { LogoBookMeNow } from './LogoBookMeNow';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -52,10 +53,7 @@ export function SidebarDesktop({ items, configItems, user, onLogout }: SidebarDe
     AsyncStorage.setItem(CLAU_PLEGAT, nou ? '1' : '0').catch(() => undefined);
   };
 
-  // Logotip: sobre fons blanc, quadrat del color de l'empresa; sobre fons de color, quadrat blanc
   const fonsClar = theme.sidebarBg.toLowerCase() === '#ffffff';
-  const logoBg = fonsClar ? theme.primary : '#FFFFFF';
-  const logoFg = fonsClar ? theme.textOnPrimary : theme.primary;
   const hoverBg = fonsClar ? 'rgba(148,163,184,0.12)' : 'rgba(255,255,255,0.10)';
   const vora = fonsClar ? '#E5E7EB' : 'rgba(255,255,255,0.16)';
 
@@ -110,9 +108,7 @@ export function SidebarDesktop({ items, configItems, user, onLogout }: SidebarDe
           accessibilityLabel="BookMeNow"
           style={styles.marcaLink}
         >
-          <View style={[styles.logo, { backgroundColor: logoBg }]}>
-            <Text style={[styles.logoText, { color: logoFg }]}>B</Text>
-          </View>
+          <LogoBookMeNow mida={40} />
           {!plegat && (
             <View style={styles.marcaTextos}>
               <Text style={[styles.marcaNom, { color: theme.sidebarText }]}>BookMeNow</Text>
@@ -180,8 +176,6 @@ const styles = StyleSheet.create({
   marca: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 18, gap: 8 },
   marcaPlegada: { flexDirection: 'column', gap: 12 },
   marcaLink: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1, minWidth: 0 },
-  logo: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
   marcaTextos: { flexShrink: 1, minWidth: 0 },
   marcaNom: { fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
   marcaSub: { fontSize: 12, marginTop: 1 },

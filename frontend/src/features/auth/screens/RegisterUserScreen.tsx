@@ -26,6 +26,7 @@ import { uploadFotoEmpresa } from "@/features/empresas/services/empresas.service
 import { createHorariTram } from "@/features/horarios/services/horari-empresa.service";
 import { TramModal, minsToHHMM } from "@/features/horarios/components/modal/TramModal";
 import { HC, cardShadow } from "@/features/home/constants/inicio.constants";
+import { LogoBookMeNow } from "@/ui/components/LogoBookMeNow";
 
 export default function RegisterUserScreen() {
   const router = useRouter();
@@ -156,7 +157,7 @@ export default function RegisterUserScreen() {
           </TouchableOpacity>
 
           <View style={styles.brandRow}>
-            <View style={[styles.brandDot, { backgroundColor: HC.primary }]} />
+            <LogoBookMeNow mida={28} />
             <Text style={[styles.brandText, { color: HC.primary }]}>BOOKMENOW</Text>
           </View>
 
@@ -392,8 +393,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40, maxWidth: 480, width: "100%", alignSelf: "center" },
   backButton: { position: "absolute", top: 0, left: 0, zIndex: 10, padding: 4 },
 
-  brandRow: { flexDirection: "row", alignItems: "center" },
-  brandDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   brandText: { letterSpacing: 3, fontWeight: "800", fontSize: 11 },
   title: { fontSize: 28, fontWeight: "800", color: HC.textPrimary, lineHeight: 34 },
   subtitle: { color: HC.textMuted, marginTop: 6, fontSize: 14 },
