@@ -17,7 +17,7 @@ import { useLanguage } from '@/core/i18n';
 import api from '@/core/api/api';
 import { SidebarDesktop, type SidebarItem } from './SidebarDesktop';
 
-type NavKey = 'navInici' | 'navReserves' | 'navServeis' | 'navHoraris' | 'navVacances' | 'navEstadistiques';
+type NavKey = 'navInici' | 'navReserves' | 'navServeis' | 'navEquip' | 'navHoraris' | 'navVacances' | 'navEstadistiques';
 
 type NavItem = SidebarItem & { key: NavKey; adminOnly: boolean };
 
@@ -25,6 +25,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { key: 'navInici',         icon: 'home-outline',      activeIcon: 'home',      path: '/inici',        adminOnly: false },
   { key: 'navReserves',      icon: 'calendar-outline',  activeIcon: 'calendar',  path: '/bookings',     adminOnly: false },
   { key: 'navServeis',       icon: 'grid-outline',      activeIcon: 'grid',      path: '/services',     adminOnly: true },
+  { key: 'navEquip',         icon: 'people-outline',    activeIcon: 'people',    path: '/equip',        adminOnly: true },
   { key: 'navHoraris',       icon: 'time-outline',      activeIcon: 'time',      path: '/horarios',     adminOnly: true },
   { key: 'navVacances',      icon: 'sunny-outline',     activeIcon: 'sunny',     path: '/vacaciones',   adminOnly: false },
   { key: 'navEstadistiques', icon: 'bar-chart-outline', activeIcon: 'bar-chart', path: '/estadisticas', adminOnly: true },
@@ -49,13 +50,14 @@ type MobileNavItem = {
 const MOBILE_NAV_ITEMS: MobileNavItem[] = [
   { key: 'navInici',        icon: 'home-outline',      activeIcon: 'home',      path: '/inici',      adminOnly: false },
   { key: 'navReserves',     icon: 'calendar-outline',  activeIcon: 'calendar',  path: '/bookings',   adminOnly: false },
-  { key: 'navGestio',       icon: 'construct-outline', activeIcon: 'construct', adminOnly: true, activePaths: ['/services', '/horarios', '/estadisticas'], isSheet: true },
+  { key: 'navGestio',       icon: 'construct-outline', activeIcon: 'construct', adminOnly: true, activePaths: ['/services', '/equip', '/horarios', '/estadisticas'], isSheet: true },
   { key: 'navVacances',     icon: 'sunny-outline',     activeIcon: 'sunny',     path: '/vacaciones', adminOnly: false },
   { key: 'navConfiguracio', icon: 'settings-outline',  activeIcon: 'settings',  path: '/configuracio-usuari', adminOnly: false, activePaths: ['/configuracio-usuari', '/configuracio-empresa'] },
 ];
 
-const GESTIO_ITEMS: { icon: 'grid-outline' | 'time-outline' | 'bar-chart-outline'; key: NavKey; path: string }[] = [
+const GESTIO_ITEMS: { icon: 'grid-outline' | 'people-outline' | 'time-outline' | 'bar-chart-outline'; key: NavKey; path: string }[] = [
   { icon: 'grid-outline', key: 'navServeis', path: '/services' },
+  { icon: 'people-outline', key: 'navEquip', path: '/equip' },
   { icon: 'time-outline', key: 'navHoraris', path: '/horarios' },
   { icon: 'bar-chart-outline', key: 'navEstadistiques', path: '/estadisticas' },
 ];

@@ -9,6 +9,8 @@ export interface AbsenciaEmpresa {
     tipus: TipusAbsenciaEmpresa;
     createdAt: string;
     updatedAt: string;
+    /** Cites actives dins del tancament (només tancaments futurs). */
+    reservesAfectades?: number;
 }
 
 export interface CreateAbsenciaEmpresaDto {

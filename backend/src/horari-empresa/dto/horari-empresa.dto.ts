@@ -1,4 +1,5 @@
-import { IsInt, Min, Max } from 'class-validator';
+import { IsInt, Min, Max, IsArray, ArrayMaxSize, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateHorariEmpresaDto {
@@ -33,4 +34,27 @@ export class UpdateHorariEmpresaDto {
     @Min(1)
     @Max(1440)
     fiMin: number;
+}
+
+export class TramDiaDto {
+    @ApiProperty({ example: 540 })
+    @IsInt()
+    @Min(0)
+    @Max(1439)
+    iniciMin: number;
+
+    @ApiProperty({ example: 840 })
+    @IsInt()
+    @Min(1)
+    @Max(1440)
+    fiMin: number;
+}
+
+export class SubstituirDiaHorariDto {
+    @ApiProperty({ type: [TramDiaDto], description: 'Trams del dia. Llista buida = tancat.' })
+    @IsArray()
+    @ArrayMaxSize(6)
+    @ValidateNested({ each: true })
+    @Type(() => TramDiaDto)
+    trams: TramDiaDto[];
 }
