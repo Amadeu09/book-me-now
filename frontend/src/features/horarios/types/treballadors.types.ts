@@ -37,6 +37,7 @@ export interface TreballadorBackendItem {
     Usuari?: {
         email: string;
         fotoPerfil?: string | null;
+        rol?: string;
     };
     plantilla?: {
         id: number;

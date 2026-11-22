@@ -295,7 +295,7 @@ export class TreballadorsService {
     const data = await this.prisma.treballador.findMany({
       where: { empresaId },
       include: {
-        Usuari: { select: { email: true, fotoPerfil: true } },
+        Usuari: { select: { email: true, fotoPerfil: true, rol: true } },
         serveis: { include: { servei: true } },
         plantilla: true,
       },
@@ -304,13 +304,48 @@ export class TreballadorsService {
       take: Number(rows),
     });
 
+    const diesUsats = await this.diesVacancesUsatsAny(data.map(t => t.id));
+
     return {
-      data,
+      data: data.map(t => ({ ...t, diesVacancesUsats: diesUsats.get(t.id) ?? 0 })),
       total,
       page: Number(page),
       rows: Number(rows),
       totalPages: Math.ceil(total / rows),
     };
+  }
+
+  /**
+   * Dies de vacances aprovades de l'any en curs per a cada treballador.
+   * Compta dies naturals (com la pantalla de Vacances), retallats a l'any.
+   */
+  private async diesVacancesUsatsAny(treballadorIds: number[]): Promise<Map<number, number>> {
+    const resultat = new Map<number, number>();
+    if (treballadorIds.length === 0) return resultat;
+
+    const any = new Date().getFullYear();
+    const iniciAny = new Date(Date.UTC(any, 0, 1));
+    const fiAny = new Date(Date.UTC(any, 11, 31, 23, 59, 59, 999));
+
+    const vacances = await this.prisma.absencia.findMany({
+      where: {
+        treballadorId: { in: treballadorIds },
+        tipus: 'VACANCES',
+        estat: 'APROVADA',
+        inici: { lte: fiAny },
+        fi: { gte: iniciAny },
+      },
+      select: { treballadorId: true, inici: true, fi: true },
+    });
+
+    const DIA_MS = 86_400_000;
+    for (const v of vacances) {
+      const inici = Math.max(v.inici.getTime(), iniciAny.getTime());
+      const fi = Math.min(v.fi.getTime(), fiAny.getTime());
+      const dies = Math.round((fi - inici) / DIA_MS) + 1;
+      if (dies > 0) resultat.set(v.treballadorId, (resultat.get(v.treballadorId) ?? 0) + dies);
+    }
+    return resultat;
   }
 
   async update(empresaId: number, id: number, dto: UpdateTreballadorDto, currentUser: number) {

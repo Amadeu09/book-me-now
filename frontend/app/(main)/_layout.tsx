@@ -6,7 +6,7 @@ import Navbar from "@/ui/components/navBar";
 import { useTheme } from '@/core/theme/ThemeProvider';
 import { StripedBackground } from '@/components/StripedBackground';
 
-const ADMIN_RESTRICTED = ['/services', '/horarios', '/estadisticas', '/configuracio-empresa'];
+const ADMIN_RESTRICTED = ['/services', '/equip', '/horarios', '/estadisticas', '/configuracio-empresa'];
 
 export default function MainLayout() {
     const { width } = useWindowDimensions();
@@ -51,6 +51,7 @@ export default function MainLayout() {
                     <Tabs.Screen name="profile" options={{ href: null }} />
                     <Tabs.Screen name="bookings" />
                     <Tabs.Screen name="services" />
+                    <Tabs.Screen name="equip" />
                     <Tabs.Screen name="horarios" />
                     <Tabs.Screen name="vacaciones" />
                     <Tabs.Screen name="estadisticas" />
