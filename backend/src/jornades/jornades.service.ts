@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateJornadaPlantillaDto } from './dto/jornada-plantilla.dto';
 import { UpdateJornadaPlantillaDto } from './dto/update-jornada-plantilla.dto';
 import { Rol } from '@prisma/client';
+import { normalitzarPaginacio } from '../common/utils/paginacio.utils';
 
 @Injectable()
 export class JornadesService {
@@ -131,6 +132,7 @@ export class JornadesService {
             throw new NotFoundException('Empresa no trobada');
         }
 
+        ({ page, rows } = normalitzarPaginacio(page, rows, 2));
         const skip = (page - 1) * rows;
         const total = await this.prisma.jornadaPlantilla.count({ where: { empresaId } });
         

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Resend } from 'resend';
+import { EmailService, EmailResult } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { escapeHtml } from '../common/utils/html.utils';
 
@@ -18,17 +18,14 @@ const LOT = 100;
 @Injectable()
 export class EmailPostCitaService {
   private readonly logger = new Logger(EmailPostCitaService.name);
-  private readonly resend: Resend;
-  private readonly emailFrom: string;
   private readonly portalUrl: string;
   private executant = false;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly email: EmailService,
   ) {
-    this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
-    this.emailFrom = this.config.get<string>('EMAIL_FROM');
     this.portalUrl = this.config.get<string>('PORTAL_URL', 'http://localhost:3002');
   }
 
@@ -63,21 +60,24 @@ export class EmailPostCitaService {
         });
         if (count === 0) continue;
 
-        try {
-          await this.enviar({
-            email: reserva.clientEmail,
-            nom: reserva.clientNom ?? '',
-            serveiNom: reserva.servei.nom,
-            dataHoraInici: reserva.dataHora,
-            tokenValoracio: reserva.tokenValoracio,
-          });
-        } catch (err) {
-          this.logger.error(`Error enviant email post-cita (reserva ${reserva.id})`, err instanceof Error ? err.stack : String(err));
-          // Es tornarà a intentar a la propera execució.
-          await this.prisma.reserva.update({
-            where: { id: reserva.id },
-            data: { emailPostCitaEnviat: false },
-          });
+        const resultat = await this.enviar({
+          email: reserva.clientEmail,
+          nom: reserva.clientNom ?? '',
+          serveiNom: reserva.servei.nom,
+          dataHoraInici: reserva.dataHora,
+          tokenValoracio: reserva.tokenValoracio,
+        });
+        if (!resultat.ok) {
+          if (resultat.permanent) {
+            // Adreça invàlida o similar: reintentar no servirà, es deixa marcada
+            this.logger.warn(`Email post-cita descartat (reserva ${reserva.id}): ${resultat.error}`);
+          } else {
+            // Error transitori: es tornarà a intentar a la propera execució
+            await this.prisma.reserva.update({
+              where: { id: reserva.id },
+              data: { emailPostCitaEnviat: false },
+            });
+          }
         }
       }
     } catch (err) {
@@ -93,7 +93,7 @@ export class EmailPostCitaService {
     serveiNom: string;
     dataHoraInici: Date;
     tokenValoracio: string | null;
-  }): Promise<void> {
+  }): Promise<EmailResult> {
     const dataFormatada = dades.dataHoraInici.toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' });
     const horaFormatada = dades.dataHoraInici.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
 
@@ -103,8 +103,7 @@ export class EmailPostCitaService {
       ? `${this.portalUrl}/valoracio/${encodeURIComponent(dades.tokenValoracio)}`
       : null;
 
-    const { error } = await this.resend.emails.send({
-      from: this.emailFrom,
+    return this.email.send({
       to: dades.email,
       subject: `Com ha anat la teva cita de ${dades.serveiNom}?`,
       html: `
@@ -123,6 +122,5 @@ export class EmailPostCitaService {
         <p>Gràcies per confiar en nosaltres. Fins aviat!</p>
       `,
     });
-    if (error) throw new Error(`Resend: ${error.message}`);
   }
 }

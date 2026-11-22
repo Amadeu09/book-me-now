@@ -9,27 +9,13 @@ import {
 import { v2 as cloudinary } from 'cloudinary';
 import { BusinessType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateEmpresaDto, UpdateEmpresaDto } from './dto/empresa.dto';
+import { UpdateEmpresaDto } from './dto/empresa.dto';
 
 @Injectable()
 export class EmpresasService {
   private readonly logger = new Logger(EmpresasService.name);
 
   constructor(private prisma: PrismaService) { }
-
-  async create(createEmpresaDto: CreateEmpresaDto) {
-    const empresa = await this.prisma.empresa.create({
-      data: {
-        nom: createEmpresaDto.nom,
-        ubicacio: createEmpresaDto.ubicacio,
-        capacitat: createEmpresaDto.capacitat ?? null,
-        activa: createEmpresaDto.activa ?? true,
-        ...(createEmpresaDto.diasAntesReserva ? { diasAntesReserva: createEmpresaDto.diasAntesReserva } : {}),
-      },
-    });
-
-    return empresa;
-  }
 
   async searchPublic(query: string) {
     const sanitized = query.trim().slice(0, 100);

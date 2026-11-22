@@ -98,8 +98,8 @@ export function GestioReservaClient({ reserva, token }: Props) {
     try {
       await modificarReservaByToken(token, selectedDate, selectedSlot.split(' - ')[0]);
       setView('modificada');
-    } catch (err: any) {
-      if (err?.message === 'CONFLICT') {
+    } catch (err: unknown) {
+      if ((err as Error | undefined)?.message === 'CONFLICT') {
         setErrorMsg('Aquest horari ja no està disponible. Torna a seleccionar una altra hora.');
       } else {
         setErrorMsg('No s\'ha pogut modificar la reserva. Torna-ho a provar.');
@@ -452,7 +452,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-800 mb-1">Cita modificada</h2>
-                <p className="text-gray-500 text-sm">La teva cita s'ha canviat correctament a:</p>
+                <p className="text-gray-500 text-sm">La teva cita s’ha canviat correctament a:</p>
                 <div className="bg-green-50 border border-green-100 rounded-xl p-3 mt-3 text-left">
                   <p className="text-sm font-semibold text-green-800 capitalize">
                     {new Date(`${selectedDate}T00:00:00`).toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -472,7 +472,7 @@ export function GestioReservaClient({ reserva, token }: Props) {
                 <span className="material-symbols-outlined text-red-500 text-4xl">error</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-800 mb-1">S'ha produït un error</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-1">S’ha produït un error</h2>
                 <p className="text-gray-500 text-sm">{errorMsg}</p>
               </div>
               <button

@@ -200,7 +200,7 @@ export function CreateAbsenciaModal({ visible, inici, fi, diesVacancesAnuals, va
                         )}
 
                         {/* Tipus */}
-                        <Text style={styles.label}>Tipus d'absència *</Text>
+                        <Text style={styles.label}>{"Tipus d'absència *"}</Text>
                         <View style={styles.tipusGrid}>
                             {TIPUS_OPTIONS.map(opt => {
                                 const isActive = tipus === opt.value;

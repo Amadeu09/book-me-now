@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuarisModule } from './usuaris/usuaris.module';
 import { EmpresasModule } from './empresas/empresas.module';
@@ -48,6 +49,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     ScheduleModule.forRoot(),
     // Core modules
     PrismaModule,
+    CommonModule,
     AuthModule,
     // Business modules
     UsuarisModule,

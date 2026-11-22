@@ -172,6 +172,8 @@ export interface JwtPayload {
   email: string;
   rol: Rol;
   empresaId: number;
+  /** Inici de la sessió (segons Unix). Es conserva en renovar el token. */
+  ini?: number;
   iat?: number;
   exp?: number;
 }

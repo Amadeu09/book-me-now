@@ -14,7 +14,7 @@ export const HorariosTabs: React.FC<HorariosTabsProps> = ({ activeTab, onTabChan
     const { t } = useLanguage();
     const TAB_LABELS: Record<TabKey, string> = {
         global: t('tabGlobal'),
-        plantilles: t('tabPlantilles'),
+        plantillas: t('tabPlantilles'),
         personal: t('tabPersonal'),
     };
     return (

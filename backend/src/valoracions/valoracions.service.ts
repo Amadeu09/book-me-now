@@ -78,6 +78,9 @@ export class ValoracionsService {
         if (!reserva) throw new NotFoundException('Enllaç de valoració no vàlid');
         if (reserva.tokenValoracioUsat) throw new ConflictException('Aquesta cita ja ha estat valorada');
         if (reserva.dataHora > new Date()) throw new BadRequestException('Encara no pots valorar una cita que no ha passat');
+        if (reserva.estat === 'CANCELLADA' || reserva.estat === 'NO_SHOW') {
+            throw new BadRequestException('Aquesta cita no es pot valorar');
+        }
 
         if (reserva.treballadorId && (dto.puntuacioTreballador === undefined || !dto.comentariTreballador)) {
             throw new BadRequestException('Cal valorar també el treballador');

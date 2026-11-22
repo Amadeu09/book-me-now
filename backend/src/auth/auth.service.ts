@@ -13,13 +13,21 @@ import { TokenBlacklistService } from './token-blacklist.service';
 import { SessionCacheService } from './session-cache.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { Resend } from 'resend';
+import { EmailService } from '../email/email.service';
+
+/** Hash bcrypt vàlid d'una contrasenya aleatòria, per igualar el temps del login. */
+const HASH_FICTICI = '$2b$10$Bkn2RD4V8ZAKCGGqmEj/2ejrSOmc1xedPvFfoJMOzPnKzvCw1QHMW';
+
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/** Una sessió es pot anar renovant com a màxim 30 dies des del login. */
+const DURADA_MAXIMA_SESSIO_S = 30 * 24 * 60 * 60;
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly resend: Resend;
-  private readonly emailFrom: string;
   private readonly portalUrl: string;
 
   constructor(
@@ -28,9 +36,8 @@ export class AuthService {
     private tokenBlacklistService: TokenBlacklistService,
     private config: ConfigService,
     private sessionCache: SessionCacheService,
+    private email: EmailService,
   ) {
-    this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
-    this.emailFrom = this.config.get<string>('EMAIL_FROM');
     this.portalUrl = this.config.get<string>('PORTAL_URL') ?? 'http://localhost:3002';
   }
 
@@ -47,6 +54,8 @@ export class AuthService {
     });
 
     if (!user) {
+      // Mateix cost que una contrasenya incorrecta: no es pot saber si l'email existeix pel temps de resposta
+      await bcrypt.compare(loginDto.password, HASH_FICTICI);
       this.logger.warn('Login attempt with unknown credentials');
       throw new UnauthorizedException('Credencials invàlides');
     }
@@ -60,14 +69,7 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      rol: user.rol,
-      empresaId: user.empresaId,
-    };
-
-    const token = this.jwtService.sign(payload);
+    const token = this.signarToken(user);
 
     this.logger.log(`Login successful for user: ${user.id}`);
 
@@ -162,15 +164,7 @@ export class AuthService {
       return { empresa, usuari };
     });
 
-    // Generate JWT token
-    const payload: JwtPayload = {
-      sub: result.usuari.id,
-      email: result.usuari.email,
-      rol: result.usuari.rol,
-      empresaId: result.usuari.empresaId,
-    };
-
-    const token = this.jwtService.sign(payload);
+    const token = this.signarToken(result.usuari);
 
     this.logger.log(`Signup successful for user: ${result.usuari.id}`);
 
@@ -247,15 +241,15 @@ export class AuthService {
     const token = crypto.randomBytes(32).toString('hex');
     const expiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min
 
+    // A la BD només es guarda el hash: qui llegeixi la taula no pot fer servir el token
     await this.prisma.usuari.update({
       where: { email },
-      data: { resetToken: token, resetTokenExpiry: expiry },
+      data: { resetToken: hashToken(token), resetTokenExpiry: expiry },
     });
 
     const resetUrl = `${this.portalUrl}/reset-password?token=${token}`;
 
-    this.resend.emails.send({
-      from: this.emailFrom,
+    this.email.sendInBackground({
       to: email,
       subject: 'Restableix la teva contrasenya — BookMeNow',
       html: `
@@ -268,14 +262,14 @@ export class AuthService {
           <p style="color:#6B7280;font-size:13px;">L'enllaç caducarà en <strong>30 minuts</strong>. Si no has sol·licitat cap canvi, ignora aquest correu.</p>
         </div>
       `,
-    }).catch(err => this.logger.error('Error sending reset email', err));
+    });
 
-    this.logger.log(`Password reset requested for: ${email}`);
+    this.logger.log(`Password reset requested for user: ${user.id}`);
     return { message: 'Si existeix el compte, rebràs un correu en breus.' };
   }
 
   async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    const user = await this.prisma.usuari.findUnique({ where: { resetToken: token } });
+    const user = await this.prisma.usuari.findUnique({ where: { resetToken: hashToken(token) } });
 
     if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
       throw new BadRequestException('Token invàlid o caducat');
@@ -292,20 +286,36 @@ export class AuthService {
     return { message: 'Contrasenya restablerta correctament' };
   }
 
-  private signarToken(user: { id: number; email: string; rol: JwtPayload['rol']; empresaId: number }): string {
+  /**
+   * Signa un token. `sessioIniciada` és l'inici de la sessió original: en un login
+   * nou és ara; en renovar, es conserva perquè la sessió tingui una durada màxima.
+   */
+  private signarToken(
+    user: { id: number; email: string; rol: JwtPayload['rol']; empresaId: number },
+    sessioIniciada: number = Math.floor(Date.now() / 1000),
+  ): string {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       rol: user.rol,
       empresaId: user.empresaId,
+      ini: sessioIniciada,
     };
     return this.jwtService.sign(payload);
   }
 
-  /** Renova la sessió: emet un token nou amb la caducitat completa. */
-  async refresh(userId: number): Promise<{ token: string }> {
+  /**
+   * Renova la sessió: emet un token nou amb la caducitat completa, sempre que la
+   * sessió original no superi la durada màxima (cal tornar a fer login).
+   */
+  async refresh(userId: number, sessioIniciada?: number): Promise<{ token: string }> {
+    const ara = Math.floor(Date.now() / 1000);
+    const inici = sessioIniciada ?? ara;
+    if (ara - inici > DURADA_MAXIMA_SESSIO_S) {
+      throw new UnauthorizedException('Sessió caducada: torna a iniciar sessió');
+    }
     const user = await this.validateUser(userId);
-    return { token: this.signarToken(user) };
+    return { token: this.signarToken(user, inici) };
   }
 
   /**

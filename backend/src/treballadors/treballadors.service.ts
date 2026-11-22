@@ -1,14 +1,20 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTreballadorDto } from './dto/CreateTreballadorDto';
 import { AssignarServeisDto } from './dto/AssignarServeisDto';
 import { UpdateTreballadorDto } from './dto/UpdateTreballadorDto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 import { getRotacioIdx } from '../common/utils/horari.utils';
+import { normalitzarPaginacio } from '../common/utils/paginacio.utils';
 
 const PLANTILLA_INCLUDE = {
   rotacions: { include: { dies: { include: { trams: true } } } },
 } as const;
+
+type TreballadorAmbPlantilla = Prisma.TreballadorGetPayload<{
+  include: { plantilla: { include: typeof PLANTILLA_INCLUDE } };
+}>;
 
 function parseDateInici(iso?: string): Date {
   if (!iso) {
@@ -32,6 +38,12 @@ export class TreballadorsService {
     const userAfegir = await this.prisma.usuari.findUnique({ where: { id: dto.idUsuari } });
     if (!userAfegir) throw new NotFoundException('L\'usuari a assignar no existeix');
     if (userAfegir.empresaId !== empresaId) throw new ForbiddenException('No pots assignar un usuari d\'una altra empresa');
+
+    if (dto.plantillaId) {
+      const plantilla = await this.prisma.jornadaPlantilla.findUnique({ where: { id: dto.plantillaId } });
+      if (!plantilla) throw new NotFoundException('La plantilla de jornada no existeix');
+      if (plantilla.empresaId !== empresaId) throw new ForbiddenException('La plantilla no pertany a la teva empresa');
+    }
 
     const treballador = await this.prisma.treballador.create({
       data: {
@@ -96,8 +108,14 @@ export class TreballadorsService {
     if (!user) throw new NotFoundException('Usuari no trobat');
     if (user.rol !== 'ADMIN_GENERAL') throw new ForbiddenException('Usuari no autoritzat');
 
-    const serveisTreballador = await this.prisma.treballadorServei.findUnique({ where: { id } });
+    const serveisTreballador = await this.prisma.treballadorServei.findUnique({
+      where: { id },
+      include: { treballador: { select: { empresaId: true } } },
+    });
     if (!serveisTreballador) throw new NotFoundException('Els serveis del treballador no existeixen');
+    if (serveisTreballador.treballador.empresaId !== empresaId) {
+      throw new ForbiddenException('No pots modificar els serveis d\'un treballador d\'una altra empresa');
+    }
 
     return await this.prisma.treballadorServei.delete({ where: { id } });
   }
@@ -105,15 +123,47 @@ export class TreballadorsService {
   async getDisponibilitatPublic(treballadorId: number, serveiId: number) {
     const treballador = await this.prisma.treballador.findUnique({
       where: { id: treballadorId },
-      include: { plantilla: { include: PLANTILLA_INCLUDE } },
+      include: { plantilla: { include: PLANTILLA_INCLUDE }, empresa: { select: { activa: true } } },
     });
-    if (!treballador || !treballador.actiu) throw new NotFoundException('El treballador no existeix');
+    if (!treballador || !treballador.actiu || !treballador.empresa.activa) throw new NotFoundException('El treballador no existeix');
 
     const servei = await this.prisma.servei.findUnique({ where: { id: serveiId } });
     if (!servei || !servei.actiu) throw new NotFoundException('El servei no existeix');
     if (servei.empresaId !== treballador.empresaId) throw new NotFoundException('El servei no pertany a aquest treballador');
 
-    const empresaInfo = await this.prisma.empresa.findUnique({ where: { id: treballador.empresaId }, select: { diasAntesReserva: true } });
+    return this.calcularDisponibilitat(treballador, servei.duradaMin);
+  }
+
+  async getDisponibilitat(empresaId: number, id: number, serveiId: number, currentUser: number) {
+    const user = await this.prisma.usuari.findUnique({ where: { id: currentUser } });
+    if (!user) throw new NotFoundException('Usuari no trobat');
+    if (user.rol !== 'ADMIN_GENERAL') throw new ForbiddenException('Usuari no autoritzat');
+
+    const treballador = await this.prisma.treballador.findUnique({
+      where: { id },
+      include: { plantilla: { include: PLANTILLA_INCLUDE } },
+    });
+    if (!treballador) throw new NotFoundException('El treballador no existeix');
+    if (treballador.empresaId !== empresaId) throw new ForbiddenException('No pots veure la disponibilitat d\'un treballador d\'una altra empresa');
+
+    const servei = await this.prisma.servei.findUnique({ where: { id: serveiId } });
+    if (!servei) throw new NotFoundException('El servei no existeix');
+    if (servei.empresaId !== empresaId) throw new ForbiddenException('El servei no pertany a la teva empresa');
+
+    return this.calcularDisponibilitat(treballador, servei.duradaMin);
+  }
+
+  /**
+   * Franges lliures d'un treballador per a un servei, des d'avui fins a `diasAntesReserva`.
+   * Única implementació per a la vista pública i la d'administració.
+   * Retorna { 'YYYY-MM-DD': ['HH:MM - HH:MM', ...] }.
+   */
+  private async calcularDisponibilitat(
+    treballador: TreballadorAmbPlantilla,
+    duradaMin: number,
+  ): Promise<Record<string, string[]>> {
+    const empresaId = treballador.empresaId;
+    const empresaInfo = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { diasAntesReserva: true } });
     const dies = empresaInfo?.diasAntesReserva ?? 14;
     const now = new Date();
     const today = new Date();
@@ -123,20 +173,21 @@ export class TreballadorsService {
 
     const [reserves, absencies, absenciesEmpresa] = await Promise.all([
       this.prisma.reserva.findMany({
-        where: { treballadorId, dataHora: { gte: today, lt: endDate }, estat: { not: 'CANCELLADA' } },
+        where: { treballadorId: treballador.id, dataHora: { gte: today, lt: endDate }, estat: { not: 'CANCELLADA' } },
         include: { servei: true },
       }),
       this.prisma.absencia.findMany({
-        where: { treballadorId, estat: 'APROVADA', inici: { lte: endDate }, fi: { gte: today } },
+        where: { treballadorId: treballador.id, estat: 'APROVADA', inici: { lte: endDate }, fi: { gte: today } },
       }),
       this.prisma.absenciaEmpresa.findMany({
-        where: { empresaId: treballador.empresaId, inici: { lte: endDate }, fi: { gte: today } },
+        where: { empresaId, inici: { lte: endDate }, fi: { gte: today } },
       }),
     ]);
 
     const plantilla = treballador.plantilla;
     const disponibilitat: Record<string, string[]> = {};
     const MS_PER_MIN = 60000;
+    const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
     for (let i = 0; i < dies; i++) {
       const currentDate = new Date(today);
@@ -178,9 +229,9 @@ export class TreballadorsService {
         let currentMin = tram.iniciMin;
         const tramEnd = tram.fiMin;
 
-        while (currentMin + servei.duradaMin <= tramEnd) {
+        while (currentMin + duradaMin <= tramEnd) {
           const slotStartMin = currentMin;
-          const slotEndMin = currentMin + servei.duradaMin;
+          const slotEndMin = currentMin + duradaMin;
 
           const slotStartDate = new Date(currentDate);
           slotStartDate.setHours(Math.floor(slotStartMin / 60), slotStartMin % 60, 0, 0);
@@ -188,182 +239,36 @@ export class TreballadorsService {
           slotEndDate.setHours(Math.floor(slotEndMin / 60), slotEndMin % 60, 0, 0);
 
           if (slotStartDate <= now) {
-            currentMin += servei.duradaMin;
+            currentMin += duradaMin;
             continue;
           }
 
-          let isBlocked = false;
-          let jumpToMin = -1;
-
-          for (const res of dayReserves) {
+          // Si xoca amb una reserva, es salta fins al final d'aquella reserva
+          const reservaSolapada = dayReserves.find(res => {
             const resStart = new Date(res.dataHora);
             const resEnd = new Date(resStart.getTime() + res.servei.duradaMin * MS_PER_MIN);
-            if (slotStartDate < resEnd && slotEndDate > resStart) {
-              isBlocked = true;
-              jumpToMin = resEnd.getHours() * 60 + resEnd.getMinutes();
-              break;
-            }
-          }
-
-          if (!isBlocked) {
-            for (const abs of dayAbsencies) {
-              const absEnd = new Date(abs.fi);
-              absEnd.setHours(23, 59, 59, 999);
-              if (slotStartDate < absEnd && slotEndDate > abs.inici) {
-                isBlocked = true;
-                jumpToMin = tramEnd;
-                break;
-              }
-            }
-          }
-
-          if (!isBlocked) {
-            slots.push(`${String(Math.floor(slotStartMin / 60)).padStart(2, '0')}:${String(slotStartMin % 60).padStart(2, '0')} - ${String(Math.floor(slotEndMin / 60)).padStart(2, '0')}:${String(slotEndMin % 60).padStart(2, '0')}`);
-            currentMin += servei.duradaMin;
-          } else {
-            currentMin = jumpToMin > currentMin ? jumpToMin : currentMin + servei.duradaMin;
-          }
-        }
-      }
-
-      disponibilitat[dateString] = slots;
-    }
-
-    return disponibilitat;
-  }
-
-  async getDisponibilitat(empresaId: number, id: number, serveiId: number, currentUser: number) {
-    const user = await this.prisma.usuari.findUnique({ where: { id: currentUser } });
-    if (!user) throw new NotFoundException('Usuari no trobat');
-    if (user.rol !== 'ADMIN_GENERAL') throw new ForbiddenException('Usuari no autoritzat');
-
-    const treballador = await this.prisma.treballador.findUnique({
-      where: { id },
-      include: { plantilla: { include: PLANTILLA_INCLUDE } },
-    });
-    if (!treballador) throw new NotFoundException('El treballador no existeix');
-    if (treballador.empresaId !== empresaId) throw new ForbiddenException('No pots veure la disponibilitat d\'un treballador d\'una altra empresa');
-
-    const servei = await this.prisma.servei.findUnique({ where: { id: serveiId } });
-    if (!servei) throw new NotFoundException('El servei no existeix');
-    if (servei.empresaId !== empresaId) throw new ForbiddenException('El servei no pertany a la teva empresa');
-
-    const empresaInfo = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { diasAntesReserva: true } });
-    const dies = empresaInfo?.diasAntesReserva ?? 14;
-    const now = new Date();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const endDate = new Date(today);
-    endDate.setDate(endDate.getDate() + dies);
-
-    const [reserves, absencies, absenciesEmpresa] = await Promise.all([
-      this.prisma.reserva.findMany({
-        where: { treballadorId: id, dataHora: { gte: today, lt: endDate }, estat: { not: 'CANCELLADA' } },
-        include: { servei: true },
-      }),
-      this.prisma.absencia.findMany({
-        where: { treballadorId: id, estat: 'APROVADA', inici: { lte: endDate }, fi: { gte: today } },
-      }),
-      this.prisma.absenciaEmpresa.findMany({
-        where: { empresaId, inici: { lte: endDate }, fi: { gte: today } },
-      }),
-    ]);
-
-    const plantilla = treballador.plantilla;
-    const disponibilitat: Record<string, string[]> = {};
-    const MS_PER_MIN = 60000;
-
-    for (let i = 0; i < dies; i++) {
-      const currentDate = new Date(today);
-      currentDate.setDate(currentDate.getDate() + i);
-      const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-
-      const dayStart = new Date(currentDate); dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(currentDate); dayEnd.setHours(23, 59, 59, 999);
-
-      if (absenciesEmpresa.some(a => a.inici <= dayEnd && a.fi >= dayStart)) {
-        disponibilitat[dateString] = []; continue;
-      }
-      if (!plantilla || !plantilla.rotacions || plantilla.rotacions.length === 0) {
-        disponibilitat[dateString] = []; continue;
-      }
-
-      const refDate = new Date(treballador.dataIniciRotacio ?? currentDate);
-      refDate.setHours(0, 0, 0, 0);
-      if (currentDate < refDate) { disponibilitat[dateString] = []; continue; }
-
-      let dow = currentDate.getDay();
-      if (dow === 0) dow = 7;
-
-      const rotacionsOrdenades = [...plantilla.rotacions].sort((a, b) => a.index - b.index);
-      const rotacioIdx = getRotacioIdx(rotacionsOrdenades, refDate, currentDate);
-      const rotacio = rotacionsOrdenades[rotacioIdx];
-      if (!rotacio) { disponibilitat[dateString] = []; continue; }
-
-      const diaRotacio = rotacio.dies.find(d => d.dow === dow);
-      if (!diaRotacio || diaRotacio.esDescans || !diaRotacio.trams) {
-        disponibilitat[dateString] = []; continue;
-      }
-
-      const dayReserves = reserves.filter(r => {
-        const rDate = new Date(r.dataHora);
-        return rDate >= dayStart && rDate < dayEnd;
-      });
-      const dayAbsencies = absencies.filter(a => a.inici <= dayEnd && a.fi >= dayStart);
-
-      const slots: string[] = [];
-      for (const tram of diaRotacio.trams) {
-        let currentMin = tram.iniciMin;
-        const tramEnd = tram.fiMin;
-
-        while (currentMin + servei.duradaMin <= tramEnd) {
-          const slotStartMin = currentMin;
-          const slotEndMin = currentMin + servei.duradaMin;
-
-          const slotStartDate = new Date(currentDate);
-          slotStartDate.setHours(Math.floor(slotStartMin / 60), slotStartMin % 60, 0, 0);
-          const slotEndDate = new Date(currentDate);
-          slotEndDate.setHours(Math.floor(slotEndMin / 60), slotEndMin % 60, 0, 0);
-
-          if (slotStartDate <= now) {
-            currentMin += servei.duradaMin;
+            return slotStartDate < resEnd && slotEndDate > resStart;
+          });
+          if (reservaSolapada) {
+            const resEnd = new Date(new Date(reservaSolapada.dataHora).getTime() + reservaSolapada.servei.duradaMin * MS_PER_MIN);
+            const jumpToMin = resEnd.getHours() * 60 + resEnd.getMinutes();
+            currentMin = jumpToMin > currentMin ? jumpToMin : currentMin + duradaMin;
             continue;
           }
 
-          let isBlocked = false;
-          let jumpToMin = -1;
-
-          for (const res of dayReserves) {
-            const resStart = new Date(res.dataHora);
-            const resEnd = new Date(resStart.getTime() + res.servei.duradaMin * MS_PER_MIN);
-            if (slotStartDate < resEnd && slotEndDate > resStart) {
-              isBlocked = true;
-              jumpToMin = resEnd.getHours() * 60 + resEnd.getMinutes();
-              break;
-            }
-          }
-
-          if (isBlocked) {
-            currentMin = jumpToMin > currentMin ? jumpToMin : currentMin + servei.duradaMin;
-            continue;
-          }
-
-          for (const abs of dayAbsencies) {
+          // Si cau dins una absència, la resta del tram queda bloquejada
+          const enAbsencia = dayAbsencies.some(abs => {
             const absEnd = new Date(abs.fi);
             absEnd.setHours(23, 59, 59, 999);
-            if (slotStartDate < absEnd && slotEndDate > abs.inici) {
-              isBlocked = true;
-              jumpToMin = tramEnd;
-              break;
-            }
+            return slotStartDate < absEnd && slotEndDate > abs.inici;
+          });
+          if (enAbsencia) {
+            currentMin = tramEnd;
+            continue;
           }
 
-          if (!isBlocked) {
-            slots.push(`${String(Math.floor(slotStartMin / 60)).padStart(2, '0')}:${String(slotStartMin % 60).padStart(2, '0')} - ${String(Math.floor(slotEndMin / 60)).padStart(2, '0')}:${String(slotEndMin % 60).padStart(2, '0')}`);
-            currentMin += servei.duradaMin;
-          } else {
-            currentMin = jumpToMin;
-          }
+          slots.push(`${hhmm(slotStartMin)} - ${hhmm(slotEndMin)}`);
+          currentMin += duradaMin;
         }
       }
 
@@ -383,6 +288,7 @@ export class TreballadorsService {
     const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } });
     if (!empresa) throw new NotFoundException('Empresa no trobada');
 
+    ({ page, rows } = normalitzarPaginacio(page, rows, 2));
     const skip = (page - 1) * rows;
     const total = await this.prisma.treballador.count({ where: { empresaId } });
 

@@ -40,7 +40,7 @@ function getInitials(name: string): string {
     return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function getRolLabel(rol: string, t: (key: string) => string): string {
+function getRolLabel(rol: string, t: (key: 'rolAdmin' | 'rolEmpleat') => string): string {
     if (rol === 'ADMIN_GENERAL') return t('rolAdmin');
     if (rol === 'EMPLEAT') return t('rolEmpleat');
     return rol;

@@ -6,6 +6,7 @@ export interface SessionUser {
   email: string;
   rol: Rol;
   empresaId: number;
+  sessioIniciada?: number;
 }
 
 const TTL_MS = 60_000;

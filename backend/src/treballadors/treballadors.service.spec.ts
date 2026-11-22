@@ -37,6 +37,9 @@ describe('TreballadorsService', () => {
         empresa: {
             findUnique: jest.fn().mockResolvedValue({ diasAntesReserva: 14 }),
         },
+        jornadaPlantilla: {
+            findUnique: jest.fn().mockResolvedValue({ id: 10, empresaId: 1 }),
+        },
     };
 
     beforeEach(async () => {
@@ -206,6 +209,33 @@ describe('TreballadorsService', () => {
             await expect(service.create(empresaId, createDto, adminUserId)).rejects.toThrow(ForbiddenException);
         });
 
+        it('should throw ForbiddenException if the plantilla belongs to another company', async () => {
+            mockPrismaService.usuari.findUnique
+                .mockResolvedValueOnce(adminUser)
+                .mockResolvedValueOnce(targetUser);
+            mockPrismaService.jornadaPlantilla.findUnique.mockResolvedValueOnce({ id: 10, empresaId: 999 });
+            await expect(service.create(empresaId, createDto, adminUserId)).rejects.toThrow(ForbiddenException);
+        });
+
+        describe('eliminarServeis', () => {
+            const adminUser = { id: 1, rol: 'ADMIN_GENERAL', empresaId: 1 };
+
+            it('no deixa esborrar assignacions d\'una altra empresa', async () => {
+                mockPrismaService.usuari.findUnique.mockResolvedValue(adminUser);
+                prismaService.treballadorServei.findUnique = jest.fn().mockResolvedValue({ id: 5, treballador: { empresaId: 999 } });
+                prismaService.treballadorServei.delete = jest.fn();
+                await expect(service.eliminarServeis(1, 5, 1)).rejects.toThrow(ForbiddenException);
+                expect(prismaService.treballadorServei.delete).not.toHaveBeenCalled();
+            });
+
+            it('esborra assignacions de la pròpia empresa', async () => {
+                mockPrismaService.usuari.findUnique.mockResolvedValue(adminUser);
+                prismaService.treballadorServei.findUnique = jest.fn().mockResolvedValue({ id: 5, treballador: { empresaId: 1 } });
+                prismaService.treballadorServei.delete = jest.fn().mockResolvedValue({ id: 5 });
+                await expect(service.eliminarServeis(1, 5, 1)).resolves.toEqual({ id: 5 });
+            });
+        });
+
         describe('assignarServeis', () => {
             const empresaId = 1;
             const adminUserId = 1;
@@ -329,6 +359,30 @@ describe('TreballadorsService', () => {
 
             expect(result[FAKE_DATE_KEY]).toContain('09:00 - 10:00');
             expect(result[FAKE_DATE_KEY]).not.toContain('08:00 - 09:00');
+        });
+
+        it('la vista pública dona les mateixes franges que la d\'administració', async () => {
+            const worker = { id: workerId, empresaId, actiu: true, dataIniciRotacio: null, plantilla: makePlantilla(FAKE_DOW), empresa: { activa: true } };
+            const reservationDate = new Date(FAKE_NOW);
+            reservationDate.setHours(10, 30, 0, 0);
+
+            mockPrismaService.usuari.findUnique.mockResolvedValue(adminUser);
+            mockPrismaService.treballador.findUnique.mockResolvedValue(worker);
+            prismaService.servei.findUnique = jest.fn().mockResolvedValue({ ...servei, actiu: true });
+            prismaService.reserva.findMany = jest.fn().mockResolvedValue([{ dataHora: reservationDate, servei: { duradaMin: 45 } }]);
+            prismaService.absencia.findMany = jest.fn().mockResolvedValue([]);
+            mockPrismaService.absenciaEmpresa.findMany.mockResolvedValue([]);
+
+            const admin = await service.getDisponibilitat(empresaId, workerId, serviceId, adminUserId);
+            const publica = await service.getDisponibilitatPublic(workerId, serviceId);
+
+            expect(publica).toEqual(admin);
+            expect(publica[FAKE_DATE_KEY]).toContain('11:15 - 12:15');
+        });
+
+        it('la vista pública no mostra treballadors d\'una empresa desactivada', async () => {
+            mockPrismaService.treballador.findUnique.mockResolvedValue({ id: workerId, empresaId, actiu: true, plantilla: null, empresa: { activa: false } });
+            await expect(service.getDisponibilitatPublic(workerId, serviceId)).rejects.toThrow(NotFoundException);
         });
     });
 });

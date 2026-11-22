@@ -5,6 +5,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiResponse, ApiTags, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateReservaDto, UpdateReservaEstatDto, ReservaResponseDto, ModificarReservaGestioDto } from './dto/reserves.dto';
 
@@ -26,6 +27,7 @@ export class ReservesController {
 
   @Patch('gestio/:token/cancellar')
   @Public()
+  @Throttle({ short: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Cancel·lar una reserva pel token de gestió' })
   @ApiResponse({ status: 200, description: 'Reserva cancel·lada' })
   @ApiResponse({ status: 400, description: 'Reserva ja cancel·lada o ja passada' })
@@ -36,6 +38,7 @@ export class ReservesController {
 
   @Patch('gestio/:token/modificar')
   @Public()
+  @Throttle({ short: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Modificar data/hora d\'una reserva pel token de gestió' })
   @ApiBody({ type: ModificarReservaGestioDto })
   @ApiResponse({ status: 200, description: 'Reserva modificada' })
@@ -47,6 +50,8 @@ export class ReservesController {
 
   @Post('public')
   @Public()
+  // Anti-spam: com a molt 3 reserves per minut i 15 per hora des de la mateixa IP
+  @Throttle({ short: { limit: 3, ttl: 60_000 }, long: { limit: 15, ttl: 3_600_000 } })
   @ApiOperation({ summary: 'Crear una reserva pública sense autenticació' })
   @ApiBody({ type: CreateReservaDto })
   @ApiResponse({ status: 201, description: 'Reserva creada correctament' })

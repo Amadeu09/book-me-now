@@ -42,29 +42,6 @@ describe('EmpresasService', () => {
     jest.clearAllMocks();
   });
 
-  describe('create', () => {
-    it('debería crear una nueva empresa', async () => {
-      const createDto = {
-        nom: 'Nueva Empresa',
-        ubicacio: 'Barcelona, España',
-        capacitat: 30,
-        activa: true,
-      };
-
-      const mockEmpresa = {
-        id: 1,
-        ...createDto,
-        createdAt: new Date(),
-      };
-
-      mockPrismaService.empresa.create.mockResolvedValue(mockEmpresa);
-
-      const result = await service.create(createDto);
-
-      expect(result).toEqual(mockEmpresa);
-    });
-  });
-
   describe('findAll', () => {
     it('debería devolver las empresas del usuario autenticado', async () => {
       const mockEmpresas = [

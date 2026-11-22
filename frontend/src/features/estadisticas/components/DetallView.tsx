@@ -178,7 +178,6 @@ const dv = StyleSheet.create({
     empty: { fontSize: 13, color: HC.textMuted, textAlign: 'center', paddingVertical: 20 },
 
     flex2: { flex: 2 },
-    flex1: { flex: 1 },
     center: { textAlign: 'center' },
     right: { textAlign: 'right' },
 });

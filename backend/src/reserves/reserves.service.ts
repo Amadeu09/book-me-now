@@ -1,10 +1,10 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservaDto, ModificarReservaGestioDto } from './dto/reserves.dto';
 import { Prisma, ReservaEstat } from '@prisma/client';
-import { Resend } from 'resend';
+import { EmailService } from '../email/email.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 import { getRotacioIdx } from '../common/utils/horari.utils';
 import { escapeHtml } from '../common/utils/html.utils';
@@ -12,17 +12,83 @@ import { escapeHtml } from '../common/utils/html.utils';
 /** Espai de noms dels advisory locks de reserves. */
 const LOCK_NS_RESERVES = 1001;
 
+/** Rang màxim de dies que es pot demanar d'una vegada a l'agenda. */
+const MAX_DIES_RANG = 62;
+
+/** Parseja una data YYYY-MM-DD (hora local) o llança 400. */
+function parseDataDia(valor: string | undefined, camp: string): Date {
+  if (!valor || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    throw new BadRequestException(`'${camp}' ha de tenir el format YYYY-MM-DD`);
+  }
+  const [any, mes, dia] = valor.split('-').map(Number);
+  const data = new Date(any, mes - 1, dia);
+  if (isNaN(data.getTime()) || data.getMonth() !== mes - 1) {
+    throw new BadRequestException(`'${camp}' no és una data vàlida`);
+  }
+  return data;
+}
+
+/** Rang [inici 00:00, fi 23:59:59.999] validat. */
+function parseRangDies(inici: string | undefined, fi: string | undefined): { desde: Date; fins: Date } {
+  const desde = parseDataDia(inici, 'inici');
+  const fins = parseDataDia(fi, 'fi');
+  fins.setHours(23, 59, 59, 999);
+  if (fins < desde) throw new BadRequestException("'fi' no pot ser anterior a 'inici'");
+  if ((fins.getTime() - desde.getTime()) / 86_400_000 > MAX_DIES_RANG) {
+    throw new BadRequestException(`El rang no pot superar ${MAX_DIES_RANG} dies`);
+  }
+  return { desde, fins };
+}
+
+function normalitzarEmail(email?: string | null): string | null {
+  const net = email?.trim().toLowerCase();
+  return net ? net : null;
+}
+
+function formatarDataHora(data: Date): { dia: string; hora: string } {
+  return {
+    dia: data.toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' }),
+    hora: data.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }),
+  };
+}
+
 @Injectable()
 export class ReservesService {
-  private readonly resend: Resend;
-  private readonly emailFrom: string;
+  private readonly logger = new Logger(ReservesService.name);
 
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private email: EmailService,
+  ) { }
+
+  private get portalUrl(): string {
+    return this.config.get<string>('PORTAL_URL', 'http://localhost:3002');
+  }
+
+  /**
+   * Client de la reserva, dins la transacció.
+   * - Sense email: sempre un client nou.
+   * - Amb email: es reutilitza el client existent de l'empresa. Només el personal
+   *   (`actualitzarDades`) pot canviar-ne el nom i el telèfon; una reserva pública no
+   *   pot sobreescriure les dades d'un client que ja existeix.
+   */
+  private async resoldreClient(
+    tx: Prisma.TransactionClient,
+    empresaId: number,
+    dades: { nom: string; email: string | null; telefon?: string | null },
+    actualitzarDades: boolean,
   ) {
-    this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
-    this.emailFrom = this.config.get<string>('EMAIL_FROM');
+    if (!dades.email) {
+      return tx.client.create({
+        data: { nom: dades.nom, email: null, telefon: dades.telefon ?? null, empresaId },
+      });
+    }
+    return tx.client.upsert({
+      where: { email_empresaId: { email: dades.email, empresaId } },
+      update: actualitzarDades ? { nom: dades.nom, telefon: dades.telefon ?? null } : {},
+      create: { nom: dades.nom, email: dades.email, telefon: dades.telefon ?? null, empresaId },
+    });
   }
 
   private async checkSlotAvailable(
@@ -130,14 +196,6 @@ export class ReservesService {
     }
   }
 
-  private async safeEnviarEmail(fn: () => Promise<void>, context: string): Promise<void> {
-    try {
-      await fn();
-    } catch (err) {
-      console.error(`[ReservesService] Error enviant email (${context}):`, err);
-    }
-  }
-
   private async createReservaInternal(
     dto: CreateReservaDto,
     options: { checkActiu: boolean; esClient: boolean; empresaIdUsuari?: number },
@@ -145,8 +203,12 @@ export class ReservesService {
     const servei = await this.prisma.servei.findUnique({ where: { id: dto.idServei } });
     if (!servei || (options.checkActiu && !servei.actiu)) throw new NotFoundException('Servei no trobat');
 
-    const treballador = await this.prisma.treballador.findUnique({ where: { id: dto.idTreballador } });
+    const treballador = await this.prisma.treballador.findUnique({
+      where: { id: dto.idTreballador },
+      include: { empresa: { select: { activa: true } } },
+    });
     if (!treballador || (options.checkActiu && !treballador.actiu)) throw new NotFoundException('Treballador no trobat');
+    if (options.checkActiu && !treballador.empresa.activa) throw new NotFoundException('Empresa no trobada');
     if (servei.empresaId !== treballador.empresaId) throw new NotFoundException('Servei no trobat');
     if (options.empresaIdUsuari !== undefined && treballador.empresaId !== options.empresaIdUsuari) {
       throw new ForbiddenException('El treballador no pertany a la teva empresa');
@@ -157,6 +219,9 @@ export class ReservesService {
     });
     if (!treballadorServei) throw new ForbiddenException('El treballador no ofereix aquest servei');
 
+    const email = normalitzarEmail(dto.email);
+    if (options.esClient && !email) throw new BadRequestException("L'email és obligatori per reservar");
+
     const dataHoraInici = new Date(`${dto.data}T${dto.hora}:00`);
 
     if (isNaN(dataHoraInici.getTime())) throw new BadRequestException(`Data o hora invàlida: "${dto.data}T${dto.hora}"`);
@@ -166,21 +231,17 @@ export class ReservesService {
     if (options.esClient) await this.checkFinestraClient(treballador.empresaId, dataHoraInici);
     await this.checkSlotAvailable(dto.idTreballador, treballador.empresaId, servei.duradaMin, dataHoraInici);
 
-    const email = dto.email?.trim().toLowerCase() ?? null;
     const tokenValoracio = email ? randomUUID() : null;
 
     const reserva = await this.prisma.$transaction(async (tx) => {
       await this.assertSenseSolapament(tx, dto.idTreballador, dataHoraInici, dataHoraFinal);
 
-      const client = email
-        ? await tx.client.upsert({
-          where: { email_empresaId: { email, empresaId: treballador.empresaId } },
-          update: { nom: dto.nom, telefon: dto.telefon ?? null },
-          create: { nom: dto.nom, email, telefon: dto.telefon ?? null, empresaId: treballador.empresaId },
-        })
-        : await tx.client.create({
-          data: { nom: dto.nom, email: null, telefon: dto.telefon ?? null, empresaId: treballador.empresaId },
-        });
+      const client = await this.resoldreClient(
+        tx,
+        treballador.empresaId,
+        { nom: dto.nom, email, telefon: dto.telefon },
+        !options.esClient,
+      );
 
       const tokenGestio = email ? randomUUID() : null;
 
@@ -203,10 +264,7 @@ export class ReservesService {
     });
 
     if (email) {
-      this.safeEnviarEmail(
-        () => this.enviarEmailConfirmacio(reserva, { ...dto, email }, dataHoraInici, reserva.tokenGestio),
-        'confirmació',
-      );
+      this.enviarEmailConfirmacio(reserva, { ...dto, email }, dataHoraInici, reserva.tokenGestio);
       // L'email post-cita l'envia EmailPostCitaService quan acaba la cita.
     }
 
@@ -292,20 +350,12 @@ export class ReservesService {
     return this.prisma.$transaction(async (tx) => {
       await this.assertSenseSolapament(tx, dto.idTreballador, dataHoraInici, dataHoraFinal, idReserva);
 
-      let client = await tx.client.findFirst({
-        where: { email: dto.email, empresaId: treballador.empresaId },
-      });
-
-      if (!client) {
-        client = await tx.client.create({
-          data: {
-            nom: dto.nom,
-            email: dto.email,
-            telefon: dto.telefon,
-            empresaId: treballador.empresaId,
-          },
-        });
-      }
+      const email = normalitzarEmail(dto.email);
+      // Si no canvia l'email ni el nom, es manté el mateix client (abans, sense email,
+      // la reserva acabava assignada al primer client de l'empresa).
+      const client = !email && reserva.clientId !== null && reserva.clientNom === dto.nom
+        ? { id: reserva.clientId }
+        : await this.resoldreClient(tx, treballador.empresaId, { nom: dto.nom, email, telefon: dto.telefon }, true);
 
       return tx.reserva.update({
         where: { id: idReserva },
@@ -315,7 +365,7 @@ export class ReservesService {
           empresaId: treballador.empresaId,
           serveiId: dto.idServei,
           clientId: client.id,
-          clientEmail: dto.email,
+          clientEmail: email,
           clientNom: dto.nom,
           observacions: dto.observacions,
         },
@@ -345,34 +395,24 @@ export class ReservesService {
       data: { estat: nouEstat },
     });
 
-    if (nouEstat === 'CANCELLADA' && reserva.clientEmail) {
-      this.enviarEmailCancellacio(reserva).catch(err =>
-        console.error('Error sending cancellation email', err),
-      );
+    if (nouEstat === 'CANCELLADA' && reserva.estat !== 'CANCELLADA' && reserva.clientEmail) {
+      this.enviarEmailCancellacio(reserva);
     }
 
     return updated;
   }
 
-  private async enviarEmailCancellacio(reserva: {
+  private enviarEmailCancellacio(reserva: {
     clientNom?: string | null;
     clientEmail: string;
     dataHora: Date;
     servei: { nom: string };
     empresa: { nom: string };
-  }): Promise<void> {
-    const portalUrl = this.config.get<string>('PORTAL_URL', 'http://localhost:3002');
-    const dataFormatada = reserva.dataHora.toLocaleDateString('ca-ES', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-      timeZone: 'Europe/Madrid',
-    });
-    const horaFormatada = reserva.dataHora.toLocaleTimeString('ca-ES', {
-      hour: '2-digit', minute: '2-digit',
-      timeZone: 'Europe/Madrid',
-    });
+  }): void {
+    const portalUrl = this.portalUrl;
+    const { dia: dataFormatada, hora: horaFormatada } = formatarDataHora(reserva.dataHora);
 
-    await this.resend.emails.send({
-      from: this.emailFrom,
+    this.email.sendInBackground({
       to: reserva.clientEmail,
       subject: `Reserva cancel·lada — ${reserva.empresa.nom}`,
       html: `
@@ -412,14 +452,10 @@ export class ReservesService {
         where: { idUsuari: currentUserId },
       });
     } else {
+      // Només per id de treballador: abans també s'acceptava l'id d'usuari, i com que
+      // són seqüències diferents el mateix número podia correspondre a dues persones.
       treballador = await this.prisma.treballador.findFirst({
-        where: {
-          OR: [
-            { id: idTreballador },
-            { idUsuari: idTreballador }
-          ],
-          empresaId: currentUserEmpresaId
-        },
+        where: { id: idTreballador, empresaId: currentUserEmpresaId },
       });
     }
 
@@ -432,19 +468,9 @@ export class ReservesService {
     }
 
     let dateFilter = {};
-    if (inici && fi) {
-      const dataInici = new Date(inici);
-      dataInici.setHours(0, 0, 0, 0);
-
-      const dataFi = new Date(fi);
-      dataFi.setHours(23, 59, 59, 999);
-
-      dateFilter = {
-        dataHora: {
-          gte: dataInici,
-          lte: dataFi,
-        }
-      };
+    if (inici || fi) {
+      const { desde, fins } = parseRangDies(inici, fi);
+      dateFilter = { dataHora: { gte: desde, lte: fins } };
     }
 
     const reserves = await this.prisma.reserva.findMany({
@@ -474,9 +500,16 @@ export class ReservesService {
       throw new ForbiddenException('Sense permisos per veure totes les reserves de l\'empresa');
     }
 
-    if (treballadorId) {
+    const { desde: dataInici, fins: dataFi } = parseRangDies(inici, fi);
+
+    const idTreballador = treballadorId ? Number(treballadorId) : undefined;
+    if (idTreballador !== undefined && !Number.isInteger(idTreballador)) {
+      throw new BadRequestException("'treballadorId' ha de ser un número");
+    }
+
+    if (idTreballador !== undefined) {
       const userBooking = await this.prisma.treballador.findUnique({
-        where: { id: parseInt(treballadorId) },
+        where: { id: idTreballador },
       });
 
       if (!userBooking) {
@@ -488,15 +521,9 @@ export class ReservesService {
       }
     }
 
-    const dataInici = new Date(inici);
-    dataInici.setHours(0, 0, 0, 0);
-
-    const dataFi = new Date(fi);
-    dataFi.setHours(23, 59, 59, 999);
-
     const reserves = await this.prisma.reserva.findMany({
       where: {
-        ...(treballadorId && { treballadorId: parseInt(treballadorId) }),
+        ...(idTreballador !== undefined && { treballadorId: idTreballador }),
         empresaId: empresaId,
         dataHora: {
           gte: dataInici,
@@ -513,21 +540,19 @@ export class ReservesService {
     return reserves;
   }
 
-  private async enviarEmailConfirmacio(
+  private enviarEmailConfirmacio(
     reserva: { servei: { nom: string; duradaMin: number } },
-    dto: CreateReservaDto,
+    dto: { nom: string; email: string },
     dataHoraInici: Date,
     tokenGestio: string | null,
-  ): Promise<void> {
-    const portalUrl = this.config.get<string>('PORTAL_URL', 'http://localhost:3002');
-    const dataFormatada = dataHoraInici.toLocaleDateString('ca-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' });
-    const horaFormatada = dataHoraInici.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
-    const gestioLink = tokenGestio ? `${portalUrl}/reserva/${tokenGestio}` : null;
+    assumpte = 'Reserva confirmada',
+  ): void {
+    const { dia: dataFormatada, hora: horaFormatada } = formatarDataHora(dataHoraInici);
+    const gestioLink = tokenGestio ? `${this.portalUrl}/reserva/${tokenGestio}` : null;
 
-    await this.resend.emails.send({
-      from: this.emailFrom,
+    this.email.sendInBackground({
       to: dto.email,
-      subject: 'Reserva confirmada',
+      subject: assumpte,
       html: `
         <h2>La teva reserva ha estat confirmada!</h2>
         <p>Hola ${escapeHtml(dto.nom)},</p>
@@ -552,6 +577,8 @@ export class ReservesService {
   async getReservaByToken(token: string) {
     const reserva = await this.prisma.reserva.findUnique({
       where: { tokenGestio: token },
+      // El token de valoració només s'ha de rebre per email quan la cita ha passat
+      omit: { tokenValoracio: true, tokenValoracioUsat: true, emailPostCitaEnviat: true },
       include: {
         servei: true,
         treballador: { select: { id: true, nom: true, Usuari: { select: { fotoPerfil: true } } } },
@@ -564,15 +591,22 @@ export class ReservesService {
   }
 
   async cancellarReservaByToken(token: string) {
-    const reserva = await this.prisma.reserva.findUnique({ where: { tokenGestio: token } });
+    const reserva = await this.prisma.reserva.findUnique({
+      where: { tokenGestio: token },
+      include: { servei: { select: { nom: true } } },
+    });
     if (!reserva) throw new NotFoundException('Reserva no trobada');
     if (reserva.estat === 'CANCELLADA') throw new BadRequestException('La reserva ja està cancel·lada');
     if (reserva.dataHora < new Date()) throw new BadRequestException('No es pot cancel·lar una cita ja passada');
 
-    return this.prisma.reserva.update({
+    const actualitzada = await this.prisma.reserva.update({
       where: { tokenGestio: token },
       data: { estat: 'CANCELLADA' },
+      omit: { tokenValoracio: true },
     });
+
+    this.avisarNegoci(reserva, 'cancel·lada', reserva.dataHora);
+    return actualitzada;
   }
 
   async modificarReservaByToken(token: string, dto: ModificarReservaGestioDto) {
@@ -594,14 +628,78 @@ export class ReservesService {
     await this.checkFinestraClient(reserva.empresaId, dataHoraInici);
     await this.checkSlotAvailable(reserva.treballadorId, reserva.empresaId, reserva.servei.duradaMin, dataHoraInici);
 
-    return this.prisma.$transaction(async (tx) => {
+    const actualitzada = await this.prisma.$transaction(async (tx) => {
       await this.assertSenseSolapament(tx, reserva.treballadorId, dataHoraInici, dataHoraFinal, reserva.id);
 
       return tx.reserva.update({
         where: { tokenGestio: token },
         data: { dataHora: dataHoraInici },
-        include: { servei: true, treballador: true, empresa: true },
+        omit: { tokenValoracio: true },
+        include: { servei: true, treballador: true, empresa: { select: { id: true, nom: true, fotoPerfil: true, ubicacio: true } } },
       });
     });
+
+    this.avisarNegoci(reserva, 'canviada', reserva.dataHora, dataHoraInici);
+    if (reserva.clientEmail) {
+      this.enviarEmailConfirmacio(
+        { servei: reserva.servei },
+        { nom: reserva.clientNom ?? '', email: reserva.clientEmail },
+        dataHoraInici,
+        token,
+        'Reserva modificada',
+      );
+    }
+    return actualitzada;
+  }
+
+  /**
+   * Avisa els administradors de l'empresa i el treballador assignat quan el client
+   * cancel·la o canvia la cita des del seu enllaç.
+   */
+  private avisarNegoci(
+    reserva: { empresaId: number; treballadorId: number | null; clientNom: string | null; servei: { nom: string } },
+    accio: 'cancel·lada' | 'canviada',
+    dataAnterior: Date,
+    dataNova?: Date,
+  ): void {
+    void (async () => {
+      try {
+        const destinataris = await this.prisma.usuari.findMany({
+          where: {
+            empresaId: reserva.empresaId,
+            OR: [
+              { rol: 'ADMIN_GENERAL' },
+              ...(reserva.treballadorId ? [{ treballador: { id: reserva.treballadorId } }] : []),
+            ],
+          },
+          select: { email: true },
+        });
+        const emails = [...new Set(destinataris.map((u) => u.email))];
+        if (emails.length === 0) return;
+
+        const abans = formatarDataHora(dataAnterior);
+        const despres = dataNova ? formatarDataHora(dataNova) : null;
+        const client = escapeHtml(reserva.clientNom || 'Un client');
+
+        this.email.sendInBackground({
+          to: emails,
+          subject: `Cita ${accio} pel client — ${reserva.servei.nom}`,
+          html: `
+            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
+              <h2 style="color:#6366F1;margin:0 0 12px">BookMeNow</h2>
+              <p style="color:#334155;font-size:15px;"><strong>${client}</strong> ha ${accio === 'cancel·lada' ? 'cancel·lat' : 'canviat'} la seva cita des de l'enllaç de gestió.</p>
+              <ul style="color:#334155;font-size:14px;">
+                <li><strong>Servei:</strong> ${escapeHtml(reserva.servei.nom)}</li>
+                <li><strong>${despres ? 'Abans' : 'Data'}:</strong> ${abans.dia}, ${abans.hora}</li>
+                ${despres ? `<li><strong>Ara:</strong> ${despres.dia}, ${despres.hora}</li>` : ''}
+              </ul>
+            </div>
+          `,
+        });
+      } catch (err) {
+        // Un avís que no surt no ha de fer fallar la petició del client
+        this.logger.error('Error avisant el negoci', err instanceof Error ? err.stack : String(err));
+      }
+    })();
   }
 }

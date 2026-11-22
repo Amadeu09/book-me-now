@@ -23,9 +23,14 @@ export class CreateUsuariDto {
   @IsEnum(Rol)
   rol: Rol;
 
-  @ApiProperty({ example: 1, description: 'ID de la empresa' })
+  /**
+   * Obsolet: s'ignora. L'usuari sempre es crea a l'empresa de qui fa la petició.
+   * Es manté opcional perquè les versions antigues de l'app encara l'envien.
+   */
+  @ApiProperty({ example: 1, required: false, deprecated: true, description: 'Ignorat: s\'usa l\'empresa de l\'usuari autenticat' })
+  @IsOptional()
   @IsNumber()
-  empresaId: number;
+  empresaId?: number;
 }
 
 export class UpdateUsuariDto {

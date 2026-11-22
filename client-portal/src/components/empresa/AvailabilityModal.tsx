@@ -181,8 +181,8 @@ export function AvailabilityModal({ treballadorId, allTreballadors, serveiId, tr
         idTreballador: finalTreballadorId,
       });
       setStep('success');
-    } catch (err: any) {
-      setStep(err?.message === 'CONFLICT' ? 'conflict' : 'error');
+    } catch (err: unknown) {
+      setStep((err as Error | undefined)?.message === 'CONFLICT' ? 'conflict' : 'error');
     } finally {
       setSubmitting(false);
     }
@@ -453,7 +453,7 @@ export function AvailabilityModal({ treballadorId, allTreballadors, serveiId, tr
               <span className="material-symbols-outlined text-error text-4xl">error</span>
             </div>
             <div>
-              <h4 className="text-xl font-bold text-on-surface mb-1">No s'ha pogut fer la reserva</h4>
+              <h4 className="text-xl font-bold text-on-surface mb-1">No s’ha pogut fer la reserva</h4>
               <p className="text-sm text-on-surface-variant">
                 Hi ha hagut un error inesperat. Torna-ho a provar.
               </p>

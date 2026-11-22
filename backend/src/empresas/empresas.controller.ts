@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
@@ -17,7 +16,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { opcionsPujadaImatge } from '../common/utils/upload.utils';
 import {
   ApiTags,
   ApiOperation,
@@ -28,7 +27,8 @@ import {
 } from '@nestjs/swagger';
 
 import { EmpresasService } from './empresas.service';
-import { CreateEmpresaDto, UpdateEmpresaDto } from './dto/empresa.dto';
+import { UpdateEmpresaDto } from './dto/empresa.dto';
+import { BusinessType } from '@prisma/client';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -54,11 +54,12 @@ export class EmpresasController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.empresasService.findAllPublic(
-      tipo ?? null,
-      parseInt(page ?? '1', 10) || 1,
-      parseInt(limit ?? '9', 10) || 9,
-    );
+    if (tipo && !(Object.values(BusinessType) as string[]).includes(tipo)) {
+      throw new BadRequestException("'tipo' no és un tipus de negoci vàlid");
+    }
+    const pagina = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const mida = Math.min(50, Math.max(1, parseInt(limit ?? '9', 10) || 9));
+    return this.empresasService.findAllPublic(tipo ?? null, pagina, mida);
   }
 
   @Get('public/:id')
@@ -78,13 +79,6 @@ export class EmpresasController {
       throw new BadRequestException("El paràmetre 'q' és obligatori");
     }
     return this.empresasService.searchPublic(q);
-  }
-
-  @Post()
-  @Roles('ADMIN_GENERAL')
-  @ApiOperation({ summary: 'Crear empresa' })
-  create(@Body() createEmpresaDto: CreateEmpresaDto) {
-    return this.empresasService.create(createEmpresaDto);
   }
 
   @Get()
@@ -133,9 +127,7 @@ export class EmpresasController {
   @ApiParam({ name: 'id' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
-    FileInterceptor('foto', {
-      storage: memoryStorage(),
-    }),
+    FileInterceptor('foto', opcionsPujadaImatge(5)),
   )
   uploadFoto(
     @Param('id', ParseIntPipe) id: number,
@@ -161,7 +153,7 @@ export class EmpresasController {
   @ApiOperation({ summary: 'Subir banner de la empresa' })
   @ApiParam({ name: 'id' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('banner', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('banner', opcionsPujadaImatge(8)))
   uploadBanner(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile(
