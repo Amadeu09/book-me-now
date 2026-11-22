@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { LogoMark } from './logo';
 
 export function Navbar() {
   const [visible, setVisible] = useState(true);
@@ -25,7 +26,8 @@ export function Navbar() {
       }`}
     >
       <div className="flex justify-between items-center px-6 md:px-12 py-6 max-w-[1920px] mx-auto">
-        <Link href="/" className="text-2xl font-bold tracking-tighter text-slate-900 font-headline hover:opacity-80 transition-opacity">
+        <Link href="/" className="flex items-center gap-3 text-2xl font-bold tracking-tighter text-slate-900 font-headline hover:opacity-80 transition-opacity">
+          <LogoMark size={36} />
           BookMeNow
         </Link>
         <div className="hidden md:flex gap-8 items-center font-['Plus_Jakarta_Sans'] tracking-tight font-medium text-sm">
