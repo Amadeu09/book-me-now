@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAbsenciesPendents, updateEstatAbsencia } from '../services/absencies-pendents.service';
 
-export function useAbsenciesPendents(page: number) {
+export function useAbsenciesPendents(page: number, enabled = true) {
     return useQuery({
         queryKey: ['absencies-pendents', page],
         queryFn: () => getAbsenciesPendents(page),
         staleTime: 30_000,
+        enabled,
     });
 }
 

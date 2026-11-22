@@ -3,12 +3,14 @@ import { EstatAbsencia, TipusAbsencia } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAbsenciaDto, UpdateAbsenciaDto, UpdateEstatAbsenciaDto } from './dto/absencia.dto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
+import { normalitzarPaginacio } from '../common/utils/paginacio.utils';
 
 @Injectable()
 export class AbsenciesService {
     constructor(private prisma: PrismaService) { }
 
     async getPendents(empresaId: number, page: number, rows: number) {
+        ({ page, rows } = normalitzarPaginacio(page, rows, 4));
         const skip = (page - 1) * rows;
         const where = {
             estat: EstatAbsencia.PENDENT,

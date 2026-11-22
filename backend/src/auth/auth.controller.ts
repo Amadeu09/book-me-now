@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { opcionsPujadaImatge } from '../common/utils/upload.utils';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -75,7 +75,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Token renovat' })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   async refresh(@CurrentUser() user: CurrentUserData): Promise<{ token: string }> {
-    return this.authService.refresh(user.userId);
+    return this.authService.refresh(user.userId, user.sessioIniciada);
   }
 
   @Post('change-password')
@@ -161,7 +161,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Subir foto de perfil propia (self-service)' })
   @ApiResponse({ status: 200, description: 'Foto actualizada' })
   @ApiResponse({ status: 400, description: 'Archivo no válido' })
-  @UseInterceptors(FileInterceptor('foto', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('foto', opcionsPujadaImatge(5)))
   async uploadMyFoto(
     @UploadedFile(
       new ParseFilePipe({

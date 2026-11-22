@@ -3,6 +3,7 @@ import { NotFoundException, ForbiddenException, ConflictException } from '@nestj
 import { UsuarisService } from './usuaris.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { Rol } from '@prisma/client';
+import { SessionCacheService } from '../auth/session-cache.service';
 
 describe('UsuarisService', () => {
   let service: UsuarisService;
@@ -25,6 +26,10 @@ describe('UsuarisService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: SessionCacheService,
+          useValue: { invalidateUser: jest.fn(), invalidateToken: jest.fn() },
         },
       ],
     }).compile();
@@ -67,6 +72,24 @@ describe('UsuarisService', () => {
 
       expect(result).toEqual(mockUser);
       expect(prismaService.usuari.create).toHaveBeenCalled();
+    });
+
+    it('ignora el empresaId del body i crea l\'usuari a l\'empresa de l\'admin', async () => {
+      mockPrismaService.usuari.findUnique.mockImplementation((args) => {
+        if (args?.where?.email) return Promise.resolve(null);
+        if (args?.where?.id) return Promise.resolve({ id: 1, rol: 'ADMIN_GENERAL', empresaId: 7 });
+        return Promise.resolve(null);
+      });
+      mockPrismaService.usuari.create.mockResolvedValue({ id: 2 });
+
+      await service.create(
+        { email: 'x@example.com', password: 'SecurePass123!', nom: 'X', rol: 'ADMIN_GENERAL' as Rol, empresaId: 999 },
+        1,
+      );
+
+      expect(prismaService.usuari.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ empresaId: 7 }) }),
+      );
     });
 
     it.skip('debería lanzar ConflictException si el email ya existe', async () => {

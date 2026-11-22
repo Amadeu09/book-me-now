@@ -6,7 +6,6 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TokenBlacklistService } from './token-blacklist.service';
-import { SessionCacheService } from './session-cache.service';
 import { UsuarisService } from '../usuaris/usuaris.service';
 
 @Module({
@@ -29,7 +28,7 @@ import { UsuarisService } from '../usuaris/usuaris.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TokenBlacklistService, SessionCacheService, UsuarisService],
-  exports: [AuthService, JwtStrategy, PassportModule, TokenBlacklistService, SessionCacheService],
+  providers: [AuthService, JwtStrategy, TokenBlacklistService, UsuarisService],
+  exports: [AuthService, JwtStrategy, PassportModule, TokenBlacklistService],
 })
 export class AuthModule {}

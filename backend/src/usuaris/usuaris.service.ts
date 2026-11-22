@@ -11,6 +11,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuariDto, UpdateUsuariDto } from './dto/usuari.dto';
 import * as bcrypt from 'bcrypt';
+import { SessionCacheService } from '../auth/session-cache.service';
 
 /** Camps retornats a totes les consultes de usuari */
 const USUARI_SELECT = {
@@ -26,7 +27,10 @@ const USUARI_SELECT = {
 export class UsuarisService {
   private readonly logger = new Logger(UsuarisService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private sessionCache: SessionCacheService,
+  ) { }
 
   async create(createUsuariDto: CreateUsuariDto, currentUserId: number) {
     const existing = await this.prisma.usuari.findUnique({
@@ -56,7 +60,8 @@ export class UsuarisService {
         email: createUsuariDto.email,
         hash,
         rol: createUsuariDto.rol,
-        empresaId: createUsuariDto.empresaId,
+        // Mai l'empresaId del body: un admin només pot crear usuaris a la seva empresa
+        empresaId: currentUsuari.empresaId,
       },
       select: USUARI_SELECT,
     });
@@ -125,6 +130,8 @@ export class UsuarisService {
 
     if (updateUsuariDto.password) {
       dataToUpdate.hash = await bcrypt.hash(updateUsuariDto.password, 10);
+      // Les sessions obertes amb la contrasenya anterior deixen de valer
+      dataToUpdate.credencialsCanviades = new Date();
     }
 
 
@@ -133,6 +140,8 @@ export class UsuarisService {
       data: dataToUpdate,
       select: USUARI_SELECT,
     });
+
+    if (dataToUpdate.hash) this.sessionCache.invalidateUser(id);
 
     this.logger.log(`Usuari updated: ${id}`);
     return updated;
@@ -150,6 +159,7 @@ export class UsuarisService {
     }
 
     await this.prisma.usuari.delete({ where: { id } });
+    this.sessionCache.invalidateUser(id);
 
     this.logger.log(`Usuari deleted: ${id}`);
     return { message: 'Usuari eliminat correctament' };

@@ -32,7 +32,7 @@ describe('JwtStrategy', () => {
       credencialsCanviades: new Date((ara - 60) * 1000),
     });
     const sessio = await strategy.validate(req, { sub: 1, iat: ara } as any);
-    expect(sessio).toEqual({ userId: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1 });
+    expect(sessio).toEqual({ userId: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1, sessioIniciada: ara });
 
     await strategy.validate(req, { sub: 1, iat: ara } as any);
     expect(authService.validateUser).toHaveBeenCalledTimes(1);

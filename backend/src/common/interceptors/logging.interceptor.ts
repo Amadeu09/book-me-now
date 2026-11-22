@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { ocultarTokens } from '../utils/log.utils';
 
 /**
  * Logging interceptor
@@ -18,7 +19,8 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const { method, url, ip } = request;
+    const { method, ip } = request;
+    const url = ocultarTokens(request.url);
     const userAgent = request.get('user-agent') || '';
     const now = Date.now();
 

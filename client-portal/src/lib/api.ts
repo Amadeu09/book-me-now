@@ -3,9 +3,13 @@ import type { Disponibilitat, Empresa, EmpresaListResponse, ServeiPublic, Reserv
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // SSR GET: Node.js http/https with agent:false (fresh TCP per request, no pool).
-// Retries on ECONNRESET/ECONNREFUSED/timeout — Docker Desktop resets connections during container restarts.
+// Timeout ampli perquè la primera petició després d'un temps sense trànsit pot
+// esperar que la base de dades (Neon) es desperti; un sol reintent per a errors de
+// connexió. Abans: 5 s × 5 intents ≈ 25 s d'espera i timeouts igualment.
 // Browser: native fetch.
-async function ssrGet(url: string, retries = 4): Promise<Response> {
+const SSR_TIMEOUT_MS = 12_000;
+
+async function ssrGet(url: string, retries = 1): Promise<Response> {
   if (typeof window === 'undefined') {
     const parsed = new URL(url);
     const isHttps = parsed.protocol === 'https:';
@@ -19,7 +23,7 @@ async function ssrGet(url: string, retries = 4): Promise<Response> {
             path: parsed.pathname + parsed.search,
             method: 'GET',
             agent: false,
-            timeout: 5000,
+            timeout: SSR_TIMEOUT_MS,
           },
           (res) => {
             const chunks: Buffer[] = [];
@@ -37,8 +41,9 @@ async function ssrGet(url: string, retries = 4): Promise<Response> {
         req.on('error', reject);
         req.end();
       });
-    } catch (err: any) {
-      if (retries > 0 && ['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT'].includes(err?.code)) {
+    } catch (err: unknown) {
+      const code = (err as NodeJS.ErrnoException | undefined)?.code;
+      if (retries > 0 && code && ['ECONNRESET', 'ECONNREFUSED'].includes(code)) {
         await new Promise(r => setTimeout(r, 1000));
         return ssrGet(url, retries - 1);
       }

@@ -190,8 +190,6 @@ export default function Services() {
     const renderCard = ({ item }: { item: Servei }) => (
         <ServiceCard
             service={item}
-            onEdit={openEdit}
-            onDelete={handleDeleteRequest}
             onPress={() => setSelectedItem(item)}
         />
     );

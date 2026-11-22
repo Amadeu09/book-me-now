@@ -8,13 +8,10 @@ import type { CreateUsuariPayload, UsuariResponse, CreateTreballadorPayload, Tre
  * POST /api/usuaris
  */
 export async function createUsuari(data: Omit<CreateUsuariPayload, 'empresaId' | 'rol'>): Promise<UsuariResponse> {
-    const empresaId = await getEmpresaId();
-    if (!empresaId) throw new Error('No se pudo obtener el empresaId de la sesión');
-
-    const payload: CreateUsuariPayload = {
+    // L'empresa la decideix el servidor a partir de la sessió
+    const payload: Omit<CreateUsuariPayload, 'empresaId'> = {
         ...data,
         rol: 'EMPLEAT',
-        empresaId,
     };
 
     const res = await api.post('/usuaris', payload);

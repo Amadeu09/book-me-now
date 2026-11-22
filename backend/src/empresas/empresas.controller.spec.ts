@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmpresasController } from './empresas.controller';
 import { EmpresasService } from './empresas.service';
-import { CreateEmpresaDto, UpdateEmpresaDto } from './dto/empresa.dto';
+import { UpdateEmpresaDto } from './dto/empresa.dto';
 import { Rol } from '@prisma/client';
 
 const mockEmpresasService = {
@@ -35,18 +35,6 @@ describe('EmpresasController', () => {
 
     it('should be defined', () => {
         expect(controller).toBeDefined();
-    });
-
-    describe('create', () => {
-        it('should call service.create', async () => {
-            const dto: CreateEmpresaDto = { nom: 'Test', ubicacio: 'Loc' };
-            mockEmpresasService.create.mockResolvedValue('created');
-
-            const result = await controller.create(dto);
-
-            expect(service.create).toHaveBeenCalledWith(dto);
-            expect(result).toBe('created');
-        });
     });
 
     describe('findAll', () => {

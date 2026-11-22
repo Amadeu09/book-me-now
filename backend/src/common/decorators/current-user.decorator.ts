@@ -6,6 +6,8 @@ export interface CurrentUserData {
   email: string;
   rol: Rol;
   empresaId: number;
+  /** Inici de la sessió (segons Unix), per limitar quant es pot renovar */
+  sessioIniciada?: number;
 }
 
 export const CurrentUser = createParamDecorator(

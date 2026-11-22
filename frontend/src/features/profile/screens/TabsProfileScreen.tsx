@@ -1,3 +1,6 @@
-import ProfileScreen from './ProfileScreen';
+import { Redirect } from 'expo-router';
 
-export default ProfileScreen;
+/** El perfil antic s'ha repartit entre Inici i Configuració. */
+export default function TabsProfileScreen() {
+    return <Redirect href="/inici" />;
+}

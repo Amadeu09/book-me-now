@@ -28,7 +28,6 @@ import { deleteJornada } from '../services/jornades.service';
 import { deleteTreballador } from '../services/treballadors.service';
 import {
     HC, cardShadow,
-    MOCK_HOLIDAYS,
     type TabKey,
     type Employee,
 } from '../constants/horarios.constants';
@@ -246,7 +245,7 @@ export default function HorariosScreen() {
                             </View>
 
                             {/* Excepciones */}
-                            <ExceptionSectionDesktop holidays={MOCK_HOLIDAYS} />
+                            <ExceptionSectionDesktop />
                         </View>
 
                         {/* ── Right column ── */}
@@ -435,6 +434,9 @@ export default function HorariosScreen() {
                                             template={t}
                                             onEdit={handleEditTemplate}
                                             onDelete={handleDeleteTemplate}
+                                            isMenuOpen={openMenuId === t.id}
+                                            onMenuOpen={() => setOpenMenuId(t.id)}
+                                            onMenuClose={() => setOpenMenuId(null)}
                                         />
                                     ))}
                                     {plantillasTotalPages > 1 && (

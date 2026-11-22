@@ -106,7 +106,7 @@ export function EditAbsenciaModal({ visible, absencia, onClose, onSuccess }: Pro
                             editable={!isPending}
                         />
                         {fiValid && iniValid && fi < inici && (
-                            <Text style={styles.fieldError}>La data fi ha de ser posterior a l'inici.</Text>
+                            <Text style={styles.fieldError}>{"La data fi ha de ser posterior a l'inici."}</Text>
                         )}
 
                         <Text style={styles.label}>Motiu (opcional)</Text>

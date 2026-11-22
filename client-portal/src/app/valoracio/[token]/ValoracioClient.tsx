@@ -108,8 +108,8 @@ export function ValoracioClient({ info, token }: Props) {
         }),
       });
       setView('success');
-    } catch (err: any) {
-      if (err?.message === 'JA_VALORADA') {
+    } catch (err: unknown) {
+      if ((err as Error | undefined)?.message === 'JA_VALORADA') {
         setView('success');
       } else {
         setErrorMsg('No s\'ha pogut enviar la valoració. Torna-ho a provar.');
@@ -171,7 +171,7 @@ export function ValoracioClient({ info, token }: Props) {
                 <span className="material-symbols-outlined text-red-500 text-4xl">error</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-800 mb-1">S'ha produït un error</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-1">S’ha produït un error</h2>
                 <p className="text-gray-500 text-sm">{errorMsg}</p>
               </div>
               <button
@@ -190,7 +190,7 @@ export function ValoracioClient({ info, token }: Props) {
           <>
             {/* Bloc empresa */}
             <div className={CARD}>
-              <p className={LABEL}>Valoració de l'establiment</p>
+              <p className={LABEL}>Valoració de l’establiment</p>
               <div className="flex items-center gap-3 mb-4">
                 {info.empresa.fotoPerfil ? (
                   <img src={info.empresa.fotoPerfil} alt={info.empresa.nom} className="w-10 h-10 rounded-full object-cover border border-gray-100" />
