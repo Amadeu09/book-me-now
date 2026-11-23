@@ -58,13 +58,27 @@ export async function me() {
   return res.data;
 }
 
+export interface InvitacioPublica {
+  email: string | null;
+  nomEmpresa: string | null;
+  caduca: string;
+}
+
+/** Comprova un enllaç d'invitació de registre (error si no és vàlid). */
+export async function consultarInvitacio(token: string): Promise<InvitacioPublica> {
+  const res = await api.get(`/auth/invitacio/${encodeURIComponent(token)}`);
+  return res.data;
+}
+
 export async function signup(
   empresaData: SignupInput['empresa'],
-  userData: SignupInput['usuari']
+  userData: SignupInput['usuari'],
+  invitacio: string,
 ): Promise<AuthResponse> {
-  const payload: SignupInput = {
+  const payload: SignupInput & { invitacio: string } = {
     empresa: empresaData,
     usuari: userData,
+    invitacio,
   };
   const res = await api.post('/auth/signup', payload);
   return res.data;

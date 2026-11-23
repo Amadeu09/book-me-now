@@ -35,7 +35,7 @@ function resolveApiBase(): string {
   return candidate;
 }
 
-const API_URL = `${resolveApiBase()}/api`;
+export const API_URL = `${resolveApiBase()}/api`;
 
 if (__DEV__) {
   // eslint-disable-next-line no-console

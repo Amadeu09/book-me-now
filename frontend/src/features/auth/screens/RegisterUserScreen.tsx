@@ -33,7 +33,8 @@ export default function RegisterUserScreen() {
   const params = useLocalSearchParams();
   const theme = useTheme();
 
-  const [email, setEmail] = useState("");
+  const emailInvitacio = typeof params.emailInvitacio === "string" ? params.emailInvitacio : "";
+  const [email, setEmail] = useState(emailInvitacio);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -101,7 +102,7 @@ export default function RegisterUserScreen() {
 
     try {
       setLoading(true);
-      const response = await signup(empresaData as any, userData);
+      const response = await signup(empresaData as any, userData, params.invitacio as string);
       await setToken(response.token);
       await setUser(response.user);
 
@@ -201,6 +202,8 @@ export default function RegisterUserScreen() {
                 placeholderTextColor={HC.textMuted}
                 value={email}
                 onChangeText={setEmail}
+                editable={!emailInvitacio}
+                accessibilityHint={emailInvitacio ? "La invitación es para este email" : undefined}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 style={styles.input}

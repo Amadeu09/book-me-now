@@ -174,10 +174,9 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={styles.registerRow}>
-              <Text style={styles.metaText}>¿No tienes cuenta? </Text>
-              <TouchableOpacity onPress={() => router.push("/register")}>
-                <Text style={[styles.linkText, { color: HC.primary }]}>Crear cuenta</Text>
-              </TouchableOpacity>
+              <Text style={[styles.metaText, { textAlign: "center" }]}>
+                Las cuentas nuevas se crean con el enlace de invitación de BookMeNow.
+              </Text>
             </View>
           </View>
 

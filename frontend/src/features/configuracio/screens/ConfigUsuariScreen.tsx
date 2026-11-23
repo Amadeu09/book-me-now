@@ -12,6 +12,8 @@ import { UsuariPerfilSection } from '../components/UsuariPerfilSection';
 import { UsuariAparencaSection } from '../components/UsuariAparencaSection';
 import { UsuariContrasenyaSection } from '../components/UsuariContrasenyaSection';
 import { Boto } from '../components/Boto';
+import { desactivarPush } from '@/features/avisos/services/push';
+import { UsuariAvisosSection } from '@/features/avisos/components/UsuariAvisosSection';
 
 /** Configuració › Usuari: perfil, aparença, contrasenya i sortir. */
 export default function ConfigUsuariScreen() {
@@ -23,7 +25,9 @@ export default function ConfigUsuariScreen() {
 
     const tancarSessio = async () => {
         // Invalida el token al servidor; si falla, la sessió local es tanca igualment
-        await api.post('/auth/logout').catch(() => undefined);
+        // Aquest navegador deixa de rebre els avisos d'aquest usuari
+      await desactivarPush();
+      await api.post('/auth/logout').catch(() => undefined);
         await clearSession();
         queryClient.clear();
         router.replace('/login');
@@ -49,6 +53,7 @@ export default function ConfigUsuariScreen() {
                     />
                     </View>
                     <View style={styles.colSide}>
+                    <UsuariAvisosSection />
                     <UsuariAparencaSection />
                     <UsuariContrasenyaSection />
                     </View>

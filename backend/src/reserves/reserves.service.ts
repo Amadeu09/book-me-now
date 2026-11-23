@@ -7,6 +7,7 @@ import { Prisma, ReservaEstat } from '@prisma/client';
 import { EmailService } from '../email/email.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 import { getRotacioIdx } from '../common/utils/horari.utils';
+import { AvisosService } from '../avisos/avisos.service';
 import { escapeHtml } from '../common/utils/html.utils';
 
 /** Espai de noms dels advisory locks de reserves. */
@@ -60,6 +61,7 @@ export class ReservesService {
     private prisma: PrismaService,
     private config: ConfigService,
     private email: EmailService,
+    private readonly avisos: AvisosService,
   ) { }
 
   private get portalUrl(): string {
@@ -266,6 +268,19 @@ export class ReservesService {
     if (email) {
       this.enviarEmailConfirmacio(reserva, { ...dto, email }, dataHoraInici, reserva.tokenGestio);
       // L'email post-cita l'envia EmailPostCitaService quan acaba la cita.
+    }
+
+    // Reserva feta pel client des del portal: avisem el negoci
+    if (options.esClient) {
+      this.avisos.avisarNegoci({
+        tipus: 'RESERVA_NOVA',
+        reservaId: reserva.id,
+        empresaId: reserva.empresaId,
+        treballadorId: reserva.treballadorId,
+        clientNom: reserva.clientNom,
+        serveiNom: reserva.servei.nom,
+        dataHora: reserva.dataHora,
+      });
     }
 
     return reserva;
@@ -657,49 +672,20 @@ export class ReservesService {
    * cancel·la o canvia la cita des del seu enllaç.
    */
   private avisarNegoci(
-    reserva: { empresaId: number; treballadorId: number | null; clientNom: string | null; servei: { nom: string } },
+    reserva: { id: number; empresaId: number; treballadorId: number | null; clientNom: string | null; servei: { nom: string } },
     accio: 'cancel·lada' | 'canviada',
     dataAnterior: Date,
     dataNova?: Date,
   ): void {
-    void (async () => {
-      try {
-        const destinataris = await this.prisma.usuari.findMany({
-          where: {
-            empresaId: reserva.empresaId,
-            OR: [
-              { rol: 'ADMIN_GENERAL' },
-              ...(reserva.treballadorId ? [{ treballador: { id: reserva.treballadorId } }] : []),
-            ],
-          },
-          select: { email: true },
-        });
-        const emails = [...new Set(destinataris.map((u) => u.email))];
-        if (emails.length === 0) return;
-
-        const abans = formatarDataHora(dataAnterior);
-        const despres = dataNova ? formatarDataHora(dataNova) : null;
-        const client = escapeHtml(reserva.clientNom || 'Un client');
-
-        this.email.sendInBackground({
-          to: emails,
-          subject: `Cita ${accio} pel client — ${reserva.servei.nom}`,
-          html: `
-            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
-              <h2 style="color:#6366F1;margin:0 0 12px">BookMeNow</h2>
-              <p style="color:#334155;font-size:15px;"><strong>${client}</strong> ha ${accio === 'cancel·lada' ? 'cancel·lat' : 'canviat'} la seva cita des de l'enllaç de gestió.</p>
-              <ul style="color:#334155;font-size:14px;">
-                <li><strong>Servei:</strong> ${escapeHtml(reserva.servei.nom)}</li>
-                <li><strong>${despres ? 'Abans' : 'Data'}:</strong> ${abans.dia}, ${abans.hora}</li>
-                ${despres ? `<li><strong>Ara:</strong> ${despres.dia}, ${despres.hora}</li>` : ''}
-              </ul>
-            </div>
-          `,
-        });
-      } catch (err) {
-        // Un avís que no surt no ha de fer fallar la petició del client
-        this.logger.error('Error avisant el negoci', err instanceof Error ? err.stack : String(err));
-      }
-    })();
+    this.avisos.avisarNegoci({
+      tipus: accio === 'cancel·lada' ? 'RESERVA_CANCELLADA' : 'RESERVA_CANVIADA',
+      reservaId: reserva.id,
+      empresaId: reserva.empresaId,
+      treballadorId: reserva.treballadorId,
+      clientNom: reserva.clientNom,
+      serveiNom: reserva.servei.nom,
+      dataHora: dataNova ?? dataAnterior,
+      dataAnterior: dataNova ? dataAnterior : undefined,
+    });
   }
 }

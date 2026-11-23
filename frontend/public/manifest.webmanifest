@@ -1,0 +1,14 @@
+{
+  "name": "BookMeNow · Gestión",
+  "short_name": "BookMeNow",
+  "start_url": "/inici",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8F9FB",
+  "theme_color": "#5B5BD6",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

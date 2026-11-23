@@ -3,6 +3,9 @@ import { ReservesService } from './reserves.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import { AvisosService } from '../avisos/avisos.service';
+
+const avisos = { avisarNegoci: jest.fn() };
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateReservaDto } from './dto/reserves.dto';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
@@ -56,6 +59,10 @@ describe('ReservesService', () => {
                     provide: EmailService,
                     useValue: { send: jest.fn().mockResolvedValue({ ok: true }), sendInBackground: jest.fn() },
                 },
+                {
+                    provide: AvisosService,
+                    useValue: avisos,
+                },
             ],
         }).compile();
 
@@ -108,6 +115,24 @@ describe('ReservesService', () => {
                 where: { email_empresaId: { email: 'client@example.com', empresaId: 1 } },
                 update: {},
             }));
+        });
+
+        it('avisa el negoci quan un client reserva des del portal', async () => {
+            avisos.avisarNegoci.mockClear();
+            jest.spyOn(service as any, 'checkFinestraClient').mockResolvedValue(undefined);
+            jest.spyOn(service as any, 'checkSlotAvailable').mockResolvedValue(undefined);
+            const dataHora = new Date('2026-12-01T10:00:00Z');
+            mockPrismaService.$transaction.mockImplementation(async (callback: any) => callback({
+                $executeRaw: jest.fn().mockResolvedValue(1),
+                reserva: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn().mockResolvedValue({ id: 9, empresaId: 1, treballadorId: 1, clientNom: 'Laura', dataHora, servei: { nom: 'Tall', duradaMin: 60 } }) },
+                client: { upsert: jest.fn().mockResolvedValue({ id: 1 }), create: jest.fn() },
+            }));
+
+            await service.createPublic(dto);
+
+            expect(avisos.avisarNegoci).toHaveBeenCalledWith({
+                tipus: 'RESERVA_NOVA', reservaId: 9, empresaId: 1, treballadorId: 1, clientNom: 'Laura', serveiNom: 'Tall', dataHora,
+            });
         });
     });
 

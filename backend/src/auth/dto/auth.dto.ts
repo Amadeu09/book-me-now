@@ -83,6 +83,12 @@ export class SignupDto {
   @ValidateNested()
   @Type(() => SignupEmpresaDto)
   empresa: SignupEmpresaDto;
+
+  @ApiProperty({ description: "Token de l'enllaç d'invitació: el registre només és possible amb invitació" })
+  @IsString()
+  @IsNotEmpty({ message: 'Cal una invitació per registrar-se' })
+  @MaxLength(200)
+  invitacio: string;
 }
 
 export class LoginResponseDto {
