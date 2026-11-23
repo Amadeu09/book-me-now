@@ -64,7 +64,7 @@ export function HeroSection({ onTipo }: Props) {
 
   return (
     <section id="hero" className="bg-brand-soft">
-      <div className="max-w-[1200px] mx-auto px-5 sm:px-6 pt-10 pb-16 md:pt-20 md:pb-24 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-14 lg:gap-16 items-center">
+      <div className="max-w-[1200px] mx-auto px-5 sm:px-6 pt-10 pb-12 md:pt-20 md:pb-16 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-14 lg:gap-16 items-center">
         <div className="flex flex-col gap-6 min-w-0">
           <span className="self-start inline-flex items-center gap-2 bg-white border border-brand-line rounded-full px-3.5 py-1.5 text-[13px] font-bold text-brand">
             <Icon name="clock" size={15} />
