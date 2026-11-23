@@ -1,258 +1,150 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getEmpresasPublic } from '@/lib/api';
 import type { Empresa } from '@/types/empresa';
+import { Icon } from '@/components/ui/icon';
+import { CATEGORIES, TIPO_LABELS } from './tipus';
 
-const CATEGORIES: { label: string; value: string | null; icon: string }[] = [
-  { label: 'Peluquería', value: 'PERRUQUERIA', icon: 'content_cut' },
-  { label: 'Barbería', value: 'BARBERIA', icon: 'face_retouching_natural' },
-  { label: 'Estética', value: 'ESTETICA', icon: 'auto_awesome' },
-  { label: 'Spa', value: 'SPA', icon: 'spa' },
-  { label: 'Dental', value: 'DENTAL', icon: 'dentistry' },
-  { label: 'Fisioterapia', value: 'FISIOTERAPIA', icon: 'accessibility_new' },
-  { label: 'Más', value: null, icon: 'grid_view' },
-];
-
-const TIPO_LABELS: Record<string, string> = {
-  PERRUQUERIA: 'Peluquería',
-  BARBERIA: 'Barbería',
-  ESTETICA: 'Estética',
-  SPA: 'Spa',
-  MASSATGES: 'Masajes',
-  NUTRICIONISTA: 'Nutricionista',
-  FISIOTERAPIA: 'Fisioterapia',
-  DENTAL: 'Dental',
-  VETERINARIA: 'Veterinaria',
-  ALTRES: 'Otros',
-  OTROS: 'Otros',
-};
-
-const LIMIT = 3;
+const PER_PAGINA = 6;
 
 function BusinessCard({ empresa }: { empresa: Empresa }) {
-  const router = useRouter();
-  const initial = empresa.nom.charAt(0).toUpperCase();
-  const tipoLabel = empresa.tipo ? (TIPO_LABELS[empresa.tipo] ?? empresa.tipo) : null;
-
+  const tipo = empresa.tipo ? (TIPO_LABELS[empresa.tipo] ?? empresa.tipo) : null;
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => router.push(`/empresa/${empresa.id}`)}
-      onKeyDown={(e) => e.key === 'Enter' && router.push(`/empresa/${empresa.id}`)}
-      className="group bg-white rounded-[2rem] border border-gray-200/80 overflow-hidden hover:border-primary/30 transition-colors duration-200 flex flex-col cursor-pointer"
-    >
-      {/* Banner */}
-      <div className="relative h-44 shrink-0 overflow-hidden">
+    <article className="group bg-white border border-brand-line rounded-[20px] overflow-hidden flex flex-col hover:shadow-[0_18px_40px_rgba(20,20,43,0.08)] transition-shadow">
+      <div className="relative h-[180px] bg-brand-soft overflow-hidden">
         {empresa.bannerUrl ? (
-          <img
-            src={empresa.bannerUrl}
-            alt={empresa.nom}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
+          <img src={empresa.bannerUrl} alt="" className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
         ) : (
-          <div
-            className="w-full h-full flex items-center justify-center text-5xl font-black text-white/30 select-none"
-            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #1F2937 100%)' }}
-          >
-            {initial}
+          <div aria-hidden="true" className="w-full h-full flex items-center justify-center text-[56px] font-extrabold text-brand/25">
+            {empresa.nom.charAt(0).toUpperCase()}
           </div>
         )}
-        {tipoLabel && (
-          <span className="absolute top-4 right-4 text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/90 text-primary backdrop-blur-sm">
-            {tipoLabel}
-          </span>
+        {empresa.fotoPerfil && (
+          <img src={empresa.fotoPerfil} alt="" className="absolute left-5 -bottom-6 w-14 h-14 rounded-[14px] object-cover border-4 border-white shadow-sm" />
         )}
       </div>
-
-      {/* Body */}
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-bold text-gray-900 text-base leading-tight line-clamp-1 mb-1.5">
-          {empresa.nom}
-        </h3>
-
+      <div className={`px-5 pb-5 ${empresa.fotoPerfil ? 'pt-9' : 'pt-5'} flex flex-col gap-2.5 flex-1`}>
+        {tipo && (
+          <span className="self-start text-[12px] font-bold text-brand bg-brand-soft px-2.5 py-1 rounded-full">{tipo}</span>
+        )}
+        <h3 className="m-0 text-[18px] font-extrabold text-brand-ink line-clamp-1">{empresa.nom}</h3>
         {empresa.ubicacio && (
-          <p className="flex items-center gap-1 text-xs text-gray-400 line-clamp-1 mb-4">
-            <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>location_on</span>
+          <p className="m-0 flex items-center gap-1.5 text-[14px] text-brand-muted line-clamp-1">
+            <Icon name="pin" size={15} className="shrink-0" />
             {empresa.ubicacio}
           </p>
         )}
-
-        <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-xs font-semibold text-primary group-hover:text-primary transition-colors">
-            Ver perfil
-          </span>
-          <span className="material-symbols-outlined text-primary/30 group-hover:text-primary transition-colors" style={{ fontSize: '18px' }}>
-            north_east
-          </span>
-        </div>
+        <Link
+          href={`/empresa/${empresa.id}`}
+          className="mt-auto pt-1 inline-flex items-center justify-center gap-2 min-h-[46px] rounded-[12px] border border-brand-line text-brand-ink text-[15px] font-bold hover:border-brand hover:text-brand transition-colors"
+        >
+          Ver horarios y reservar
+          <span className="sr-only">en {empresa.nom}</span>
+        </Link>
       </div>
-    </div>
+    </article>
   );
 }
 
-function NavArrow({
-  direction,
-  disabled,
-  onClick,
-}: {
-  direction: 'left' | 'right';
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={direction === 'left' ? 'Anterior' : 'Siguiente'}
-      className={[
-        'shrink-0 w-11 h-11 rounded-full border flex items-center justify-center transition-colors duration-150',
-        disabled
-          ? 'border-gray-100 text-gray-300 cursor-not-allowed bg-white'
-          : 'border-gray-200 text-gray-600 bg-white hover:border-primary hover:text-primary',
-      ].join(' ')}
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-        {direction === 'left' ? 'chevron_left' : 'chevron_right'}
-      </span>
-    </button>
-  );
+interface Props {
+  tipo: string | null;
+  onTipo: (tipo: string | null) => void;
 }
 
-export function BusinessDirectorySection() {
-  const [selectedTipo, setSelectedTipo] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [businesses, setBusinesses] = useState<Empresa[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+export function BusinessDirectorySection({ tipo, onTipo }: Props) {
+  const [pagina, setPagina] = useState(1);
+  const [negocis, setNegocis] = useState<Empresa[]>([]);
+  const [totalPagines, setTotalPagines] = useState(1);
+  const [carregant, setCarregant] = useState(true);
+  const [error, setError] = useState(false);
+
+  // En canviar de tipus, tornem a la primera pàgina abans de demanar res
+  const [tipoPrevi, setTipoPrevi] = useState(tipo);
+  if (tipo !== tipoPrevi) {
+    setTipoPrevi(tipo);
+    setPagina(1);
+  }
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-
-    getEmpresasPublic(selectedTipo, currentPage, LIMIT)
+    let cancel = false;
+    setCarregant(true);
+    setError(false);
+    getEmpresasPublic(tipo, pagina, PER_PAGINA)
       .then((res) => {
-        if (cancelled) return;
-        setBusinesses(res.data);
-        setTotalPages(res.totalPages);
+        if (cancel) return;
+        setNegocis((prev) => (pagina === 1 ? res.data : [...prev, ...res.data]));
+        setTotalPagines(res.totalPages);
       })
-      .catch(() => {
-        if (!cancelled) setBusinesses([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [selectedTipo, currentPage]);
-
-  const handleCategorySelect = (value: string | null) => {
-    setSelectedTipo(value);
-    setCurrentPage(1);
-  };
+      .catch(() => { if (!cancel) { setError(true); if (pagina === 1) setNegocis([]); } })
+      .finally(() => { if (!cancel) setCarregant(false); });
+    return () => { cancel = true; };
+  }, [tipo, pagina]);
 
   return (
-    <section className="px-6 md:px-12 max-w-[1920px] mx-auto mb-8">
+    <section id="negocios" className="py-16 md:py-24 scroll-mt-20">
+      <div className="max-w-[1200px] mx-auto px-5 sm:px-6 flex flex-col gap-8">
+        <div>
+          <p className="m-0 mb-2 text-[13px] font-extrabold tracking-[0.12em] uppercase text-brand">Negocios en BookMeNow</p>
+          <h2 className="m-0 text-[28px] md:text-[40px] tracking-[-0.03em] font-extrabold text-brand-ink">Reserva donde ya confías</h2>
+        </div>
 
-      {/* Pill bar */}
-      <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-gray-400 mb-3">
-          Tipo de negocio
-        </p>
-        <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
-          {CATEGORIES.map((cat) => {
-            const isSelected = selectedTipo === cat.value;
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 sm:mx-0 sm:px-0 sm:flex-wrap" role="group" aria-label="Filtrar por tipo de negocio">
+          {CATEGORIES.map((c) => {
+            const actiu = tipo === c.value;
             return (
               <button
-                key={cat.value ?? 'all'}
-                onClick={() => handleCategorySelect(cat.value)}
-                className={[
-                  'flex items-center gap-1.5 px-4 py-2.5 rounded-full whitespace-nowrap text-sm font-medium transition-colors duration-150 shrink-0 border',
-                  isSelected
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/30 hover:text-primary',
-                ].join(' ')}
+                key={c.value ?? 'tots'}
+                type="button"
+                aria-pressed={actiu}
+                onClick={() => onTipo(c.value)}
+                className={`shrink-0 inline-flex items-center gap-2 min-h-[40px] px-3.5 rounded-full border text-[14px] font-semibold transition-colors ${
+                  actiu ? 'bg-brand border-brand text-white' : 'bg-white border-brand-line text-brand-ink hover:border-brand hover:text-brand'
+                }`}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                  {cat.icon}
-                </span>
-                {cat.label}
+                <Icon name={c.icon} size={16} />
+                {c.label}
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Row with side arrows */}
-      {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <span
-            className="material-symbols-outlined text-gray-300"
-            style={{ fontSize: '40px', animation: 'spin 1s linear infinite' }}
-          >
-            progress_activity
-          </span>
-        </div>
-      ) : businesses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <span className="material-symbols-outlined text-gray-300" style={{ fontSize: '48px' }}>
-            store_mall_directory
-          </span>
-          <p className="text-sm text-gray-400">No hay negocios de este tipo todavía.</p>
-        </div>
-      ) : (
-        <div className="flex items-stretch gap-4">
-          {/* Left arrow */}
-          <div className="flex items-center">
-            <NavArrow
-              direction="left"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-            />
-          </div>
-
-          {/* Cards — always 3 columns */}
-          <div className="flex-1 grid grid-cols-3 gap-5">
-            {businesses.map((empresa) => (
-              <BusinessCard key={empresa.id} empresa={empresa} />
+        {carregant && pagina === 1 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="Cargando negocios">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-[360px] rounded-[20px] bg-brand-soft animate-pulse" />
             ))}
           </div>
-
-          {/* Right arrow */}
-          <div className="flex items-center">
-            <NavArrow
-              direction="right"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-            />
+        ) : negocis.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-14 text-center">
+            <span className="w-14 h-14 rounded-full bg-brand-soft text-brand flex items-center justify-center"><Icon name="search" size={24} /></span>
+            <p className="m-0 text-[15px] text-brand-muted">
+              {error ? 'No hemos podido cargar los negocios. Vuelve a intentarlo en un momento.' : 'Todavía no hay negocios de este tipo.'}
+            </p>
+            {tipo && !error && (
+              <button type="button" onClick={() => onTipo(null)} className="text-[15px] font-bold text-brand min-h-[44px]">Ver todos los negocios</button>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Page indicator dots */}
-      {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-5">
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              aria-label={`Página ${i + 1}`}
-              style={{
-                width: i + 1 === currentPage ? '24px' : '8px',
-                height: '8px',
-                borderRadius: '999px',
-                backgroundColor: i + 1 === currentPage ? '#6366F1' : '#e5e7eb',
-                transition: 'all 0.3s ease',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            />
-          ))}
-        </div>
-      )}
+        ) : (
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {negocis.map((e) => <BusinessCard key={e.id} empresa={e} />)}
+            </div>
+            {pagina < totalPagines && (
+              <button
+                type="button"
+                onClick={() => setPagina((p) => p + 1)}
+                disabled={carregant}
+                className="self-center inline-flex items-center gap-2 min-h-[48px] px-6 rounded-[12px] border border-brand-line bg-white text-brand-ink text-[15px] font-bold hover:border-brand hover:text-brand transition-colors disabled:opacity-60"
+              >
+                {carregant ? 'Cargando…' : 'Ver más negocios'}
+                {!carregant && <Icon name="arrow" size={18} />}
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 }

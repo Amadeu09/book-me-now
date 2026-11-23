@@ -54,6 +54,12 @@ const config: Config = {
         "on-secondary-fixed": "#351000",
         "error-container": "#ffdad6",
         "primary": "#6366F1",
+        "brand": "#5B5BD6",
+        "brand-ink": "#14142B",
+        "brand-lila": "#B9B9FA",
+        "brand-soft": "#F3F3FD",
+        "brand-muted": "#5A5A72",
+        "brand-line": "#E6E6F0",
         "outline-variant": "#cbc3d7",
         "tertiary-fixed": "#ffdcbb",
         "on-tertiary-fixed": "#2c1700"
