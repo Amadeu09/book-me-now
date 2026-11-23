@@ -9,12 +9,14 @@ import { SaLogin } from '../components/SaLogin';
 import { SaEmpreses } from '../components/SaEmpreses';
 import { SaInvitacions } from '../components/SaInvitacions';
 import { SaRegistre } from '../components/SaRegistre';
+import { SaCorreus } from '../components/SaCorreus';
 import { SA } from '../components/sa.estils';
 
-type Pestanya = 'empreses' | 'invitacions' | 'registre';
+type Pestanya = 'empreses' | 'invitacions' | 'correus' | 'registre';
 const PESTANYES: { clau: Pestanya; label: string; icona: React.ComponentProps<typeof Ionicons>['name'] }[] = [
   { clau: 'empreses', label: 'Empresas', icona: 'business-outline' },
   { clau: 'invitacions', label: 'Invitaciones', icona: 'mail-outline' },
+  { clau: 'correus', label: 'Correos', icona: 'paper-plane-outline' },
   { clau: 'registre', label: 'Registro', icona: 'list-outline' },
 ];
 
@@ -81,6 +83,7 @@ export default function SuperAdminScreen() {
           </View>
           {pestanya === 'empreses' && <SaEmpreses />}
           {pestanya === 'invitacions' && <SaInvitacions />}
+          {pestanya === 'correus' && <SaCorreus />}
           {pestanya === 'registre' && <SaRegistre />}
         </View>
       </ScrollView>

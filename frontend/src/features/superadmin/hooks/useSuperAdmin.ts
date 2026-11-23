@@ -45,3 +45,7 @@ export function useRevocarInvitacio() {
 export function useRegistreAdmin(page: number) {
   return useQuery({ queryKey: ['sa-registre', page], queryFn: () => api.getRegistre(page), placeholderData: keepPreviousData });
 }
+
+export function useCorreusAdmin() {
+  return useQuery({ queryKey: ['sa-correus'], queryFn: api.getCorreus, refetchInterval: 60_000 });
+}

@@ -11,6 +11,7 @@ import { hashToken, nouToken } from '../common/utils/token.utils';
 import { esc, plantillaEmail } from '../common/utils/email-plantilla';
 import { normalitzarPaginacio } from '../common/utils/paginacio.utils';
 import { SUPERADMIN_DURADA_S, clauSuperAdmin } from './superadmin.constants';
+import { PLANS_CORREU } from '../email/plans-correu';
 import { CrearInvitacioDto } from './dto/superadmin.dto';
 
 // Mateix cost que un hash real: el temps de resposta no revela si l'email existeix
@@ -115,6 +116,7 @@ export class SuperAdminService implements OnApplicationBootstrap {
     });
     const url = `${this.appUrl}/superadmin/contrasenya?token=${token}`;
     const res = await this.email.send({
+      tipus: 'SUPERADMIN',
       to: email,
       subject: alta ? 'Activa el teu accés de superadmin a BookMeNow' : 'Restableix la contrasenya de superadmin',
       html: plantillaEmail({
@@ -209,6 +211,7 @@ export class SuperAdminService implements OnApplicationBootstrap {
     let emailEnviat = false;
     if (dto.enviarEmail && email) {
       const res = await this.email.send({
+        tipus: 'INVITACIO',
         to: email,
         subject: 'Et convidem a BookMeNow',
         html: plantillaEmail({
@@ -256,6 +259,75 @@ export class SuperAdminService implements OnApplicationBootstrap {
     const { tokenHash: _ocult, ...resta } = i;
     const estat: EstatInvitacio = i.usadaAt ? 'USADA' : i.revocada ? 'REVOCADA' : i.caduca < new Date() ? 'CADUCADA' : 'PENDENT';
     return { ...resta, estat };
+  }
+
+  /* ── Correus (quota de Resend) ─────────────────────── */
+
+  /**
+   * Ús de correus d'avui i d'aquest mes (períodes en UTC, com Resend), desglossat per tipus i
+   * per empresa, i la sèrie dels últims 30 dies. El front els compara amb cada pla.
+   */
+  async estadistiquesCorreus() {
+    const ara = new Date();
+    const iniciDia = new Date(Date.UTC(ara.getUTCFullYear(), ara.getUTCMonth(), ara.getUTCDate()));
+    const iniciMes = new Date(Date.UTC(ara.getUTCFullYear(), ara.getUTCMonth(), 1));
+    const fa30 = new Date(iniciDia.getTime() - 29 * 24 * 60 * 60 * 1000);
+    const diesMes = new Date(Date.UTC(ara.getUTCFullYear(), ara.getUTCMonth() + 1, 0)).getUTCDate();
+    const diaDelMes = ara.getUTCDate();
+
+    const suma = (where: Prisma.CorreuEnviatWhereInput) =>
+      this.prisma.correuEnviat.aggregate({ where, _sum: { destinataris: true } }).then((r) => r._sum.destinataris ?? 0);
+
+    const [avui, mes, fallitsAvui, fallitsMes, perTipusMes, perTipusAvui, perEmpresaMes, diari, primer] = await Promise.all([
+      suma({ ok: true, createdAt: { gte: iniciDia } }),
+      suma({ ok: true, createdAt: { gte: iniciMes } }),
+      suma({ ok: false, createdAt: { gte: iniciDia } }),
+      suma({ ok: false, createdAt: { gte: iniciMes } }),
+      this.prisma.correuEnviat.groupBy({ by: ['tipus'], where: { ok: true, createdAt: { gte: iniciMes } }, _sum: { destinataris: true } }),
+      this.prisma.correuEnviat.groupBy({ by: ['tipus'], where: { ok: true, createdAt: { gte: iniciDia } }, _sum: { destinataris: true } }),
+      this.prisma.correuEnviat.groupBy({ by: ['empresaId'], where: { ok: true, createdAt: { gte: iniciMes } }, _sum: { destinataris: true } }),
+      this.prisma.$queryRaw<{ dia: Date; total: bigint }[]>`
+        SELECT date_trunc('day', "createdAt" AT TIME ZONE 'UTC') AS dia, SUM("destinataris")::bigint AS total
+        FROM "CorreuEnviat"
+        WHERE "ok" = true AND "createdAt" >= ${fa30}
+        GROUP BY 1 ORDER BY 1`,
+      this.prisma.correuEnviat.findFirst({ orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
+    ]);
+
+    const empreses = await this.prisma.empresa.findMany({
+      where: { id: { in: perEmpresaMes.map((e) => e.empresaId).filter((x): x is number => x !== null) } },
+      select: { id: true, nom: true },
+    });
+    const noms = new Map(empreses.map((e) => [e.id, e.nom]));
+    const totals = new Map(diari.map((d) => [new Date(d.dia).toISOString().slice(0, 10), Number(d.total)]));
+    const serie = Array.from({ length: 30 }, (_, i) => {
+      const dia = new Date(fa30.getTime() + i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      return { dia, total: totals.get(dia) ?? 0 };
+    });
+    const avuiPerTipus = new Map(perTipusAvui.map((t) => [t.tipus, t._sum.destinataris ?? 0]));
+
+    return {
+      plaActual: this.email.pla,
+      plans: PLANS_CORREU,
+      comptantDes: primer?.createdAt ?? null,
+      avui: { enviats: avui, fallits: fallitsAvui },
+      mes: {
+        enviats: mes,
+        fallits: fallitsMes,
+        dia: diaDelMes,
+        diesMes,
+        // Projecció lineal a final de mes amb el ritme actual
+        projeccio: Math.round((mes / diaDelMes) * diesMes),
+      },
+      perTipus: perTipusMes
+        .map((t) => ({ tipus: t.tipus, mes: t._sum.destinataris ?? 0, avui: avuiPerTipus.get(t.tipus) ?? 0 }))
+        .sort((a, b) => b.mes - a.mes),
+      perEmpresa: perEmpresaMes
+        .map((e) => ({ empresaId: e.empresaId, nom: e.empresaId ? noms.get(e.empresaId) ?? `#${e.empresaId}` : 'Plataforma', mes: e._sum.destinataris ?? 0 }))
+        .sort((a, b) => b.mes - a.mes)
+        .slice(0, 15),
+      diari: serie,
+    };
   }
 
   /* ── Registre d'accions ────────────────────────────── */

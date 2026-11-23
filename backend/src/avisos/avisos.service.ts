@@ -107,6 +107,8 @@ export class AvisosService implements OnModuleInit {
     for (const [idioma, emails] of perIdioma) {
       const { titol, cos } = textAvis(avis, idioma);
       this.email.sendInBackground({
+        tipus: 'AVIS_NEGOCI',
+        empresaId: avis.empresaId,
         to: [...new Set(emails)],
         subject: `${titol} — ${avis.serveiNom}`,
         html: plantillaEmail({

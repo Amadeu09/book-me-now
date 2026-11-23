@@ -99,3 +99,25 @@ export const revocarInvitacio = (id: number) => sapi.post(`/superadmin/invitacio
 
 export const getRegistre = (page: number) =>
   sapi.get<Pagina<AccioRegistre>>('/superadmin/registre', { params: { page, rows: 30 } }).then((r) => r.data);
+
+export interface PlaCorreu {
+  id: 'free' | 'pro';
+  nom: string;
+  preuMes: number;
+  limitDia: number | null;
+  limitMes: number;
+  excesPer1000: number | null;
+}
+
+export interface EstadistiquesCorreus {
+  plaActual: 'free' | 'pro';
+  plans: Record<'free' | 'pro', PlaCorreu>;
+  comptantDes: string | null;
+  avui: { enviats: number; fallits: number };
+  mes: { enviats: number; fallits: number; dia: number; diesMes: number; projeccio: number };
+  perTipus: { tipus: string; mes: number; avui: number }[];
+  perEmpresa: { empresaId: number | null; nom: string; mes: number }[];
+  diari: { dia: string; total: number }[];
+}
+
+export const getCorreus = () => sapi.get<EstadistiquesCorreus>('/superadmin/correus').then((r) => r.data);
