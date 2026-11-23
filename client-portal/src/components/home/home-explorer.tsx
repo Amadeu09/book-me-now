@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { HeroSection } from './hero-section';
 import { BusinessDirectorySection } from './business-directory';
+import { NegocisEnAccio } from './negocis-en-accio';
 
 /** Uneix el cercador de l'inici amb el directori: triar un tipus filtra i hi baixa. */
 export function HomeExplorer() {
@@ -16,6 +17,7 @@ export function HomeExplorer() {
   return (
     <>
       <HeroSection onTipo={filtraIBaixa} />
+      <NegocisEnAccio onTipo={filtraIBaixa} />
       <BusinessDirectorySection tipo={tipo} onTipo={setTipo} />
     </>
   );
