@@ -1,82 +1,85 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { LogoMark } from './logo';
+import { Wordmark } from './wordmark';
+import { ACCES_URL, REGISTRE_URL } from '@/lib/links';
 
 type ModalType = 'privacy' | 'terms' | 'contact' | null;
 
 const MODAL_CONTENT: Record<NonNullable<ModalType>, { title: string; content: React.ReactNode }> = {
   privacy: {
-    title: 'Privacy Policy',
+    title: 'Política de privacidad',
     content: (
       <div className="space-y-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed normal-case tracking-normal">
-        <p><strong>Last updated:</strong> {new Date().getFullYear()}</p>
+        <p><strong>Última actualización:</strong> {new Date().getFullYear()}</p>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">1. Data We Collect</h3>
-          <p>When you book through BookMeNow, we collect your name, email, phone number, and appointment details. This data is necessary to confirm and manage your reservations.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">1. Datos que recogemos</h3>
+          <p>Cuando reservas a través de BookMeNow recogemos tu nombre, email, teléfono y los datos de la cita. Son necesarios para confirmar y gestionar tus reservas.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">2. How We Use Your Data</h3>
-          <p>Your data is used exclusively to manage bookings, send appointment reminders, and improve our service. We do not sell or share your personal information with third parties.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">2. Para qué los usamos</h3>
+          <p>Usamos tus datos solo para gestionar las reservas, enviarte recordatorios y mejorar el servicio. No vendemos ni cedemos tus datos personales a terceros.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">3. Data Retention</h3>
-          <p>We retain your booking history for up to 2 years. You may request deletion of your data at any time by contacting us.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">3. Conservación</h3>
+          <p>Conservamos tu historial de reservas un máximo de 2 años. Puedes pedir que borremos tus datos en cualquier momento escribiéndonos.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">4. Your Rights (GDPR)</h3>
-          <p>You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at the address below.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">4. Tus derechos (RGPD)</h3>
+          <p>Tienes derecho a acceder, rectificar o suprimir tus datos personales. Para ejercerlo, escríbenos a la dirección de abajo.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">5. Contact</h3>
-          <p>For privacy-related inquiries: <a href="mailto:privacy@bookmenow.app" className="text-primary underline">privacy@bookmenow.app</a></p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">5. Contacto</h3>
+          <p>Para consultas sobre privacidad: <a href="mailto:privacy@bookmenow.app" className="text-primary underline">privacy@bookmenow.app</a></p>
         </section>
       </div>
     ),
   },
   terms: {
-    title: 'Terms of Service',
+    title: 'Términos del servicio',
     content: (
       <div className="space-y-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed normal-case tracking-normal">
-        <p><strong>Last updated:</strong> {new Date().getFullYear()}</p>
+        <p><strong>Última actualización:</strong> {new Date().getFullYear()}</p>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">1. Bookings</h3>
-          <p>By booking through BookMeNow, you agree to attend your appointment at the scheduled time. Bookings are confirmed upon receiving a confirmation message.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">1. Reservas</h3>
+          <p>Al reservar con BookMeNow te comprometes a acudir a la cita a la hora acordada. La reserva queda confirmada cuando recibes el mensaje de confirmación.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">2. Cancellations & Modifications</h3>
-          <p>Cancellations must be made at least 24 hours before the appointment. Late cancellations or no-shows may be subject to a fee as set by the business.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">2. Cancelaciones y cambios</h3>
+          <p>Las cancelaciones deben hacerse al menos 24 horas antes de la cita. Las cancelaciones tardías o no presentarse pueden tener un cargo, según lo que fije cada negocio.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">3. Liability</h3>
-          <p>BookMeNow acts as a booking platform. The service itself is provided by the business you book with. We are not responsible for the quality of services rendered.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">3. Responsabilidad</h3>
+          <p>BookMeNow es una plataforma de reservas. El servicio lo presta el negocio con el que reservas, y no somos responsables de su calidad.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">4. Account Use</h3>
-          <p>You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">4. Uso de la cuenta</h3>
+          <p>Eres responsable de mantener la confidencialidad de tus credenciales y de toda la actividad de tu cuenta.</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">5. Changes to Terms</h3>
-          <p>We reserve the right to modify these terms. Continued use of the service constitutes acceptance of updated terms.</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">5. Cambios en los términos</h3>
+          <p>Podemos modificar estos términos. Seguir usando el servicio implica aceptar los términos actualizados.</p>
         </section>
       </div>
     ),
   },
   contact: {
-    title: 'Contact Us',
+    title: 'Contacto',
     content: (
       <div className="space-y-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed normal-case tracking-normal">
-        <p>Have questions or need support? Reach us through any of the following channels:</p>
+        <p>¿Tienes dudas o necesitas ayuda? Puedes contactarnos por estos canales:</p>
 
         <section className="space-y-2">
           <div className="flex items-start gap-3">
@@ -90,16 +93,16 @@ const MODAL_CONTENT: Record<NonNullable<ModalType>, { title: string; content: Re
           <div className="flex items-start gap-3">
             <span className="material-symbols-outlined text-primary text-base mt-0.5">schedule</span>
             <div>
-              <p className="font-medium text-slate-900 dark:text-white">Support Hours</p>
-              <p>Monday – Friday, 9:00 – 18:00 (CET)</p>
+              <p className="font-medium text-slate-900 dark:text-white">Horario de atención</p>
+              <p>De lunes a viernes, de 9:00 a 18:00</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
             <span className="material-symbols-outlined text-primary text-base mt-0.5">help</span>
             <div>
-              <p className="font-medium text-slate-900 dark:text-white">General Enquiries</p>
-              <p>For business partnerships or press inquiries: <a href="mailto:hello@bookmenow.app" className="text-primary underline">hello@bookmenow.app</a></p>
+              <p className="font-medium text-slate-900 dark:text-white">Otras consultas</p>
+              <p>Para colaboraciones o prensa: <a href="mailto:hello@bookmenow.app" className="text-primary underline">hello@bookmenow.app</a></p>
             </div>
           </div>
         </section>
@@ -114,23 +117,40 @@ export function Footer() {
 
   return (
     <>
-      <footer className="w-full rounded-t-[32px] bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row justify-between items-center px-16 py-20 font-['Plus_Jakarta_Sans'] text-sm uppercase tracking-widest">
-        <div className="mb-12 md:mb-0">
-          <div className="flex items-center gap-2.5 text-lg font-black text-slate-900 dark:text-white mb-4"><LogoMark size={28} />BookMeNow</div>
-          <p className="text-slate-400 dark:text-slate-600 normal-case tracking-normal max-w-xs">
-            © {new Date().getFullYear()} BookMeNow. Curated with Intention.
-          </p>
-        </div>
-        <div className="flex flex-wrap justify-center gap-12">
-          {(['privacy', 'terms', 'contact'] as const).map((key) => (
-            <button
-              key={key}
-              onClick={() => setOpen(key)}
-              className="text-slate-400 dark:text-slate-600 hover:text-primary transition-colors hover:opacity-70 uppercase tracking-widest text-sm bg-transparent border-none cursor-pointer"
-            >
-              {key === 'privacy' ? 'Privacy Policy' : key === 'terms' ? 'Terms of Service' : 'Contact Us'}
-            </button>
-          ))}
+      <footer className="border-t border-brand-line bg-white">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-6 py-12 md:py-14 flex flex-col gap-10">
+          <div className="flex flex-col md:flex-row justify-between gap-10">
+            <div className="flex flex-col gap-3 max-w-[300px]">
+              <div className="flex items-center gap-2.5"><LogoMark size={32} /><Wordmark className="text-[20px]" /></div>
+              <p className="m-0 text-[14px] leading-relaxed text-brand-muted">Reservas online para negocios de proximidad.</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-14 gap-y-8 text-[14px]">
+              <div className="flex flex-col gap-2.5">
+                <p className="m-0 font-bold text-brand-ink">Clientes</p>
+                <Link href="/#negocios" className="text-brand-muted hover:text-brand">Buscar negocios</Link>
+                <Link href="/#como-funciona" className="text-brand-muted hover:text-brand">Cómo funciona</Link>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <p className="m-0 font-bold text-brand-ink">Negocios</p>
+                <a href={REGISTRE_URL} className="text-brand-muted hover:text-brand">Registra tu negocio</a>
+                <a href={ACCES_URL} className="text-brand-muted hover:text-brand">Acceso al panel</a>
+              </div>
+              <div className="flex flex-col gap-2.5 items-start">
+                <p className="m-0 font-bold text-brand-ink">Legal</p>
+                {(['privacy', 'terms', 'contact'] as const).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setOpen(key)}
+                    className="p-0 bg-transparent border-0 text-left text-brand-muted hover:text-brand cursor-pointer"
+                  >
+                    {key === 'privacy' ? 'Privacidad' : key === 'terms' ? 'Términos' : 'Contacto'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="m-0 text-[13px] text-brand-muted">© {new Date().getFullYear()} BookMeNow</p>
         </div>
       </footer>
 
@@ -148,7 +168,7 @@ export function Footer() {
               <button
                 onClick={() => setOpen(null)}
                 className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
-                aria-label="Close"
+                aria-label="Cerrar"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
