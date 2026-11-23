@@ -61,6 +61,7 @@ export class EmailPostCitaService {
         if (count === 0) continue;
 
         const resultat = await this.enviar({
+          empresaId: reserva.empresaId,
           email: reserva.clientEmail,
           nom: reserva.clientNom ?? '',
           serveiNom: reserva.servei.nom,
@@ -88,6 +89,7 @@ export class EmailPostCitaService {
   }
 
   private async enviar(dades: {
+    empresaId: number;
     email: string;
     nom: string;
     serveiNom: string;
@@ -104,6 +106,8 @@ export class EmailPostCitaService {
       : null;
 
     return this.email.send({
+      tipus: 'POST_CITA',
+      empresaId: dades.empresaId,
       to: dades.email,
       subject: `Com ha anat la teva cita de ${dades.serveiNom}?`,
       html: `

@@ -438,3 +438,24 @@ model ClauVapid {
   privada   String
   createdAt DateTime @default(now())
 }
+
+// ── Correus enviats (per controlar la quota de Resend) ───────────────
+model CorreuEnviat {
+  id           Int      @id @default(autoincrement())
+  tipus        String
+  empresaId    Int?
+  // Resend compta cada destinatari com un correu
+  destinataris Int
+  ok           Boolean
+  error        String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([empresaId, createdAt])
+}
+
+// Avisos de quota ja enviats (un per llindar i període)
+model AvisQuota {
+  clau      String   @id
+  createdAt DateTime @default(now())
+}

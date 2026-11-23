@@ -418,6 +418,7 @@ export class ReservesService {
   }
 
   private enviarEmailCancellacio(reserva: {
+    empresaId: number;
     clientNom?: string | null;
     clientEmail: string;
     dataHora: Date;
@@ -428,6 +429,8 @@ export class ReservesService {
     const { dia: dataFormatada, hora: horaFormatada } = formatarDataHora(reserva.dataHora);
 
     this.email.sendInBackground({
+      tipus: 'CANCELLACIO_CLIENT',
+      empresaId: reserva.empresaId,
       to: reserva.clientEmail,
       subject: `Reserva cancel·lada — ${reserva.empresa.nom}`,
       html: `
@@ -556,7 +559,7 @@ export class ReservesService {
   }
 
   private enviarEmailConfirmacio(
-    reserva: { servei: { nom: string; duradaMin: number } },
+    reserva: { empresaId: number; servei: { nom: string; duradaMin: number } },
     dto: { nom: string; email: string },
     dataHoraInici: Date,
     tokenGestio: string | null,
@@ -566,6 +569,8 @@ export class ReservesService {
     const gestioLink = tokenGestio ? `${this.portalUrl}/reserva/${tokenGestio}` : null;
 
     this.email.sendInBackground({
+      tipus: assumpte === 'Reserva modificada' ? 'MODIFICACIO_CLIENT' : 'CONFIRMACIO_CLIENT',
+      empresaId: reserva.empresaId,
       to: dto.email,
       subject: assumpte,
       html: `
@@ -657,7 +662,7 @@ export class ReservesService {
     this.avisarNegoci(reserva, 'canviada', reserva.dataHora, dataHoraInici);
     if (reserva.clientEmail) {
       this.enviarEmailConfirmacio(
-        { servei: reserva.servei },
+        { empresaId: reserva.empresaId, servei: reserva.servei },
         { nom: reserva.clientNom ?? '', email: reserva.clientEmail },
         dataHoraInici,
         token,
