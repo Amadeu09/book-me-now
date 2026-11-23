@@ -101,6 +101,12 @@ export class SuperAdminController {
     return this.service.revocarInvitacio(id, admin.superAdminId);
   }
 
+  @Get('correus')
+  @ApiOperation({ summary: 'Ús de correus (quota de Resend): avui, mes, per tipus i per empresa' })
+  correus() {
+    return this.service.estadistiquesCorreus();
+  }
+
   @Get('registre')
   @ApiOperation({ summary: 'Registre de les accions del superadmin' })
   registre(

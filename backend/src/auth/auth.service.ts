@@ -271,6 +271,8 @@ export class AuthService {
     const resetUrl = `${this.portalUrl}/reset-password?token=${token}`;
 
     this.email.sendInBackground({
+      tipus: 'CONTRASENYA',
+      empresaId: user.empresaId,
       to: email,
       subject: 'Restableix la teva contrasenya — BookMeNow',
       html: `
