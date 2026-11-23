@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as webpush from 'web-push';
@@ -16,27 +16,48 @@ export interface AvisReserva extends DadesAvis {
 const DIES_CONSERVACIO = 60;
 
 @Injectable()
-export class AvisosService {
+export class AvisosService implements OnModuleInit {
   private readonly logger = new Logger(AvisosService.name);
-  private readonly pushActiu: boolean;
-  readonly clauPublica: string | null;
+  private pushActiu = false;
+  clauPublica: string | null = null;
   private readonly appUrl: string;
+  private readonly subjecte: string;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
-    config: ConfigService,
+    private readonly config: ConfigService,
   ) {
     this.appUrl = (config.get<string>('APP_URL') ?? 'https://app.bookmenow.org').replace(/\/$/, '');
+    this.subjecte = config.get<string>('VAPID_SUBJECT') ?? 'mailto:reservas@bookmenow.org';
+    // Claus per variable d'entorn (opcional): tenen prioritat sobre les de la base de dades
     const publica = config.get<string>('VAPID_PUBLIC_KEY');
     const privada = config.get<string>('VAPID_PRIVATE_KEY');
-    this.clauPublica = publica ?? null;
-    this.pushActiu = Boolean(publica && privada);
-    if (this.pushActiu) {
-      webpush.setVapidDetails(config.get<string>('VAPID_SUBJECT') ?? 'mailto:reservas@bookmenow.org', publica!, privada!);
-    } else {
-      this.logger.warn('VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY no configurades: no s\'enviaran notificacions push');
+    if (publica && privada) this.activarPush(publica, privada);
+  }
+
+  /** Sense claus per entorn, fa servir les de la base de dades i, si no n'hi ha, les genera. */
+  async onModuleInit() {
+    if (this.pushActiu) return;
+    try {
+      let claus = await this.prisma.clauVapid.findUnique({ where: { id: 1 } });
+      if (!claus) {
+        const noves = webpush.generateVAPIDKeys();
+        // Si dues instàncies arrenquen alhora, només una crea la fila i totes llegeixen la mateixa
+        await this.prisma.clauVapid.createMany({ data: [{ id: 1, publica: noves.publicKey, privada: noves.privateKey }], skipDuplicates: true });
+        claus = await this.prisma.clauVapid.findUnique({ where: { id: 1 } });
+        this.logger.log('Claus VAPID generades per a les notificacions push');
+      }
+      if (claus) this.activarPush(claus.publica, claus.privada);
+    } catch (e) {
+      this.logger.warn(`Notificacions push desactivades: ${(e as Error).message}`);
     }
+  }
+
+  private activarPush(publica: string, privada: string) {
+    webpush.setVapidDetails(this.subjecte, publica, privada);
+    this.clauPublica = publica;
+    this.pushActiu = true;
   }
 
   /**

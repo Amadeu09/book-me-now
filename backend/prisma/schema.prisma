@@ -430,3 +430,11 @@ model Notificacio {
 
   @@index([usuariId, llegida, createdAt])
 }
+
+// Claus VAPID de les notificacions push: el servidor les genera la primera vegada
+model ClauVapid {
+  id        Int      @id @default(1)
+  publica   String
+  privada   String
+  createdAt DateTime @default(now())
+}

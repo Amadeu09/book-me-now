@@ -2,7 +2,7 @@ import * as webpush from 'web-push';
 import { AvisosService } from './avisos.service';
 import { textAvis } from './avisos.textos';
 
-jest.mock('web-push', () => ({ setVapidDetails: jest.fn(), sendNotification: jest.fn() }));
+jest.mock('web-push', () => ({ setVapidDetails: jest.fn(), sendNotification: jest.fn(), generateVAPIDKeys: jest.fn(() => ({ publicKey: 'pub-gen', privateKey: 'priv-gen' })) }));
 
 const config = (vals: Record<string, string>) => ({ get: (k: string) => vals[k] }) as any;
 const espera = () => new Promise((r) => setImmediate(r));
@@ -22,6 +22,7 @@ describe('AvisosService', () => {
       },
       notificacio: { createMany: jest.fn() },
       pushSubscripcio: { deleteMany: jest.fn() },
+      clauVapid: { findUnique: jest.fn().mockResolvedValue(null), createMany: jest.fn() },
     };
     email = { sendInBackground: jest.fn() };
   });
@@ -79,6 +80,22 @@ describe('AvisosService', () => {
     await espera();
     expect(webpush.sendNotification).toHaveBeenCalledTimes(2);
     expect(prisma.pushSubscripcio.deleteMany).toHaveBeenCalledWith({ where: { id: 11 } });
+  });
+
+  it('sense claus enlloc, les genera i les desa una sola vegada', async () => {
+    prisma.clauVapid.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 1, publica: 'pub-gen', privada: 'priv-gen' });
+    const service = new AvisosService(prisma, email, config({}));
+    await service.onModuleInit();
+    expect(prisma.clauVapid.createMany).toHaveBeenCalledWith({ data: [{ id: 1, publica: 'pub-gen', privada: 'priv-gen' }], skipDuplicates: true });
+    expect(service.clauPublica).toBe('pub-gen');
+  });
+
+  it('fa servir les claus desades si ja existeixen', async () => {
+    prisma.clauVapid.findUnique.mockResolvedValue({ id: 1, publica: 'pub-bd', privada: 'priv-bd' });
+    const service = new AvisosService(prisma, email, config({}));
+    await service.onModuleInit();
+    expect(prisma.clauVapid.createMany).not.toHaveBeenCalled();
+    expect(service.clauPublica).toBe('pub-bd');
   });
 
   it('un error intern no es propaga', async () => {

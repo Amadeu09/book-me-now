@@ -68,3 +68,12 @@ CREATE TABLE "Notificacio" (
 );
 CREATE INDEX "Notificacio_usuariId_llegida_createdAt_idx" ON "Notificacio"("usuariId", "llegida", "createdAt");
 ALTER TABLE "Notificacio" ADD CONSTRAINT "Notificacio_usuariId_fkey" FOREIGN KEY ("usuariId") REFERENCES "Usuari"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Claus VAPID generades pel servidor (una sola fila)
+CREATE TABLE "ClauVapid" (
+    "id" INTEGER NOT NULL DEFAULT 1,
+    "publica" TEXT NOT NULL,
+    "privada" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ClauVapid_pkey" PRIMARY KEY ("id")
+);
