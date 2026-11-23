@@ -1,89 +1,34 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { searchEmpreses } from '@/lib/api';
 import type { Empresa } from '@/types/empresa';
+import { Icon } from '@/components/ui/icon';
+import { BookingPreview } from './booking-preview';
+import { CATEGORIES } from './tipus';
 
-const TYPEWRITER_WORDS = [
-  'Extraordinario.',
-  'Único.',
-  'Exclusivo.',
-  'Inigualable.',
-  'Tuyo.',
-];
-
-const TYPING_SPEED = 80;   // ms per character while typing
-const DELETING_SPEED = 45;   // ms per character while deleting
-const PAUSE_AFTER = 2000; // ms to hold full word before deleting
-
-function useTypewriter(words: string[]) {
-  const [displayed, setDisplayed] = useState('');
-  const [wordIdx, setWordIdx] = useState(0);
-  const [phase, setPhase] = useState<'typing' | 'pausing' | 'deleting'>('typing');
-
-  useEffect(() => {
-    const word = words[wordIdx];
-
-    if (phase === 'typing') {
-      if (displayed.length < word.length) {
-        const t = setTimeout(
-          () => setDisplayed(word.slice(0, displayed.length + 1)),
-          TYPING_SPEED,
-        );
-        return () => clearTimeout(t);
-      }
-      const t = setTimeout(() => setPhase('deleting'), PAUSE_AFTER);
-      return () => clearTimeout(t);
-    }
-
-    if (phase === 'deleting') {
-      if (displayed.length > 0) {
-        const t = setTimeout(
-          () => setDisplayed(displayed.slice(0, -1)),
-          DELETING_SPEED,
-        );
-        return () => clearTimeout(t);
-      }
-      setWordIdx((i) => (i + 1) % words.length);
-      setPhase('typing');
-    }
-  }, [displayed, phase, wordIdx, words]);
-
-  return displayed;
+interface Props {
+  /** Filtra el directori per tipus i hi baixa. */
+  onTipo: (tipo: string | null) => void;
 }
 
-export function HeroSection() {
+export function HeroSection({ onTipo }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLFormElement>(null);
 
-  const typedText = useTypewriter(TYPEWRITER_WORDS);
-
-  const HERO_IMAGES = [
-    '/images/bookmenowFoto.jpg',
-    '/images/bookmenowDental.jpg',
-    '/images/bookmenowSpa.jpg',
-  ];
-  const [heroIdx, setHeroIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setHeroIdx((i) => (i + 1) % HERO_IMAGES.length), 5000);
-    return () => clearInterval(t);
-  }, []);
-
-  // Debounce + AbortController: cancel·la la request anterior si l'usuari segueix escrivint
+  // Cerca amb debounce; cancel·la la petició anterior si l'usuari continua escrivint
   useEffect(() => {
     if (query.trim().length < 2) {
       setResults([]);
       setIsOpen(false);
       return;
     }
-
     const controller = new AbortController();
-
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
@@ -91,166 +36,120 @@ export function HeroSection() {
         setResults(data);
         setIsOpen(true);
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          setResults([]);
-        }
+        if ((err as Error).name !== 'AbortError') setResults([]);
       } finally {
         setLoading(false);
       }
     }, 300);
-
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
   }, [query]);
 
-  // Tanca el dropdown en clicar fora
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+    function onClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setIsOpen(false);
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
-  return (
-    <section id="hero" className="relative min-h-[580px] flex items-center px-6 md:px-12 mb-7">
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="w-full h-full overflow-hidden relative">
-          {HERO_IMAGES.map((src, i) => (
-            <img
-              key={src}
-              alt="Interior de lujo"
-              className="absolute inset-0 w-full h-full object-cover"
-              src={src}
-              style={{
-                opacity: i === heroIdx ? 1 : 0,
-                transition: 'opacity 1.2s ease-in-out',
-              }}
-            />
-          ))}
-          {/* Base dark overlay */}
-          <div className="absolute inset-0 bg-black/40" />
-          {/* Left-side directional gradient for text contrast */}
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.70) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)' }}
-          />
-        </div>
-      </div>
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-start pt-20">
-        <div className="inline-block px-4 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-xs font-bold tracking-[0.2em] uppercase mb-6">
-          Selección Exclusiva
-        </div>
-        <h1
-          className="text-white text-6xl md:text-8xl font-black editorial-kern leading-[0.9] mb-12 max-w-3xl"
-          style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}
-        >
-          Descubre lo <br />
-          <span className="text-secondary-fixed" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}>
-            {typedText}
-            <span
-              style={{
-                display: 'inline-block',
-                width: '3px',
-                marginLeft: '4px',
-                background: 'currentColor',
-                verticalAlign: 'baseline',
-                animation: 'blink 1s step-end infinite',
-              }}
-            >&nbsp;</span>
-          </span>
-        </h1>
-        {/* Glassmorphism Floating Search */}
-        <div className="glass-panel p-4 rounded-xl w-full max-w-3xl flex flex-col md:flex-row gap-4 shadow-2xl items-center">
-          {/* Search input with dropdown */}
-          <div className="flex-1 w-full relative" ref={containerRef}>
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant z-10">
-              {loading ? 'progress_activity' : 'search'}
-            </span>
-            <input
-              className="w-full bg-surface-container-low border-none rounded-full py-4 pl-12 pr-6 focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant text-sm font-medium"
-              placeholder="¿Qué estás buscando?"
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => results.length > 0 && setIsOpen(true)}
-            />
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (results.length === 1) router.push(`/empresa/${results[0].id}`);
+    else if (results.length > 1) setIsOpen(true);
+    else onTipo(null);
+  };
 
-            {/* Dropdown de resultats */}
+  return (
+    <section id="hero" className="bg-brand-soft">
+      <div className="max-w-[1200px] mx-auto px-5 sm:px-6 pt-10 pb-16 md:pt-20 md:pb-24 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-14 lg:gap-16 items-center">
+        <div className="flex flex-col gap-6 min-w-0">
+          <span className="self-start inline-flex items-center gap-2 bg-white border border-brand-line rounded-full px-3.5 py-1.5 text-[13px] font-bold text-brand">
+            <Icon name="clock" size={15} />
+            Reservas online para negocios de proximidad
+          </span>
+          <h1 className="m-0 text-[40px] sm:text-[52px] lg:text-[64px] leading-[1.03] tracking-[-0.035em] font-extrabold text-brand-ink">
+            Tu próxima cita,
+            <br />
+            <span className="text-brand">reservada ahora.</span>
+          </h1>
+          <p className="m-0 text-[17px] sm:text-[19px] leading-relaxed text-brand-muted max-w-[520px]">
+            Encuentra peluquerías, barberías, centros de estética y mucho más. Mira sus huecos libres y reserva en segundos, sin llamadas.
+          </p>
+
+          <form ref={containerRef} role="search" onSubmit={onSubmit} className="relative flex flex-col sm:flex-row gap-2 bg-white border border-brand-line rounded-[18px] p-2 shadow-[0_12px_30px_rgba(20,20,43,0.08)]">
+            <label className="flex-1 flex items-center gap-2.5 px-3 text-brand-muted">
+              {loading ? <Icon name="spinner" size={18} className="animate-spin" /> : <Icon name="search" size={18} />}
+              <span className="sr-only">Busca un negocio o una ciudad</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => results.length > 0 && setIsOpen(true)}
+                onKeyDown={(e) => e.key === 'Escape' && setIsOpen(false)}
+                placeholder="Busca un negocio o una ciudad"
+                autoComplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={isOpen}
+                aria-controls="resultats-cerca"
+                className="w-full min-h-[44px] bg-transparent border-0 outline-none text-[15px] text-brand-ink placeholder:text-brand-muted"
+              />
+            </label>
+            <button type="submit" className="min-h-[48px] px-6 rounded-[12px] bg-brand text-white text-[15px] font-bold hover:bg-[#4A4AC4] transition-colors">
+              Buscar
+            </button>
+
             {isOpen && (
-              <ul className="absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden z-50 max-h-72 overflow-y-auto">
+              <ul id="resultats-cerca" className="absolute top-full left-0 right-0 mt-2 bg-white border border-brand-line rounded-[16px] shadow-[0_20px_50px_rgba(20,20,43,0.14)] overflow-hidden z-40 max-h-72 overflow-y-auto">
                 {results.length === 0 ? (
-                  <li className="px-4 py-3 text-sm text-on-surface-variant">
-                    No s&apos;han trobat empreses
-                  </li>
+                  <li className="px-4 py-3 text-sm text-brand-muted">No hemos encontrado negocios con ese nombre.</li>
                 ) : (
                   results.map((empresa) => (
                     <li key={empresa.id}>
                       <button
                         type="button"
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-container transition-colors text-left"
-                        onClick={() => {
-                          setIsOpen(false);
-                          router.push(`/empresa/${empresa.id}`);
-                        }}
+                        onClick={() => { setIsOpen(false); router.push(`/empresa/${empresa.id}`); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-soft transition-colors text-left"
                       >
                         {empresa.fotoPerfil ? (
-                          <img
-                            src={empresa.fotoPerfil}
-                            alt={empresa.nom}
-                            className="w-9 h-9 rounded-full object-cover shrink-0"
-                          />
+                          <img src={empresa.fotoPerfil} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                         ) : (
-                          <div className="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
-                            <span className="text-on-primary-fixed-variant text-sm font-bold">
-                              {empresa.nom.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
+                          <span className="w-9 h-9 rounded-full bg-brand-soft text-brand flex items-center justify-center shrink-0 text-sm font-bold">
+                            {empresa.nom.charAt(0).toUpperCase()}
+                          </span>
                         )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-on-surface truncate">
-                            {empresa.nom}
-                          </p>
-                          <p className="text-xs text-on-surface-variant truncate">
-                            {empresa.ubicacio}
-                          </p>
-                        </div>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-brand-ink truncate">{empresa.nom}</span>
+                          <span className="block text-xs text-brand-muted truncate">{empresa.ubicacio}</span>
+                        </span>
                       </button>
                     </li>
                   ))
                 )}
               </ul>
             )}
-          </div>
+          </form>
 
-          <button className="w-full md:w-auto bg-primary text-white px-10 py-4 rounded-full font-bold hover:bg-primary-container transition-colors shadow-xl shadow-primary/10">
-            Explorar
-          </button>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 sm:mx-0 sm:px-0 sm:flex-wrap" aria-label="Tipos de negocio">
+            {CATEGORIES.filter((c) => c.value).map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => onTipo(c.value)}
+                className="shrink-0 inline-flex items-center gap-2 min-h-[40px] px-3.5 rounded-full bg-white border border-brand-line text-brand-ink text-[14px] font-semibold hover:border-brand hover:text-brand transition-colors"
+              >
+                <Icon name={c.icon} size={16} />
+                {c.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Slideshow dots */}
-        <div className="flex items-center gap-2.5 mt-5">
-          {HERO_IMAGES.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setHeroIdx(i)}
-              aria-label={`Imagen ${i + 1}`}
-              style={{
-                width: i === heroIdx ? '28px' : '8px',
-                height: '8px',
-                borderRadius: '999px',
-                backgroundColor: i === heroIdx ? 'var(--color-secondary-fixed, #e9c46a)' : 'rgba(255,255,255,0.4)',
-                transition: 'all 0.4s ease',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            />
-          ))}
+        <div className="pt-16 sm:pt-8 lg:pt-0 min-w-0">
+          <BookingPreview />
         </div>
       </div>
     </section>
