@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -13,14 +14,12 @@ import { TokenBlacklistService } from './token-blacklist.service';
 import { SessionCacheService } from './session-cache.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { hashToken } from '../common/utils/token.utils';
 import { EmailService } from '../email/email.service';
 
 /** Hash bcrypt vàlid d'una contrasenya aleatòria, per igualar el temps del login. */
 const HASH_FICTICI = '$2b$10$Bkn2RD4V8ZAKCGGqmEj/2ejrSOmc1xedPvFfoJMOzPnKzvCw1QHMW';
 
-function hashToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
 
 /** Una sessió es pot anar renovant com a màxim 30 dies des del login. */
 const DURADA_MAXIMA_SESSIO_S = 30 * 24 * 60 * 60;
@@ -66,6 +65,11 @@ export class AuthService {
     if (!isValidPassword) {
       this.logger.warn(`Login attempt with incorrect password for user: ${user.id}`);
       throw new UnauthorizedException('Credencials invàlides');
+    }
+
+    if (!(await this.prisma.empresa.findUnique({ where: { id: user.empresaId }, select: { activa: true } }))?.activa) {
+      this.logger.warn(`Login bloquejat: empresa desactivada (usuari ${user.id})`);
+      throw new UnauthorizedException('Aquesta empresa està desactivada. Contacta amb BookMeNow.');
     }
 
     // Generate JWT token
@@ -118,6 +122,12 @@ export class AuthService {
   async signup(signupDto: SignupDto): Promise<LoginResponseDto> {
     this.logger.debug('Signup attempt');
 
+    // Sense invitació vàlida no hi ha registre
+    const invitacio = await this.invitacioUsable(this.prisma, signupDto.invitacio);
+    if (invitacio.email && invitacio.email !== signupDto.usuari.email.trim().toLowerCase()) {
+      throw new ForbiddenException('Aquesta invitació és per a un altre email');
+    }
+
     // Check if email already exists
     const existingUser = await this.prisma.usuari.findUnique({
       where: { email: signupDto.usuari.email },
@@ -133,6 +143,15 @@ export class AuthService {
 
     // Transaction: create empresa and admin user
     const result = await this.prisma.$transaction(async (tx) => {
+      // 0. Gastar la invitació (condicional: si dos registres arriben alhora, només un la fa servir)
+      const gastada = await tx.invitacio.updateMany({
+        where: { id: invitacio.id, usadaAt: null, revocada: false, caduca: { gt: new Date() } },
+        data: { usadaAt: new Date() },
+      });
+      if (gastada.count === 0) {
+        throw new ForbiddenException("La invitació no és vàlida o ha caducat. Demana'n una de nova.");
+      }
+
       // 1. Create empresa
       const empresa = await tx.empresa.create({
         data: {
@@ -160,6 +179,8 @@ export class AuthService {
       });
 
       this.logger.log(`Admin user created: ${usuari.id} (${usuari.email})`);
+
+      await tx.invitacio.update({ where: { id: invitacio.id }, data: { empresaId: empresa.id } });
 
       return { empresa, usuari };
     });
@@ -330,13 +351,32 @@ export class AuthService {
         rol: true,
         empresaId: true,
         credencialsCanviades: true,
+        empresa: { select: { activa: true } },
       },
     });
 
     if (!user) {
       throw new UnauthorizedException('Usuari no vàlid');
     }
+    if (!user.empresa.activa) {
+      throw new UnauthorizedException('Aquesta empresa està desactivada');
+    }
 
-    return user;
+    const { empresa: _empresa, ...dades } = user;
+    return dades;
+  }
+
+  /** Dades públiques d'una invitació per omplir el registre; error si no es pot fer servir. */
+  async consultarInvitacio(token: string) {
+    const inv = await this.invitacioUsable(this.prisma, token);
+    return { email: inv.email, nomEmpresa: inv.nomEmpresa, caduca: inv.caduca };
+  }
+
+  private async invitacioUsable(db: Pick<PrismaService, 'invitacio'>, token: string) {
+    const inv = await db.invitacio.findUnique({ where: { tokenHash: hashToken(token) } });
+    if (!inv || inv.revocada || inv.usadaAt || inv.caduca < new Date()) {
+      throw new ForbiddenException("La invitació no és vàlida o ha caducat. Demana'n una de nova.");
+    }
+    return inv;
   }
 }

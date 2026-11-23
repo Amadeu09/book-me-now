@@ -1,13 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  ActivityIndicator,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,6 +19,8 @@ import {
 } from "react-native";
 import { HC, cardShadow } from "@/features/home/constants/inicio.constants";
 import { LogoBookMeNow } from "@/ui/components/LogoBookMeNow";
+import { useInvitacio } from "@/features/auth/hooks/useInvitacio";
+import { RegistreNomesInvitacio } from "@/features/auth/components/RegistreNomesInvitacio";
 
 const TIPOS_NEGOCIO = [
   { label: "Peluquería", value: "PERRUQUERIA" },
@@ -37,7 +40,15 @@ const TIPOS_NEGOCIO = [
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { invitacio } = useLocalSearchParams<{ invitacio?: string }>();
+  const estatInvitacio = useInvitacio(typeof invitacio === "string" ? invitacio : undefined);
   const [nom, setNom] = useState("");
+  const nomInvitacio = estatInvitacio.estat === "valida" ? estatInvitacio.dades.nomEmpresa : null;
+
+  // Si la invitació porta el nom de l'empresa, el deixem escrit
+  useEffect(() => {
+    if (nomInvitacio) setNom((actual) => actual || nomInvitacio);
+  }, [nomInvitacio]);
   const [ubicacio, setUbicacio] = useState("");
   const [descripcio, setDescripcio] = useState("");
   const [tipo, setTipo] = useState<string | null>(null);
@@ -77,9 +88,22 @@ export default function RegisterScreen() {
         tipo: tipo || "",
         fotoUri: fotoUri || "",
         diasAntesReserva: diasAntesReserva.trim() || "14",
+        invitacio: invitacio as string,
+        emailInvitacio: estatInvitacio.estat === "valida" ? estatInvitacio.dades.email ?? "" : "",
       },
     });
   };
+
+  if (estatInvitacio.estat === "carregant") {
+    return (
+      <SafeAreaView style={[styles.safe, { alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator color={HC.primary} />
+      </SafeAreaView>
+    );
+  }
+  if (estatInvitacio.estat !== "valida") {
+    return <RegistreNomesInvitacio invalida={estatInvitacio.estat === "invalida"} />;
+  }
 
   return (
     <SafeAreaView style={styles.safe}>

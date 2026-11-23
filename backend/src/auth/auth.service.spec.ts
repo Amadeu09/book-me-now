@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { UnauthorizedException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -22,9 +22,16 @@ describe('AuthService', () => {
     },
     empresa: {
       create: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ activa: true }),
+    },
+    invitacio: {
+      findUnique: jest.fn(),
     },
     $transaction: jest.fn(),
   };
+
+  const INVITACIO_VALIDA = { id: 7, email: null, nomEmpresa: null, revocada: false, usadaAt: null, caduca: new Date(Date.now() + 86_400_000) };
+  const txInvitacio = (count = 1) => ({ updateMany: jest.fn().mockResolvedValue({ count }), update: jest.fn().mockResolvedValue({}) });
 
   const mockJwtService = {
     sign: jest.fn(),
@@ -167,7 +174,9 @@ describe('AuthService', () => {
           ubicacio: 'Barcelona, Spain',
           capacitat: 20,
         },
+        invitacio: 'token-invitacio',
       };
+      mockPrismaService.invitacio.findUnique.mockResolvedValue(INVITACIO_VALIDA);
 
       const mockEmpresa = {
         id: 1,
@@ -198,6 +207,7 @@ describe('AuthService', () => {
       mockPrismaService.usuari.findUnique.mockResolvedValue(null); // Email no existe
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
+          invitacio: txInvitacio(),
           empresa: {
             create: jest.fn().mockResolvedValue(mockEmpresa),
           },
@@ -244,7 +254,9 @@ describe('AuthService', () => {
           nom: 'Nueva Empresa',
           ubicacio: 'Barcelona',
         },
+        invitacio: 'token-invitacio',
       };
+      mockPrismaService.invitacio.findUnique.mockResolvedValue(INVITACIO_VALIDA);
 
       mockPrismaService.usuari.findUnique.mockResolvedValue({
         id: 1,
@@ -252,6 +264,38 @@ describe('AuthService', () => {
       });
 
       await expect(service.signup(signupDto)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('signup amb invitació', () => {
+    const dto = {
+      usuari: { email: 'nou@negoci.cat', password: 'SecurePass123!' },
+      empresa: { nom: 'Negoci', ubicacio: 'Vic' },
+      invitacio: 'token-invitacio',
+    };
+
+    it('rebutja el registre sense una invitació vàlida', async () => {
+      mockPrismaService.invitacio.findUnique.mockResolvedValue(null);
+      await expect(service.signup(dto)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rebutja una invitació caducada, usada o revocada', async () => {
+      for (const canvi of [{ caduca: new Date(Date.now() - 1000) }, { usadaAt: new Date() }, { revocada: true }]) {
+        mockPrismaService.invitacio.findUnique.mockResolvedValue({ ...INVITACIO_VALIDA, ...canvi });
+        await expect(service.signup(dto)).rejects.toThrow(ForbiddenException);
+      }
+    });
+
+    it("rebutja una invitació pensada per a un altre email", async () => {
+      mockPrismaService.invitacio.findUnique.mockResolvedValue({ ...INVITACIO_VALIDA, email: 'altre@negoci.cat' });
+      await expect(service.signup(dto)).rejects.toThrow(ForbiddenException);
+    });
+
+    it("si dos registres gasten la mateixa invitació alhora, només un passa", async () => {
+      mockPrismaService.invitacio.findUnique.mockResolvedValue(INVITACIO_VALIDA);
+      mockPrismaService.usuari.findUnique.mockResolvedValue(null);
+      mockPrismaService.$transaction.mockImplementation(async (cb) => cb({ invitacio: txInvitacio(0), empresa: { create: jest.fn() }, usuari: { create: jest.fn() } }));
+      await expect(service.signup(dto)).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -264,7 +308,7 @@ describe('AuthService', () => {
         empresaId: 1,
       };
 
-      mockPrismaService.usuari.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ ...mockUser, empresa: { activa: true } });
 
       const result = await service.validateUser(1);
 
@@ -277,8 +321,14 @@ describe('AuthService', () => {
           rol: true,
           empresaId: true,
           credencialsCanviades: true,
+          empresa: { select: { activa: true } },
         },
       });
+    });
+
+    it("rebutja els usuaris d'una empresa desactivada", async () => {
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, empresaId: 1, empresa: { activa: false } });
+      await expect(service.validateUser(1)).rejects.toThrow(UnauthorizedException);
     });
 
     it('debería lanzar UnauthorizedException si el usuario no existe', async () => {
@@ -312,13 +362,13 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('emet un token nou per a l\'usuari', async () => {
-      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1 });
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1, empresa: { activa: true } });
       mockJwtService.sign.mockReturnValue('renovat');
       expect(await service.refresh(1)).toEqual({ token: 'renovat' });
     });
 
     it('conserva l\'inici de la sessió original al token nou', async () => {
-      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1 });
+      mockPrismaService.usuari.findUnique.mockResolvedValue({ id: 1, email: 'a@b.c', rol: 'EMPLEAT', empresaId: 1, empresa: { activa: true } });
       mockJwtService.sign.mockReturnValue('renovat');
       const inici = Math.floor(Date.now() / 1000) - 5 * 24 * 3600;
       await service.refresh(1, inici);

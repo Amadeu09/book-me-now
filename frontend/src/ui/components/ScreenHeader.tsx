@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/core/theme/ThemeProvider';
+import { CampanaAvisos } from '@/features/avisos/components/CampanaAvisos';
 
 interface ScreenHeaderProps {
     title: string;
@@ -55,7 +56,10 @@ export function ScreenHeader({ title, subtitle, icon, right }: ScreenHeaderProps
                         ) : null}
                     </View>
                 </View>
-                {right ? <View style={styles.right}>{right}</View> : null}
+                <View style={styles.right}>
+                    {right}
+                    <CampanaAvisos sobreColor={!headerClar} />
+                </View>
             </View>
         </View>
     );
