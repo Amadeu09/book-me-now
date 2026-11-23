@@ -62,6 +62,7 @@ describe('AuthController', () => {
             const dto: SignupDto = {
                 usuari: { email: 'test@example.com', password: 'password' },
                 empresa: { nom: 'Test Co', ubicacio: 'Loc' },
+                invitacio: 'token',
             };
             const response: LoginResponseDto = {
                 token: 'token',

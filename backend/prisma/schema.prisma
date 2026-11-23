@@ -62,6 +62,8 @@ model Usuari {
   updatedAt         DateTime  @updatedAt
   empresa    Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   treballador Treballador?
+  subscripcionsPush PushSubscripcio[]
+  notificacions     Notificacio[]
 
   @@index([empresaId])
 }
@@ -355,3 +357,76 @@ enum BusinessType {
   OTROS
 }
 
+
+// ── Superadmin (propietari de la plataforma) ─────────────────────────
+// Comptes separats dels usuaris d'empresa: login, tokens i clau de signatura propis.
+model SuperAdmin {
+  id                   Int       @id @default(autoincrement())
+  email                String    @unique
+  hash                 String
+  credencialsCanviades DateTime?
+  resetToken           String?   @unique
+  resetTokenExpiry     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  invitacions          Invitacio[]
+  accions              RegistreAccio[]
+}
+
+// Enllaç d'un sol ús per registrar una empresa nova
+model Invitacio {
+  id          Int         @id @default(autoincrement())
+  tokenHash   String      @unique
+  email       String?
+  nomEmpresa  String?
+  caduca      DateTime
+  usadaAt     DateTime?
+  revocada    Boolean     @default(false)
+  empresaId   Int?
+  creadaPerId Int
+  creadaPer   SuperAdmin  @relation(fields: [creadaPerId], references: [id])
+  createdAt   DateTime    @default(now())
+
+  @@index([createdAt])
+}
+
+// Registre de les accions del superadmin
+model RegistreAccio {
+  id           Int        @id @default(autoincrement())
+  superAdminId Int
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id])
+  accio        String
+  detall       Json?
+  createdAt    DateTime   @default(now())
+
+  @@index([createdAt])
+}
+
+// ── Avisos al negoci ─────────────────────────────────────────────────
+// Subscripció Web Push d'un navegador d'un usuari
+model PushSubscripcio {
+  id        Int      @id @default(autoincrement())
+  usuariId  Int
+  usuari    Usuari   @relation(fields: [usuariId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([usuariId])
+}
+
+// Avís dins de l'app (campana)
+model Notificacio {
+  id        Int       @id @default(autoincrement())
+  usuariId  Int
+  usuari    Usuari    @relation(fields: [usuariId], references: [id], onDelete: Cascade)
+  tipus     String
+  titol     String
+  cos       String
+  reservaId Int?
+  llegida   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([usuariId, llegida, createdAt])
+}

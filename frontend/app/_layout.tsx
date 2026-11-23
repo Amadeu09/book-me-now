@@ -24,6 +24,7 @@ export default function RootLayout() {
             <Stack.Screen name="register-user" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="(main)" options={{ headerShown: false }} />
+            <Stack.Screen name="superadmin" options={{ headerShown: false }} />
           </Stack>
         </QueryClientProvider>
       </ThemeProvider>

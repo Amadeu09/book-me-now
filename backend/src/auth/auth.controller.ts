@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Get } from '@nestjs/common';
+import { Controller, Post, Body, Param, HttpCode, HttpStatus, Logger, UseGuards, Req, Patch, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { opcionsPujadaImatge } from '../common/utils/upload.utils';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -39,7 +39,7 @@ export class AuthController {
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   @Throttle({ short: { limit: 2, ttl: 60000 } }) // Max 3 signups per minute
-  @ApiOperation({ summary: 'Registro de empresa', description: 'Registra una nueva empresa con un usuario administrador' })
+  @ApiOperation({ summary: 'Registro de empresa', description: 'Registra una nueva empresa con un usuario administrador. Requiere una invitación válida' })
   @ApiBody({ type: SignupDto })
   @ApiResponse({ status: 201, description: 'Registro exitoso', type: LoginResponseDto })
   @ApiResponse({ status: 400, description: 'Petición incorrecta (errores de validación en DTO)' })
@@ -49,6 +49,14 @@ export class AuthController {
   async signup(@Body() signupDto: SignupDto): Promise<LoginResponseDto> {
     this.logger.debug(`POST /api/auth/signup - Email: ${signupDto.usuari.email}`);
     return this.authService.signup(signupDto);
+  }
+
+  @Get('invitacio/:token')
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: "Comprovar una invitació de registre i obtenir-ne l'email i el nom de l'empresa" })
+  @ApiResponse({ status: 403, description: 'Invitació no vàlida, usada, revocada o caducada' })
+  consultarInvitacio(@Param('token') token: string) {
+    return this.authService.consultarInvitacio(token);
   }
 
   @Post('logout')

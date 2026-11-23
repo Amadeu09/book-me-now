@@ -16,6 +16,7 @@ import { useTheme } from '@/core/theme/ThemeProvider';
 import { useLanguage } from '@/core/i18n';
 import api from '@/core/api/api';
 import { SidebarDesktop, type SidebarItem } from './SidebarDesktop';
+import { desactivarPush } from '@/features/avisos/services/push';
 
 type NavKey = 'navInici' | 'navReserves' | 'navServeis' | 'navEquip' | 'navHoraris' | 'navVacances' | 'navEstadistiques';
 
@@ -99,6 +100,8 @@ export default function Navbar({ variant }: NavbarProps) {
   const handleLogout = async () => {
     try {
       // Invalida el token al servidor; si falla, la sessió local es tanca igualment
+      // Aquest navegador deixa de rebre els avisos d'aquest usuari
+      await desactivarPush();
       await api.post('/auth/logout').catch(() => undefined);
       await clearSession();
       router.replace('/login');

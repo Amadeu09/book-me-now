@@ -5,6 +5,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
 import { CommonModule } from './common/common.module';
+import { SuperAdminModule } from './superadmin/superadmin.module';
+import { AvisosModule } from './avisos/avisos.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuarisModule } from './usuaris/usuaris.module';
 import { EmpresasModule } from './empresas/empresas.module';
@@ -51,6 +53,8 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     PrismaModule,
     CommonModule,
     AuthModule,
+    SuperAdminModule,
+    AvisosModule,
     // Business modules
     UsuarisModule,
     EmpresasModule,
